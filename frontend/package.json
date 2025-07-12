@@ -14,7 +14,7 @@
   "scripts": {
     "analyze": "cem analyze --litelement",
     "start": "tsc && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"web-dev-server\"",
-    "build": "tsc && npm run analyze -- --exclude dist",
+    "build": "tsc && cp ./demo/index.html ./dist/index.html && npm run analyze -- --exclude dist",
     "prepublish": "tsc && npm run analyze -- --exclude dist"
   },
   "dependencies": {
