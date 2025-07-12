@@ -1,27 +1,18 @@
+// web-dev-server.config.js
+import { esbuildPlugin } from '@web/dev-server-esbuild';
+// ↓ Uncomment these two lines only if you really want HMR
 // import { hmrPlugin, presets } from '@open-wc/dev-server-hmr';
+// const hmr = process.argv.includes('--hmr');
 
-/** Use Hot Module replacement by adding --hmr to the start command */
-const hmr = process.argv.includes('--hmr');
-
-export default /** @type {import('@web/dev-server').DevServerConfig} */ ({
-  open: '/demo/',
-  /** Use regular watch mode if HMR is not enabled. */
-  watch: !hmr,
-  /** Resolve bare module imports */
+/** @type {import('@web/dev-server').DevServerConfig} */
+export default {
+  open: '/index.html',
+  watch: true,                 // set false if you later add --hmr flag
   nodeResolve: {
     exportConditions: ['browser', 'development'],
   },
-
-  /** Compile JS for older browsers. Requires @web/dev-server-esbuild plugin */
-  // esbuildTarget: 'auto'
-
-  /** Set appIndex to enable SPA routing */
-  // appIndex: 'demo/index.html',
-
   plugins: [
-    /** Use Hot Module Replacement by uncommenting. Requires @open-wc/dev-server-hmr plugin */
     // hmr && hmrPlugin({ exclude: ['**/*/node_modules/**/*'], presets: [presets.lit] }),
+    esbuildPlugin({ ts: true, target: 'es2020' }),
   ],
-
-  // See documentation for all available options
-});
+};

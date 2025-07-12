@@ -13,8 +13,8 @@ export class ChessCoachApp extends LitElement {
     }
   `;
 
-  @property({ type: String }) header = 'Hey there';
-  @property({ type: Number }) counter = 5;
+@property({ type: String }) accessor header  = 'Hey there';
+@property({ type: Number }) accessor counter = 5;
 
   __increment() {
     this.counter += 1;

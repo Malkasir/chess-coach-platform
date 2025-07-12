@@ -3,7 +3,8 @@ import { customElement, property } from 'lit/decorators.js';
 
 @customElement('video-call')
 export class VideoCall extends LitElement {
-  @property() room = 'chess-default';
+  /** Room name passed to the Jitsi iframe */
+  @property({ type: String }) accessor room = 'chess-default';
 
   static styles = css`
     #jitsi-container {
@@ -24,7 +25,7 @@ export class VideoCall extends LitElement {
     const script = document.createElement('script');
     script.src = 'https://meet.jit.si/external_api.js';
     script.onload = () => {
-      // @ts-ignore
+      // @ts-ignore – Jitsi attaches itself to window
       new JitsiMeetExternalAPI(domain, options);
     };
     document.head.appendChild(script);
