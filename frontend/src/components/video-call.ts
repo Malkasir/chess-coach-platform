@@ -4,7 +4,7 @@ import { customElement, property } from 'lit/decorators.js';
 @customElement('video-call')
 export class VideoCall extends LitElement {
   /** Room name passed to the Jitsi iframe */
-  @property({ type: String }) accessor room = 'chess-default';
+  @property({ type: String }) room = 'chess-default';
 
   static styles = css`
     #jitsi-container {

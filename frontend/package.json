@@ -13,9 +13,11 @@
   },
   "scripts": {
     "analyze": "cem analyze --litelement",
-    "start": "web-dev-server --config web-dev-server.config.js",
-    "build": "tsc && cp ./index.html ./dist/index.html && npm run analyze -- --exclude dist",
-    "prepublish": "tsc && npm run analyze -- --exclude dist"
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "prepublish": "npm run typecheck && npm run analyze -- --exclude dist"
   },
   "dependencies": {
     "lit": "^3.1.4"
@@ -26,7 +28,8 @@
     "@web/dev-server-esbuild": "^1.0.4",
     "concurrently": "^8.2.2",
     "tslib": "^2.6.3",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "vite": "^7.0.4"
   },
   "customElements": "custom-elements.json"
 }
