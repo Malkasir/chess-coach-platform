@@ -1,11 +1,15 @@
-import './components/video-call.ts'; // This registers <video-call>
+import { html, render } from 'lit';
+import { ChessCoachApp } from './ChessCoachApp.js';
+import './components/video-call.ts'; // registers <video-call>
 
-// Optionally export your app component (if used elsewhere)
-export { ChessCoachApp } from './ChessCoachApp.js';
+// Add a container to the body
+const container = document.createElement('div');
+document.body.appendChild(container);
 
-// Wait for DOM to be ready (safer than overwriting immediately)
-window.addEventListener('DOMContentLoaded', () => {
-  const container = document.createElement('div');
-  container.innerHTML = `<video-call room="chess-room-1"></video-call>`;
-  document.body.appendChild(container);
-});
+// Render your Lit component
+render(
+  html`
+    <chess-coach-app header="Welcome to Chess Coach!"></chess-coach-app>
+  `,
+  container
+);

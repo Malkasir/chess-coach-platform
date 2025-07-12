@@ -13,8 +13,8 @@
   },
   "scripts": {
     "analyze": "cem analyze --litelement",
-    "start": "tsc && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"web-dev-server\"",
-    "build": "tsc && cp ./demo/index.html ./dist/index.html && npm run analyze -- --exclude dist",
+    "start": "tsc && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"web-dev-server --root-dir=. --app-index index.html\"",
+    "build": "tsc && cp ./index.html ./dist/index.html && npm run analyze -- --exclude dist",
     "prepublish": "tsc && npm run analyze -- --exclude dist"
   },
   "dependencies": {
