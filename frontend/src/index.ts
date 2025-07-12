@@ -9,6 +9,6 @@ const container = document.createElement('div');
 document.body.appendChild(container);
 
 render(
-  html`<chess-coach-app header="Welcome to Chess platfor Coach Aram!"></chess-coach-app>`,
+  html`<chess-coach-app header="Welcome to Chess platform Coach Aram!"></chess-coach-app>`,
   container,
 );
