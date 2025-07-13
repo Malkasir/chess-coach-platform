@@ -35,25 +35,43 @@ export class ChessCoachApp extends LitElement {
     const board = this.querySelector('chess-board');
     if (!board) return;
 
-    board.addEventListener('drag-start', (e: any) => {
-      const { source } = e.detail;
-      const moves = this.game.moves({ square: source, verbose: true });
-      if (moves.length === 0) {
-        e.preventDefault();
-      }
-    });
+board.addEventListener('drag-start', (e: any) => {
+  const { source, piece } = e.detail;          // ← correct property
 
-    board.addEventListener('drop', (e: any) => {
-      e.preventDefault();
-      const { source, target, setAction } = e.detail;
-      const move = this.game.move({ from: source, to: target, promotion: 'q' });
+  // 1️⃣ allow only the side to move
+  const turn = this.game.turn();               // 'w' | 'b'
+  if ((turn === 'w' && piece.startsWith('b')) ||
+      (turn === 'b' && piece.startsWith('w'))) {
+    e.preventDefault();
+    return;
+  }
 
-      if (move === null) {
-        setAction('snapback');
-      } else {
-        board.setAttribute('position', this.game.fen());
-      }
-    });
+  // 2️⃣ deny pickup if the piece has no legal moves
+  const moves = this.game.moves({ square: source, verbose: true });
+  if (moves.length === 0) e.preventDefault();
+});
+
+// DROP ────────────────────────────────────────────────
+board.addEventListener('drop', (e: any) => {
+  const { source, target, setAction } = e.detail;
+
+  // Let chess.js validate
+  const move = this.game.move({ from: source, to: target, promotion: 'q' });
+
+  if (move === null) {           // illegal
+    setAction('snapback');       // bounce the piece
+    return;                      // don't touch the board yet
+  }
+  // legal: leave setAction alone (default "snap" is fine)
+});
+
+// SNAP-END ─────────────────────────────────────────────
+board.addEventListener('snap-end', () => {
+  // once the animation finishes, make the board = engine
+  board.setPosition(this.game.fen());
+});
+
+
   }
 
   render() {
