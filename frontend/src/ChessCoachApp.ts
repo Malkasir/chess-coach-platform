@@ -24,36 +24,37 @@ export class ChessCoachApp extends LitElement {
   @property({ type: String }) header = 'Hey there';
   @property({ type: Number }) counter = 5;
 
-  private game = new Chess(); // ✅ chess.js game logic
+  private game = new Chess();
+  @property({ type: String }) position = 'start';
 
   __increment() {
     this.counter += 1;
   }
 
+  firstUpdated() {
+    const board = this.querySelector('chess-board');
+    if (!board) return;
 
-firstUpdated() {
-  const board = this.querySelector('chess-board');
-  if (!board) return;
+    board.addEventListener('drag-start', (e: any) => {
+      const { source } = e.detail;
+      const moves = this.game.moves({ square: source, verbose: true });
+      if (moves.length === 0) {
+        e.preventDefault();
+      }
+    });
 
-  board.setAttribute('position', this.game.fen());
+    board.addEventListener('drop', (e: any) => {
+      e.preventDefault();
+      const { source, target, setAction } = e.detail;
+      const move = this.game.move({ from: source, to: target, promotion: 'q' });
 
-  board.addEventListener('move', (e: any) => {
-    const { from, to } = e.detail;
-
-    // Try the move using chess.js
-    const move = this.game.move({ from, to, promotion: 'q' });
-
-    if (move) {
-      // ✅ Legal move
-      console.log('✅ Legal move:', move.san);
-      board.setAttribute('position', this.game.fen()); // update board to match internal state
-    } else {
-      // ❌ Illegal move → revert position
-      console.warn('❌ Illegal move:', from, to);
-      board.setAttribute('position', this.game.fen()); // force rollback
-    }
-  });
-}
+      if (move === null) {
+        setAction('snapback');
+      } else {
+        board.setAttribute('position', this.game.fen());
+      }
+    });
+  }
 
   render() {
     return html`
