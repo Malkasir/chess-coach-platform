@@ -3,6 +3,7 @@ import { customElement, property } from 'lit/decorators.js';
 import { Chess } from 'chess.js'; // ✅ NEW
 import './components/video-call.js';
 import 'chessboard-element';
+import { connectWS } from './ws.js';
 
 @customElement('chess-coach-app')
 export class ChessCoachApp extends LitElement {
@@ -35,6 +36,22 @@ export class ChessCoachApp extends LitElement {
     const board = this.querySelector('chess-board');
     if (!board) return;
 
+    const gameId = 'default-game-id'; // TODO: replace with actual ID logic
+    const token = 'sample-token';     // TODO: replace with real auth token
+
+
+      const stomp = connectWS(gameId, fen => {
+        board.setPosition(fen);
+        game.load(fen);
+      });
+
+    const sendMove = (mv:any) =>
+      stomp.publish({
+        destination: `/app/game.${gameId}.move`,
+        body: JSON.stringify({ ...mv, token })
+      });
+
+
 board.addEventListener('drag-start', (e: any) => {
   const { source, piece } = e.detail;          // ← correct property
 
@@ -57,6 +74,8 @@ board.addEventListener('drop', (e: any) => {
 
   // Let chess.js validate
   const move = this.game.move({ from: source, to: target, promotion: 'q' });
+
+  sendMove({ from: e.detail.source, to: e.detail.target });
 
   if (move === null) {           // illegal
     setAction('snapback');       // bounce the piece
