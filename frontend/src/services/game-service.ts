@@ -103,6 +103,7 @@ export class GameService {
     // Subscribe to game messages
     this.client?.subscribe(`/topic/game/${gameId}`, (message) => {
       const gameMessage: GameMessage = JSON.parse(message.body);
+      console.log('📥 Received WebSocket message:', gameMessage);
       if (this.onGameUpdate) {
         this.onGameUpdate(gameMessage);
       }
@@ -140,19 +141,21 @@ export class GameService {
     });
   }
 
-  makeMove(move: string): void {
+  makeMove(move: string, fen: string): void {
     if (!this.client?.connected || !this.gameId || !this.playerId) {
-      console.error('Not connected to game');
+      console.error('❌ Not connected to game');
       return;
     }
 
+    console.log('📤 Sending move:', move, 'FEN:', fen, 'from player:', this.playerId, 'in game:', this.gameId);
     this.client.publish({
       destination: '/app/game/move',
       body: JSON.stringify({
         type: 'MOVE',
         gameId: this.gameId,
         playerId: this.playerId,
-        move
+        move,
+        fen
       })
     });
   }

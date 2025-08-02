@@ -121,25 +121,56 @@ export class ChessCoachApp extends LitElement {
     }
 
     .game-area {
-      display: grid;
-      grid-template-columns: 1fr auto;
+      display: flex !important;
+      flex-direction: row !important;
       gap: 2rem;
-      align-items: start;
+      max-width: 1000px;
+      margin: 0 auto;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .video-panel {
+      background: rgba(255,255,255,0.1);
+      border-radius: 15px;
+      padding: 1rem;
+      border: 1px solid rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      flex: 0 0 400px;
+      width: 400px;
+      height: 450px;
+      order: 1;
     }
 
     .chess-panel {
       background: rgba(255,255,255,0.1);
       border-radius: 15px;
-      padding: 2rem;
+      padding: 1rem;
       border: 1px solid rgba(255,255,255,0.2);
       backdrop-filter: blur(10px);
       text-align: center;
+      flex: 0 0 500px;
+      width: 500px;
+      order: 2;
     }
 
     chess-board {
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 10px;
+      width: 450px !important;
+      height: 450px !important;
+      border: 3px solid rgba(255,255,255,0.4);
+      border-radius: 12px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      display: block !important;
+      margin: 0 auto !important;
+      overflow: visible !important;
+    }
+
+    video-call {
+      width: 100%;
+      height: 350px;
+      display: block;
+      border-radius: 8px;
+      overflow: hidden;
     }
 
     .turn-indicator {
@@ -162,14 +193,69 @@ export class ChessCoachApp extends LitElement {
       100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
     }
 
-    @media (max-width: 768px) {
+    /* Ensure chessboard is not clipped */
+    .chess-panel {
+      overflow: visible !important;
+    }
+
+    /* Override any potential web component styles */
+    chess-board * {
+      box-sizing: border-box !important;
+    }
+
+
+    @media (max-width: 1000px) {
       .game-area {
-        grid-template-columns: 1fr;
+        flex-direction: column !important;
+        max-width: 500px;
+        gap: 1rem;
+        align-items: center;
+      }
+      
+      .chess-panel, .video-panel {
+        flex: none;
+        width: 100%;
+        max-width: 480px;
+        margin: 0 auto;
+      }
+
+      .video-panel {
+        height: 300px;
+        order: 1;
+      }
+
+      .chess-panel {
+        order: 2;
       }
       
       .controls-row {
         flex-direction: column;
         align-items: stretch;
+      }
+      
+      chess-board {
+        width: 400px !important;
+        height: 400px !important;
+      }
+      
+      video-call {
+        height: 250px;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .game-area {
+        max-width: 350px;
+      }
+
+      chess-board {
+        width: 320px !important;
+        height: 320px !important;
+      }
+      
+      .chess-panel, .video-panel {
+        padding: 0.5rem;
+        max-width: 340px;
       }
     }
   `;
@@ -193,6 +279,127 @@ export class ChessCoachApp extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this.gameService.setGameUpdateListener(this.handleGameMessage.bind(this));
+    
+    // Add styles directly to document head to ensure they apply
+    if (!document.getElementById('chess-coach-styles')) {
+      const style = document.createElement('style');
+      style.id = 'chess-coach-styles';
+      style.textContent = `
+        chess-coach-app .game-area {
+          display: flex !important;
+          flex-direction: row !important;
+          gap: 2rem;
+          max-width: 1000px;
+          margin: 0 auto;
+          align-items: flex-start;
+          justify-content: center;
+        }
+        
+        chess-coach-app .video-panel {
+          flex: 0 0 400px;
+          width: 400px;
+          height: 500px;
+          order: 1;
+          background: rgba(255,255,255,0.1);
+          backdrop-filter: blur(10px);
+          border-radius: 15px;
+          padding: 1rem;
+          border: 1px solid rgba(255,255,255,0.2);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        chess-coach-app .chess-panel {
+          flex: 0 0 500px;
+          width: 500px;
+          order: 2;
+          background: rgba(255,255,255,0.1);
+          backdrop-filter: blur(10px);
+          border-radius: 15px;
+          padding: 1rem;
+          border: 1px solid rgba(255,255,255,0.2);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+          text-align: center;
+        }
+        
+        chess-coach-app chess-board {
+          width: 450px !important;
+          height: 450px !important;
+          display: block !important;
+          margin: 0 auto !important;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-radius: 12px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        chess-coach-app video-call {
+          width: 100%;
+          height: 400px;
+          display: block;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        
+        chess-coach-app .video-panel h3 {
+          margin-top: 0;
+          margin-bottom: 1rem;
+          font-size: 1.2rem;
+          color: white;
+        }
+        
+        @media (max-width: 1000px) {
+          chess-coach-app .game-area {
+            flex-direction: column !important;
+            max-width: 500px;
+            gap: 1rem;
+            align-items: center;
+          }
+          
+          chess-coach-app .chess-panel, 
+          chess-coach-app .video-panel {
+            flex: none;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+          }
+
+          chess-coach-app .video-panel {
+            height: 300px;
+            order: 1;
+          }
+
+          chess-coach-app .chess-panel {
+            order: 2;
+          }
+          
+          chess-coach-app chess-board {
+            width: 400px !important;
+            height: 400px !important;
+          }
+          
+          chess-coach-app video-call {
+            height: 250px;
+          }
+        }
+        
+        @media (max-width: 500px) {
+          chess-coach-app .game-area {
+            max-width: 350px;
+          }
+
+          chess-coach-app chess-board {
+            width: 320px !important;
+            height: 320px !important;
+          }
+          
+          chess-coach-app .chess-panel, 
+          chess-coach-app .video-panel {
+            padding: 0.5rem;
+            max-width: 340px;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
   }
 
   disconnectedCallback() {
@@ -226,6 +433,8 @@ export class ChessCoachApp extends LitElement {
         // If it was an invalid move, revert to last known good position
         if (message.message?.includes('Invalid move')) {
           this.updateBoardPosition();
+          // Show user feedback about invalid move
+          console.warn('❌ Invalid move rejected by server');
         }
         break;
     }
@@ -234,7 +443,8 @@ export class ChessCoachApp extends LitElement {
 
   private updateBoardPosition() {
     const board = this.querySelector('chess-board');
-    if (board) {
+    if (board && this.position) {
+      console.log('🔄 Updating board position to:', this.position);
       board.setPosition(this.position);
     }
   }
@@ -294,6 +504,18 @@ export class ChessCoachApp extends LitElement {
     const board = this.querySelector('chess-board');
     if (!board) return;
 
+    // Force the board to respect our sizing
+    setTimeout(() => {
+      const chessBoard = this.querySelector('chess-board') as any;
+      if (chessBoard) {
+        // Ensure the board respects our CSS sizing
+        chessBoard.style.width = '450px';
+        chessBoard.style.height = '450px';
+        chessBoard.style.display = 'block';
+        chessBoard.style.margin = '0 auto';
+      }
+    }, 100);
+
     board.addEventListener('drag-start', (e: any) => {
       const { source, piece } = e.detail;
 
@@ -320,21 +542,62 @@ export class ChessCoachApp extends LitElement {
     board.addEventListener('drop', (e: any) => {
       const { source, target, setAction } = e.detail;
 
-      // Try the move locally to get the SAN notation
-      const move = this.game.move({ from: source, to: target, promotion: 'q' });
-
-      if (move === null) {
+      // Check if it's the player's turn first
+      if (!this.isMyTurn()) {
         setAction('snapback');
+        console.warn('❌ Not your turn');
+        
+        // Force the board to reset to current position after snapback animation
+        setTimeout(() => {
+          this.updateBoardPosition();
+        }, 200);
         return;
       }
 
-      // Send move to server for authoritative validation
-      this.gameService.makeMove(move.san);
+      // Store the current position before attempting the move
+      const originalPosition = this.game.fen();
+
+      // Try to validate the move with chess.js (wrapped in try-catch)
+      let move;
+      try {
+        move = this.game.move({ from: source, to: target, promotion: 'q' });
+      } catch (error) {
+        // chess.js threw an error - this means invalid move
+        console.warn('❌ Chess.js threw error for move:', { from: source, to: target }, (error as Error).message);
+        setAction('snapback');
+        
+        // Force the board to reset to correct position after snapback animation
+        setTimeout(() => {
+          this.updateBoardPosition();
+        }, 200);
+        return;
+      }
+
+      if (move === null) {
+        // Move is illegal - snap back immediately
+        setAction('snapback');
+        console.warn('❌ Illegal move attempted');
+        
+        // Ensure the local game state is correct
+        this.game.load(originalPosition);
+        
+        // Force the board to reset to correct position after snapback animation
+        setTimeout(() => {
+          this.updateBoardPosition();
+        }, 200);
+        return;
+      }
+
+      // Move is legal! Send to server with the new FEN
+      const newFen = this.game.fen();
+      console.log('✅ Legal move validated:', move.san, 'New FEN:', newFen);
+      this.gameService.makeMove(move.san, newFen);
       
-      // Optimistically update the position - server will correct if invalid
-      this.position = this.game.fen();
+      // Update our local position (optimistic update)
+      this.position = newFen;
       this.updateBoardPosition();
     });
+
   }
 
   render() {
@@ -398,8 +661,12 @@ export class ChessCoachApp extends LitElement {
         </div>
 
         <div class="game-area">
-          <video-call room="chess-room-${this.gameId || '1'}"></video-call>
+          <div class="video-panel">
+            <h3 style="margin-top: 0; margin-bottom: 1rem;">Video Call</h3>
+            <video-call room="chess-room-${this.gameId || '1'}"></video-call>
+          </div>
           <div class="chess-panel">
+            <h3 style="margin-top: 0;">Chess Board</h3>
             ${this.gameStatus === 'active' ? html`
               <div class="turn-indicator ${this.isMyTurn() ? 'your-turn' : ''}">
                 <strong>${this.getCurrentTurnDisplay()}</strong>
@@ -408,9 +675,8 @@ export class ChessCoachApp extends LitElement {
             <chess-board
               position=${this.position}
               draggable-pieces
-              style="width: 400px; height: 400px;"
             ></chess-board>
-            <button class="btn btn-secondary" @click=${this.flipBoard} style="margin-top: 1rem;">
+            <button class="btn btn-secondary" @click=${this.flipBoard}>
               🔄 Flip Board
             </button>
           </div>
