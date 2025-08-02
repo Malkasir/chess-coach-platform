@@ -32,6 +32,7 @@ export class ChessCoachApp extends LitElement {
   @state() private isCoach: boolean = false;
   @state() private gameStatus: string = 'disconnected';
   @state() private position: string = 'start';
+  @state() private playerColor: 'white' | 'black' | null = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -84,8 +85,9 @@ export class ChessCoachApp extends LitElement {
       this.playerId = coachId;
       this.isCoach = true;
       
-      const gameId = await this.gameService.createGame(coachId);
+      const { gameId, coachColor } = await this.gameService.createGame(coachId);
       this.gameId = gameId;
+      this.playerColor = coachColor;
       
       await this.gameService.joinGame(gameId, coachId, true);
       this.gameStatus = 'waiting';
@@ -101,9 +103,19 @@ export class ChessCoachApp extends LitElement {
       this.isCoach = false;
       
       await this.gameService.joinGame(this.gameId, studentId, false);
+      const gameState = await this.gameService.getGameState(this.gameId);
+      this.playerColor = gameState.studentColor;
       this.gameStatus = 'active';
     } catch (error) {
       console.error('Failed to join game:', error);
+    }
+  }
+
+  private flipBoard() {
+    const board = this.querySelector('chess-board');
+    if (board) {
+      const currentOrientation = board.getOrientation();
+      board.setOrientation(currentOrientation === 'white' ? 'black' : 'white');
     }
   }
 
@@ -172,6 +184,7 @@ export class ChessCoachApp extends LitElement {
           <strong>Status:</strong> ${this.gameStatus}
           ${this.gameId ? html` | <strong>Game ID:</strong> ${this.gameId}` : ''}
           ${this.playerId ? html` | <strong>Player:</strong> ${this.playerId}` : ''}
+          ${this.playerColor ? html` | <strong>You are:</strong> ${this.playerColor}` : ''}
         </div>
       </div>
 
@@ -179,11 +192,14 @@ export class ChessCoachApp extends LitElement {
 
       <div style="display: flex; flex-wrap: wrap; gap: 2rem;">
         <video-call room="chess-room-${this.gameId || '1'}"></video-call>
-        <chess-board
-          position=${this.position}
-          draggable-pieces
-          style="width: 400px; height: 400px;"
-        ></chess-board>
+        <div>
+          <chess-board
+            position=${this.position}
+            draggable-pieces
+            style="width: 400px; height: 400px;"
+          ></chess-board>
+          <button @click=${this.flipBoard} style="margin-top: 1rem;">Flip Board</button>
+        </div>
       </div>
     `;
   }

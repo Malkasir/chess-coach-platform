@@ -14,6 +14,8 @@ export interface GameState {
   gameId: string;
   coachId: string;
   studentId: string;
+  coachColor: 'white' | 'black';
+  studentColor: 'white' | 'black';
   fen: string;
   status: string;
   moveHistory: string[];
@@ -65,7 +67,7 @@ export class GameService {
     });
   }
 
-  async createGame(coachId: string): Promise<string> {
+  async createGame(coachId: string): Promise<{ gameId: string, coachColor: 'white' | 'black' }> {
     const response = await fetch(`${this.baseUrl}/api/games/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -76,8 +78,7 @@ export class GameService {
       throw new Error('Failed to create game');
     }
 
-    const data = await response.json();
-    return data.gameId;
+    return response.json();
   }
 
   async joinGame(gameId: string, playerId: string, isCoach: boolean = false): Promise<void> {
