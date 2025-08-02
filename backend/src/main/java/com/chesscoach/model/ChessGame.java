@@ -49,10 +49,10 @@ public class ChessGame {
     }
 
     private boolean isPlayerTurn(String playerId) {
-        if (status == GameStatus.FINISHED || status == GameStatus.ABANDONED) return false;
-
-        // If no student yet, coach can always play
-        if (studentId == null && playerId.equals(coachId)) return true;
+        // Only allow moves if the game is active
+        if (status != GameStatus.ACTIVE) {
+            return false;
+        }
 
         String playerColor = playerId.equals(coachId) ? coachColor : studentColor;
         if (playerColor == null) return false; // Should not happen in an active game
