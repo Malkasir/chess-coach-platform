@@ -1,0 +1,9 @@
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.services]
+  # This tells Netlify to only build if there are changes in the 'frontend' directory.
+  # The command checks for differences between the last two commits in the 'frontend' folder.
+  build_script = "git diff --quiet HEAD^ HEAD ."
