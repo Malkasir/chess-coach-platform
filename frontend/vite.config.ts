@@ -1,10 +1,13 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  root: '.',          // keep as-is if already working
+  root: '.',
   build: {
-    outDir: 'dist',   // same
-    target: 'es2021', // same
+    outDir: 'dist',
+    target: 'es2021',
+  },
+  define: {
+    global: 'globalThis',
   },
   optimizeDeps: {
     include: [

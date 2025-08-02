@@ -20,13 +20,16 @@
     "prepublish": "npm run typecheck && npm run analyze -- --exclude dist"
   },
   "dependencies": {
+    "@stomp/stompjs": "^7.1.1",
     "chess.js": "^1.4.0",
     "chessboard-element": "^1.2.0",
     "cm-chessboard": "^8.7.8",
-    "lit": "^3.3.1"
+    "lit": "^3.3.1",
+    "sockjs-client": "^1.6.1"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.3",
+    "@types/sockjs-client": "^1.5.4",
     "@web/dev-server": "^0.4.6",
     "@web/dev-server-esbuild": "^1.0.4",
     "concurrently": "^8.2.2",
