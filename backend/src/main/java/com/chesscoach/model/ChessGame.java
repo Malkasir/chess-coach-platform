@@ -5,10 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import com.github.bhlangonijr.chesslib.Board;
-import com.github.bhlangonijr.chesslib.move.Move;
-import com.github.bhlangonijr.chesslib.move.MoveException;
-
 public class ChessGame {
     private String gameId;
     private String coachId;
@@ -21,7 +17,6 @@ public class ChessGame {
     private LocalDateTime createdAt;
     private LocalDateTime lastMoveAt;
     private boolean whiteToMove;
-    private Board board;
 
     private static final String STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -34,7 +29,6 @@ public class ChessGame {
         this.createdAt = LocalDateTime.now();
         this.lastMoveAt = LocalDateTime.now();
         this.whiteToMove = true;
-        this.board = new Board();
 
         // Randomly assign coach's color
         this.coachColor = new Random().nextBoolean() ? "white" : "black";
@@ -52,15 +46,8 @@ public class ChessGame {
         this.lastMoveAt = LocalDateTime.now();
         this.whiteToMove = !this.whiteToMove;
         
-        // Update the board to match the new position
-        try {
-            this.board.loadFromFen(newFen);
-            System.out.println("✅ Move executed successfully: " + moveStr + " -> " + newFen);
-            return true;
-        } catch (Exception e) {
-            System.out.println("❌ Failed to update board with FEN: " + newFen);
-            return false;
-        }
+        System.out.println("✅ Move executed successfully: " + moveStr + " -> " + newFen);
+        return true;
     }
 
     private boolean isPlayerTurn(String playerId) {
