@@ -3,8 +3,11 @@ package com.chesscoach.model;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import java.util.Random;
+
+import com.github.bhlangonijr.chesslib.Board;
+import com.github.bhlangonijr.chesslib.move.Move;
+import com.github.bhlangonijr.chesslib.move.MoveException;
 
 public class ChessGame {
     private String gameId;
@@ -18,6 +21,7 @@ public class ChessGame {
     private LocalDateTime createdAt;
     private LocalDateTime lastMoveAt;
     private boolean whiteToMove;
+    private Board board;
 
     private static final String STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -30,22 +34,40 @@ public class ChessGame {
         this.createdAt = LocalDateTime.now();
         this.lastMoveAt = LocalDateTime.now();
         this.whiteToMove = true;
+        this.board = new Board();
 
         // Randomly assign coach's color
         this.coachColor = new Random().nextBoolean() ? "white" : "black";
     }
 
-    public boolean makeMove(String moveStr, String playerId, String newFen) {
+    public boolean makeMove(String moveStr, String playerId) {
         if (!isPlayerTurn(playerId)) {
             return false;
         }
 
-        this.currentFen = newFen;
-        this.moveHistory.add(moveStr);
-        this.lastMoveAt = LocalDateTime.now();
-        this.whiteToMove = !this.whiteToMove;
-        
-        return true;
+        try {
+            // Parse and validate the move using chesslib
+            Move move = new Move(moveStr, board.getSideToMove());
+            
+            // Check if the move is legal in the current position
+            if (!board.isMoveLegal(move, true)) {
+                return false;
+            }
+            
+            // Execute the move
+            board.doMove(move);
+            
+            // Update game state
+            this.currentFen = board.getFen();
+            this.moveHistory.add(moveStr);
+            this.lastMoveAt = LocalDateTime.now();
+            this.whiteToMove = !this.whiteToMove;
+            
+            return true;
+        } catch (MoveException e) {
+            // Invalid move format or illegal move
+            return false;
+        }
     }
 
     private boolean isPlayerTurn(String playerId) {

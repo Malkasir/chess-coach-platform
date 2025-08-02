@@ -67,7 +67,7 @@ public class GameWebSocketController {
 
         ChessGame game = gameOpt.get();
         
-        if (game.makeMove(move, playerId, fen)) {
+        if (game.makeMove(move, playerId)) {
             gameRepository.save(game);
             
             // Broadcast move to all players in the game

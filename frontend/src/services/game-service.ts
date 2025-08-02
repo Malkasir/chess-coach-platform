@@ -140,7 +140,7 @@ export class GameService {
     });
   }
 
-  makeMove(move: string, fen: string): void {
+  makeMove(move: string): void {
     if (!this.client?.connected || !this.gameId || !this.playerId) {
       console.error('Not connected to game');
       return;
@@ -152,8 +152,7 @@ export class GameService {
         type: 'MOVE',
         gameId: this.gameId,
         playerId: this.playerId,
-        move,
-        fen
+        move
       })
     });
   }
