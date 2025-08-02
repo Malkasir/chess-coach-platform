@@ -41,7 +41,7 @@ export class GameService {
     
     // Fallback logic for dynamic detection
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      return 'http://chess-coach-platform-production.up.railway.app';
+      return 'https://chess-coach-platform-production.up.railway.app';
     }
     
     // Development fallback
