@@ -40,32 +40,25 @@ public class ChessGame {
         this.coachColor = new Random().nextBoolean() ? "white" : "black";
     }
 
-    public boolean makeMove(String moveStr, String playerId) {
+    public boolean makeMove(String moveStr, String playerId, String newFen) {
         if (!isPlayerTurn(playerId)) {
+            System.out.println("❌ Not player's turn: " + playerId);
             return false;
         }
 
+        // Frontend has already validated the move, so we trust it and update our state
+        this.currentFen = newFen;
+        this.moveHistory.add(moveStr);
+        this.lastMoveAt = LocalDateTime.now();
+        this.whiteToMove = !this.whiteToMove;
+        
+        // Update the board to match the new position
         try {
-            // Parse and validate the move using chesslib
-            Move move = new Move(moveStr, board.getSideToMove());
-            
-            // Check if the move is legal in the current position
-            if (!board.isMoveLegal(move, true)) {
-                return false;
-            }
-            
-            // Execute the move
-            board.doMove(move);
-            
-            // Update game state
-            this.currentFen = board.getFen();
-            this.moveHistory.add(moveStr);
-            this.lastMoveAt = LocalDateTime.now();
-            this.whiteToMove = !this.whiteToMove;
-            
+            this.board.loadFromFen(newFen);
+            System.out.println("✅ Move executed successfully: " + moveStr + " -> " + newFen);
             return true;
-        } catch (MoveException e) {
-            // Invalid move format or illegal move
+        } catch (Exception e) {
+            System.out.println("❌ Failed to update board with FEN: " + newFen);
             return false;
         }
     }

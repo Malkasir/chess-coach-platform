@@ -59,21 +59,26 @@ public class GameWebSocketController {
         String move = message.getMove();
         String fen = message.getFen();
 
+        System.out.println("📥 Received move: " + move + " from player: " + playerId + " in game: " + gameId);
+
         Optional<ChessGame> gameOpt = gameRepository.findById(gameId);
         if (gameOpt.isEmpty()) {
+            System.out.println("❌ Game not found: " + gameId);
             sendErrorToPlayer(gameId, playerId, "Game not found");
             return;
         }
 
         ChessGame game = gameOpt.get();
         
-        if (game.makeMove(move, playerId)) {
+        if (game.makeMove(move, playerId, fen)) {
             gameRepository.save(game);
             
             // Broadcast move to all players in the game
             GameMessage moveMsg = GameMessage.moveMessage(gameId, playerId, move, game.getFen());
+            System.out.println("📤 Broadcasting move to /topic/game/" + gameId + " - Move: " + move);
             broadcastToGame(gameId, moveMsg);
         } else {
+            System.out.println("❌ Invalid move: " + move + " from player: " + playerId);
             sendErrorToPlayer(gameId, playerId, "Invalid move");
         }
     }
