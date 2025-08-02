@@ -1,0 +1,4 @@
+# This configuration tells Railway to only trigger deployments for the service
+# when changes are detected within the 'backend' directory.
+[watch]
+watchPatterns = ["backend/**"]
