@@ -24,14 +24,34 @@ export class GameService {
   private gameId: string | null = null;
   private playerId: string | null = null;
   private onGameUpdate: ((message: GameMessage) => void) | null = null;
+  private baseUrl: string;
 
   constructor() {
+    // Determine base URL based on environment
+    this.baseUrl = this.getBaseUrl();
     this.setupWebSocket();
+  }
+
+  private getBaseUrl(): string {
+    // Use environment variable if available
+    const envUrl = import.meta.env.VITE_BACKEND_URL;
+    if (envUrl) {
+      return envUrl;
+    }
+    
+    // Fallback logic for dynamic detection
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      console.warn('Production deployment detected. Please set VITE_BACKEND_URL environment variable or deploy backend to cloud service.');
+      return 'http://your-backend-url.com'; // Replace with actual backend URL when deployed
+    }
+    
+    // Development fallback
+    return 'http://localhost:8080';
   }
 
   private setupWebSocket() {
     this.client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/chess-websocket'),
+      webSocketFactory: () => new SockJS(`${this.baseUrl}/chess-websocket`),
       debug: (str) => console.log('STOMP: ' + str),
       onConnect: () => {
         console.log('Connected to WebSocket');
@@ -46,7 +66,7 @@ export class GameService {
   }
 
   async createGame(coachId: string): Promise<string> {
-    const response = await fetch('http://localhost:8080/api/games/create', {
+    const response = await fetch(`${this.baseUrl}/api/games/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ coachId })
@@ -97,7 +117,7 @@ export class GameService {
 
     // If student joining, call REST API first
     if (!isCoach) {
-      const response = await fetch(`http://localhost:8080/api/games/${gameId}/join`, {
+      const response = await fetch(`${this.baseUrl}/api/games/${gameId}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentId: playerId })
@@ -138,7 +158,7 @@ export class GameService {
   }
 
   async getGameState(gameId: string): Promise<GameState> {
-    const response = await fetch(`http://localhost:8080/api/games/${gameId}`);
+    const response = await fetch(`${this.baseUrl}/api/games/${gameId}`);
     
     if (!response.ok) {
       throw new Error('Failed to get game state');

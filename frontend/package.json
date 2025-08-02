@@ -17,7 +17,8 @@
     "start": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "prepublish": "npm run typecheck && npm run analyze -- --exclude dist"
+    "prepublish": "npm run typecheck && npm run analyze -- --exclude dist",
+    "get-ip": "ifconfig | grep -E 'inet.*192\\.168|inet.*10\\.|inet.*172\\.' | grep -v 127.0.0.1 | awk '{print $2}' | head -1"
   },
   "dependencies": {
     "@stomp/stompjs": "^7.1.1",
