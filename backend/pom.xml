@@ -47,21 +47,8 @@
 			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
 
-		<!-- Tiny Java chess engine -->
-		<dependency>
-			<groupId>com.github.bhlangonijr</groupId>
-			<artifactId>chesslib</artifactId>
-			<version>1.3.4</version>                <!-- latest on Maven Central --> <!-- :contentReference[oaicite:0]{index=0} -->
-		</dependency>
-
+		<!-- Simple FEN and move handling - chess validation done client-side -->
 	</dependencies>
-
-	<repositories>
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
-	</repositories>
 
 	<build>
 		<plugins>

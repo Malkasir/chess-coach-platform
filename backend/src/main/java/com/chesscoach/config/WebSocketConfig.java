@@ -2,22 +2,27 @@ package com.chesscoach.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.*;
+import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 @Configuration
-@EnableWebSocketMessageBroker                     // <-- enables STOMP
+@EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
-    public void registerStompEndpoints(StompEndpointRegistry r) {
-        r.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:5173") // dev front-end
-                .withSockJS();                              // fallback if WS blocked
+    public void configureMessageBroker(MessageBrokerRegistry config) {
+        // Enable simple broker for topics
+        config.enableSimpleBroker("/topic");
+        // Set prefix for messages from client to server
+        config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry r) {
-        r.enableSimpleBroker("/topic", "/queue");    // in-memory broker
-        r.setApplicationDestinationPrefixes("/app"); // client → server
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Register STOMP endpoint
+        registry.addEndpoint("/chess-websocket")
+                .setAllowedOriginPatterns("*") // Allow all origins for development
+                .withSockJS(); // Enable SockJS fallback
     }
 }
