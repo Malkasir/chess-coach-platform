@@ -22,7 +22,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Register STOMP endpoint
         registry.addEndpoint("/chess-websocket")
-                .setAllowedOriginPatterns("*") // Allow all origins for development
+                .setAllowedOriginPatterns("*") // Allow all origins
                 .withSockJS(); // Enable SockJS fallback
     }
 }

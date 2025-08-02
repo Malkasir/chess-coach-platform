@@ -33,19 +33,20 @@ export class GameService {
   }
 
   private getBaseUrl(): string {
-    // Use environment variable if available
+    // Always prioritize the environment variable if it's set.
     const envUrl = import.meta.env.VITE_BACKEND_URL;
     if (envUrl) {
       return envUrl;
     }
-    
-    // Fallback logic for dynamic detection
-    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      return 'https://chess-coach-platform-production.up.railway.app';
+
+    // Fallback for local development ONLY if the env var is not set.
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:8080';
     }
-    
-    // Development fallback
-    return 'http://localhost:8080';
+
+    // If we are in production and the env var is missing, log an error.
+    console.error('VITE_BACKEND_URL is not set for production build!');
+    return 'about:blank'; // Fail loudly
   }
 
   private setupWebSocket() {
