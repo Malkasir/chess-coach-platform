@@ -125,7 +125,14 @@ export class ChessCoachApp extends LitElement {
     board.addEventListener('drag-start', (e: any) => {
       const { source, piece } = e.detail;
 
-      // 1️⃣ allow only the side to move
+      // 1️⃣ Do not allow dragging pieces of the wrong color
+      const pieceColor = piece.startsWith('w') ? 'white' : 'black';
+      if (this.playerColor !== pieceColor) {
+        e.preventDefault();
+        return;
+      }
+
+      // 2️⃣ allow only the side to move
       const turn = this.game.turn();
       if ((turn === 'w' && piece.startsWith('b')) ||
           (turn === 'b' && piece.startsWith('w'))) {
@@ -133,7 +140,7 @@ export class ChessCoachApp extends LitElement {
         return;
       }
 
-      // 2️⃣ deny pickup if the piece has no legal moves
+      // 3️⃣ deny pickup if the piece has no legal moves
       const moves = this.game.moves({ square: source, verbose: true });
       if (moves.length === 0) e.preventDefault();
     });
