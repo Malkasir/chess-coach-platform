@@ -4,10 +4,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.Random;
+
 public class ChessGame {
     private String gameId;
     private String coachId;
     private String studentId;
+    private String coachColor;
+    private String studentColor;
     private String currentFen;
     private List<String> moveHistory;
     private GameStatus status;
@@ -15,7 +19,6 @@ public class ChessGame {
     private LocalDateTime lastMoveAt;
     private boolean whiteToMove;
 
-    // Starting position FEN
     private static final String STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     public ChessGame(String gameId, String coachId) {
@@ -27,6 +30,9 @@ public class ChessGame {
         this.createdAt = LocalDateTime.now();
         this.lastMoveAt = LocalDateTime.now();
         this.whiteToMove = true;
+
+        // Randomly assign coach's color
+        this.coachColor = new Random().nextBoolean() ? "white" : "black";
     }
 
     public boolean makeMove(String moveStr, String playerId, String newFen) {
@@ -34,8 +40,6 @@ public class ChessGame {
             return false;
         }
 
-        // For now, trust the frontend validation
-        // In production, you'd want server-side validation
         this.currentFen = newFen;
         this.moveHistory.add(moveStr);
         this.lastMoveAt = LocalDateTime.now();
@@ -45,22 +49,24 @@ public class ChessGame {
     }
 
     private boolean isPlayerTurn(String playerId) {
-        // Allow coach to play even when waiting for student
         if (status == GameStatus.FINISHED || status == GameStatus.ABANDONED) return false;
-        
-        boolean isCoachWhite = true; // Coach always plays white for now
-        
+
         // If no student yet, coach can always play
         if (studentId == null && playerId.equals(coachId)) return true;
-        
-        return (whiteToMove && playerId.equals(coachId)) || 
-               (!whiteToMove && playerId.equals(studentId));
+
+        String playerColor = playerId.equals(coachId) ? coachColor : studentColor;
+        if (playerColor == null) return false; // Should not happen in an active game
+
+        return (whiteToMove && playerColor.equals("white")) || 
+               (!whiteToMove && playerColor.equals("black"));
     }
 
     public void joinStudent(String studentId) {
         if (this.studentId == null && status == GameStatus.WAITING_FOR_STUDENT) {
             this.studentId = studentId;
             this.status = GameStatus.ACTIVE;
+            // Assign the opposite color to the student
+            this.studentColor = coachColor.equals("white") ? "black" : "white";
         }
     }
 
@@ -73,6 +79,8 @@ public class ChessGame {
     public String getGameId() { return gameId; }
     public String getCoachId() { return coachId; }
     public String getStudentId() { return studentId; }
+    public String getCoachColor() { return coachColor; }
+    public String getStudentColor() { return studentColor; }
     public String getFen() { return currentFen; }
     public List<String> getMoveHistory() { return new ArrayList<>(moveHistory); }
     public GameStatus getStatus() { return status; }

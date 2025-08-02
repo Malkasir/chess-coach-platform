@@ -32,7 +32,8 @@ public class GameRestController {
         return ResponseEntity.ok(Map.of(
             "gameId", gameId,
             "status", "created",
-            "fen", game.getFen()
+            "fen", game.getFen(),
+            "coachColor", game.getCoachColor()
         ));
     }
 
@@ -49,6 +50,8 @@ public class GameRestController {
             "gameId", game.getGameId(),
             "coachId", game.getCoachId(),
             "studentId", game.getStudentId() != null ? game.getStudentId() : "",
+            "coachColor", game.getCoachColor(),
+            "studentColor", game.getStudentColor() != null ? game.getStudentColor() : "",
             "fen", game.getFen(),
             "status", game.getStatus().toString(),
             "moveHistory", game.getMoveHistory()
