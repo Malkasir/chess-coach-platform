@@ -41,8 +41,7 @@ export class GameService {
     
     // Fallback logic for dynamic detection
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      console.warn('Production deployment detected. Please set VITE_BACKEND_URL environment variable or deploy backend to cloud service.');
-      return 'http://your-backend-url.com'; // Replace with actual backend URL when deployed
+      return 'http://chess-coach-platform-production.up.railway.app';
     }
     
     // Development fallback
