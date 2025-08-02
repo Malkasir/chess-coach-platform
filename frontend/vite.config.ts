@@ -9,26 +9,22 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
-
   server: {
     proxy: {
       '/ws': {
-        target: 'http://localhost:8080', // Spring Boot port
-        ws: true,                        // also proxy the upgrade
+        target: 'http://localhost:8080',
+        ws: true,
         changeOrigin: true
       }
     }
   },
-
   optimizeDeps: {
     include: [
-      'cm-chessboard/src/extensions/markers/Markers.js', 'sockjs-client'
+      'cm-chessboard/src/extensions/markers/Markers.js',
+      'sockjs-client'
     ]
   },
-  define: {
-    global: 'globalThis'     // replaces every `global` identifier at build time
-  },
-
-resolve: { dedupe: ['lit'] }
-
+  resolve: { 
+    dedupe: ['lit'] 
+  }
 });
