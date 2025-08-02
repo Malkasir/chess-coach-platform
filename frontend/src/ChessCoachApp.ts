@@ -114,8 +114,7 @@ export class ChessCoachApp extends LitElement {
   private flipBoard() {
     const board = this.querySelector('chess-board');
     if (board) {
-      const currentOrientation = board.getOrientation();
-      board.setOrientation(currentOrientation === 'white' ? 'black' : 'white');
+      board.orientation = board.orientation === 'white' ? 'black' : 'white';
     }
   }
 
