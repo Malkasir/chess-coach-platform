@@ -1,0 +1,11 @@
+[phases.build]
+cmds = [
+  "cd backend",
+  "mvn clean package -DskipTests"
+]
+
+[phases.start]
+cmd = "cd backend && java -Dserver.port=$PORT -jar target/backend-0.0.1-SNAPSHOT.jar"
+
+[variables]
+MAVEN_OPTS = "-Xmx1024m"
