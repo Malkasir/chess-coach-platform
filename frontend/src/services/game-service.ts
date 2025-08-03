@@ -20,6 +20,7 @@ export interface GameState {
   fen: string;
   status: string;
   moveHistory: string[];
+  roomCode?: string;
 }
 
 export class GameService {
