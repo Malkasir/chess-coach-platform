@@ -41,9 +41,16 @@ export class GameService {
       return envUrl;
     }
 
-    // Fallback for local development ONLY if the env var is not set.
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return 'http://localhost:8080';
+    // Fallback for local development if the env var is not set.
+    // Treat any localhost or direct IP address as a dev environment and
+    // assume the backend is running on port 8080 of the same host.
+    const hostname = window.location.hostname;
+    const isLocalHost =
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      /^\d+\.\d+\.\d+\.\d+$/.test(hostname);
+    if (isLocalHost) {
+      return `http://${hostname}:8080`;
     }
 
     // If we are in production and the env var is missing, log an error.
