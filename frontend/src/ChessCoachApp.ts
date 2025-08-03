@@ -481,6 +481,20 @@ export class ChessCoachApp extends LitElement {
     }
   }
 
+  private logout() {
+    const videoCall = this.querySelector('video-call') as any;
+    videoCall?.disconnect?.();
+    this.gameService.disconnect();
+    this.game.reset();
+    this.gameId = '';
+    this.playerId = '';
+    this.isCoach = false;
+    this.gameStatus = 'disconnected';
+    this.position = 'start';
+    this.playerColor = null;
+    this.updateBoardPosition();
+  }
+
   private flipBoard() {
     const board = this.querySelector('chess-board');
     if (board) {
@@ -610,27 +624,34 @@ export class ChessCoachApp extends LitElement {
         <div class="controls-panel">
           <h3 style="margin-top: 0;">Game Controls</h3>
           <div class="controls-row">
-            <button 
+            <button
               class="btn"
-              @click=${this.createGame} 
+              @click=${this.createGame}
               ?disabled=${this.gameStatus !== 'disconnected'}
             >
               🎯 Create Game (Coach)
             </button>
-            <input 
+            <input
               class="input-field"
-              type="text" 
-              placeholder="Enter Game ID" 
+              type="text"
+              placeholder="Enter Game ID"
               .value=${this.gameId}
               @input=${(e: any) => this.gameId = e.target.value}
               ?disabled=${this.gameStatus !== 'disconnected'}
             />
-            <button 
+            <button
               class="btn btn-secondary"
-              @click=${this.joinGame} 
+              @click=${this.joinGame}
               ?disabled=${this.gameStatus !== 'disconnected' || !this.gameId}
             >
               🎓 Join Game (Student)
+            </button>
+            <button
+              class="btn btn-secondary"
+              @click=${this.logout}
+              ?disabled=${this.gameStatus === 'disconnected'}
+            >
+              🚪 Logout
             </button>
           </div>
         </div>
