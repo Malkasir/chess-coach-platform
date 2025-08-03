@@ -29,6 +29,36 @@ public class GameController {
         }
     }
 
+    @PostMapping("/{gameId}/join")
+    public ResponseEntity<?> joinGame(@PathVariable String gameId, @RequestBody JoinGameRequest request) {
+        try {
+            Map<String, Object> gameState = gameService.joinGame(gameId, request.getStudentId());
+            return ResponseEntity.ok(gameState);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{gameId}")
+    public ResponseEntity<?> getGameState(@PathVariable String gameId) {
+        try {
+            Map<String, Object> gameState = gameService.getGameState(gameId);
+            return ResponseEntity.ok(gameState);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/join-by-code")
+    public ResponseEntity<?> joinByRoomCode(@RequestBody JoinByCodeRequest request) {
+        try {
+            Map<String, Object> gameState = gameService.joinGameByRoomCode(request.getRoomCode(), request.getStudentId());
+            return ResponseEntity.ok(gameState);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     public static class CreateGameRequest {
         private String coachId;
 
@@ -38,6 +68,39 @@ public class GameController {
 
         public void setCoachId(String coachId) {
             this.coachId = coachId;
+        }
+    }
+
+    public static class JoinGameRequest {
+        private String studentId;
+
+        public String getStudentId() {
+            return studentId;
+        }
+
+        public void setStudentId(String studentId) {
+            this.studentId = studentId;
+        }
+    }
+
+    public static class JoinByCodeRequest {
+        private String roomCode;
+        private String studentId;
+
+        public String getRoomCode() {
+            return roomCode;
+        }
+
+        public void setRoomCode(String roomCode) {
+            this.roomCode = roomCode;
+        }
+
+        public String getStudentId() {
+            return studentId;
+        }
+
+        public void setStudentId(String studentId) {
+            this.studentId = studentId;
         }
     }
 }

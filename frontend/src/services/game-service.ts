@@ -68,7 +68,7 @@ export class GameService {
     });
   }
 
-  async createGame(coachId: string): Promise<{ gameId: string, coachColor: 'white' | 'black' }> {
+  async createGame(coachId: string): Promise<{ gameId: string, roomCode: string, coachColor: 'white' | 'black' }> {
     const response = await fetch(`${this.baseUrl}/api/games/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -77,6 +77,20 @@ export class GameService {
 
     if (!response.ok) {
       throw new Error('Failed to create game');
+    }
+
+    return response.json();
+  }
+
+  async joinGameByCode(roomCode: string, studentId: string): Promise<GameState> {
+    const response = await fetch(`${this.baseUrl}/api/games/join-by-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomCode: roomCode.toUpperCase(), studentId })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to join game with room code');
     }
 
     return response.json();

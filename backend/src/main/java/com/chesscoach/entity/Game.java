@@ -16,6 +16,9 @@ public class Game {
     @Column(unique = true, nullable = false)
     private String gameId; // The public game ID used in frontend
     
+    @Column(unique = true, nullable = false, length = 6)
+    private String roomCode; // Short room code for easy sharing (e.g., "ABC123")
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "coach_id", nullable = false)
     private User coach;
@@ -124,6 +127,14 @@ public class Game {
     
     public void setGameId(String gameId) {
         this.gameId = gameId;
+    }
+    
+    public String getRoomCode() {
+        return roomCode;
+    }
+    
+    public void setRoomCode(String roomCode) {
+        this.roomCode = roomCode;
     }
     
     public User getCoach() {
