@@ -1,0 +1,30 @@
+# Production Profile Configuration
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://ep-plain-hall-a2lepycf-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require}
+    username: ${DATABASE_USERNAME:neondb_owner}
+    password: ${DATABASE_PASSWORD:npg_UVT6glsqmFH2}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update # Only update, don't recreate tables
+    show-sql: false
+  
+  
+  h2:
+    console:
+      enabled: false # Disable H2 console in production
+
+# Production JWT settings
+security:
+  jwt:
+    secret: ${JWT_SECRET} # Must be set as environment variable
+    expiration: 86400000 # 24 hours
+
+logging:
+  level:
+    com.chesscoach: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN

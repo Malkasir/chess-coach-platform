@@ -8,6 +8,7 @@ export interface GameMessage {
   move?: string;
   fen?: string;
   message?: string;
+  moveHistory?: string[];
 }
 
 export interface GameState {

@@ -21,6 +21,7 @@
     "get-ip": "ifconfig | grep -E 'inet.*192\\.168|inet.*10\\.|inet.*172\\.' | grep -v 127.0.0.1 | awk '{print $2}' | head -1"
   },
   "dependencies": {
+    "@material/web": "^2.3.0",
     "@stomp/stompjs": "^7.1.1",
     "chess.js": "^1.4.0",
     "chessboard-element": "^1.2.0",

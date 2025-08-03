@@ -1,5 +1,7 @@
 package com.chesscoach.dto;
 
+import java.util.List;
+
 public class GameMessage {
     private String type;
     private String gameId;
@@ -7,6 +9,7 @@ public class GameMessage {
     private String move;
     private String fen;
     private String message;
+    private List<String> moveHistory;
 
     public GameMessage() {}
 
@@ -36,9 +39,10 @@ public class GameMessage {
         return msg;
     }
 
-    public static GameMessage gameStateMessage(String gameId, String fen) {
+    public static GameMessage gameStateMessage(String gameId, String fen, List<String> moveHistory) {
         GameMessage msg = new GameMessage("GAME_STATE", gameId);
         msg.setFen(fen);
+        msg.setMoveHistory(moveHistory);
         return msg;
     }
 
@@ -60,4 +64,7 @@ public class GameMessage {
 
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
+
+    public List<String> getMoveHistory() { return moveHistory; }
+    public void setMoveHistory(List<String> moveHistory) { this.moveHistory = moveHistory; }
 }
