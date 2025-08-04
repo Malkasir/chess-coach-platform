@@ -1,98 +1,162 @@
 package com.chesscoach.controller;
 
 import com.chesscoach.dto.GameMessage;
-import com.chesscoach.model.ChessGame;
+import com.chesscoach.entity.Game;
+import com.chesscoach.entity.User;
 import com.chesscoach.repository.GameRepository;
+import com.chesscoach.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 @Controller
 public class GameWebSocketController {
 
-    @Autowired
-    private GameRepository gameRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final GameRepository gameRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    public GameWebSocketController(SimpMessagingTemplate messagingTemplate, 
+                                   GameRepository gameRepository, 
+                                   UserRepository userRepository) {
+        this.messagingTemplate = messagingTemplate;
+        this.gameRepository = gameRepository;
+        this.userRepository = userRepository;
+    }
 
     @MessageMapping("/game/join")
-    public void joinGame(@Payload GameMessage message, SimpMessageHeaderAccessor headerAccessor) {
-        String gameId = message.getGameId();
-        String playerId = message.getPlayerId();
+    public void handleJoinGame(@Payload GameMessage message) {
+        try {
+            Optional<Game> gameOpt = gameRepository.findByGameId(message.getGameId());
+            if (gameOpt.isEmpty()) {
+                sendError(message.getGameId(), message.getPlayerId(), "Game not found");
+                return;
+            }
 
-        Optional<ChessGame> gameOpt = gameRepository.findById(gameId);
-        if (gameOpt.isEmpty()) {
-            sendErrorToPlayer(gameId, playerId, "Game not found");
-            return;
-        }
-
-        ChessGame game = gameOpt.get();
-        
-        // Store player info in session
-        headerAccessor.getSessionAttributes().put("gameId", gameId);
-        headerAccessor.getSessionAttributes().put("playerId", playerId);
-
-        // If it's a student joining
-        if (!playerId.equals(game.getCoachId()) && game.getStudentId() == null) {
-            game.joinStudent(playerId);
-            gameRepository.save(game);
+            Game game = gameOpt.get();
             
-            // Notify both players
-            broadcastToGame(gameId, GameMessage.joinMessage(gameId, playerId));
-            broadcastToGame(gameId, GameMessage.gameStateMessage(gameId, game.getFen()));
-        } else {
-            // Just send current game state
-            sendToPlayer(gameId, playerId, GameMessage.gameStateMessage(gameId, game.getFen()));
+            // Send player joined message to all players in the game
+            GameMessage joinMessage = GameMessage.joinMessage(message.getGameId(), message.getPlayerId());
+            messagingTemplate.convertAndSend("/topic/game/" + message.getGameId(), joinMessage);
+
+            // Send current game state to the joining player
+            List<String> moveHistory = parseJsonArrayToList(game.getMoveHistory());
+            GameMessage stateMessage = GameMessage.gameStateMessage(
+                message.getGameId(), 
+                game.getCurrentFen(), 
+                moveHistory
+            );
+            messagingTemplate.convertAndSend("/topic/game/" + message.getGameId() + "/" + message.getPlayerId(), stateMessage);
+
+        } catch (Exception e) {
+            sendError(message.getGameId(), message.getPlayerId(), "Failed to join game: " + e.getMessage());
         }
     }
 
     @MessageMapping("/game/move")
-    public void makeMove(@Payload GameMessage message) {
-        String gameId = message.getGameId();
-        String playerId = message.getPlayerId();
-        String move = message.getMove();
-        String fen = message.getFen();
+    public void handleMove(@Payload GameMessage message) {
+        try {
+            Optional<Game> gameOpt = gameRepository.findByGameId(message.getGameId());
+            if (gameOpt.isEmpty()) {
+                sendError(message.getGameId(), message.getPlayerId(), "Game not found");
+                return;
+            }
 
-        System.out.println("📥 Received move: " + move + " from player: " + playerId + " in game: " + gameId);
-
-        Optional<ChessGame> gameOpt = gameRepository.findById(gameId);
-        if (gameOpt.isEmpty()) {
-            System.out.println("❌ Game not found: " + gameId);
-            sendErrorToPlayer(gameId, playerId, "Game not found");
-            return;
-        }
-
-        ChessGame game = gameOpt.get();
-        
-        if (game.makeMove(move, playerId, fen)) {
-            gameRepository.save(game);
+            Game game = gameOpt.get();
             
+            // Validate that the game is active
+            if (game.getStatus() != Game.GameStatus.ACTIVE) {
+                sendError(message.getGameId(), message.getPlayerId(), "Game is not active");
+                return;
+            }
+
+            // Validate that the player is part of this game
+            Optional<User> playerOpt = userRepository.findById(Long.parseLong(message.getPlayerId()));
+            if (playerOpt.isEmpty()) {
+                sendError(message.getGameId(), message.getPlayerId(), "Player not found");
+                return;
+            }
+
+            User player = playerOpt.get();
+            boolean isHost = game.getHost().getId().equals(player.getId());
+            boolean isGuest = game.getGuest() != null && game.getGuest().getId().equals(player.getId());
+
+            if (!isHost && !isGuest) {
+                sendError(message.getGameId(), message.getPlayerId(), "Player not part of this game");
+                return;
+            }
+
+            // Update game state in database
+            game.setCurrentFen(message.getFen());
+            
+            // Add move to history
+            List<String> currentMoves = parseJsonArrayToList(game.getMoveHistory());
+            currentMoves.add(message.getMove());
+            game.setMoveHistory(formatListToJsonArray(currentMoves));
+            
+            gameRepository.save(game);
+
             // Broadcast move to all players in the game
-            GameMessage moveMsg = GameMessage.moveMessage(gameId, playerId, move, game.getFen());
-            System.out.println("📤 Broadcasting move to /topic/game/" + gameId + " - Move: " + move);
-            broadcastToGame(gameId, moveMsg);
-        } else {
-            System.out.println("❌ Invalid move: " + move + " from player: " + playerId);
-            sendErrorToPlayer(gameId, playerId, "Invalid move");
+            GameMessage moveMessage = GameMessage.moveMessage(
+                message.getGameId(), 
+                message.getPlayerId(), 
+                message.getMove(), 
+                message.getFen()
+            );
+            moveMessage.setMoveHistory(currentMoves);
+            
+            messagingTemplate.convertAndSend("/topic/game/" + message.getGameId(), moveMessage);
+
+        } catch (Exception e) {
+            sendError(message.getGameId(), message.getPlayerId(), "Failed to make move: " + e.getMessage());
         }
     }
 
-    private void broadcastToGame(String gameId, GameMessage message) {
-        messagingTemplate.convertAndSend("/topic/game/" + gameId, message);
+    private void sendError(String gameId, String playerId, String errorMessage) {
+        GameMessage errorMsg = GameMessage.errorMessage(gameId, errorMessage);
+        if (playerId != null) {
+            messagingTemplate.convertAndSend("/topic/game/" + gameId + "/" + playerId, errorMsg);
+        } else {
+            messagingTemplate.convertAndSend("/topic/game/" + gameId, errorMsg);
+        }
     }
 
-    private void sendToPlayer(String gameId, String playerId, GameMessage message) {
-        messagingTemplate.convertAndSend("/topic/game/" + gameId + "/" + playerId, message);
+    private List<String> parseJsonArrayToList(String jsonArray) {
+        if (jsonArray == null || jsonArray.equals("[]")) {
+            return new java.util.ArrayList<>();
+        }
+        // Simple JSON array parsing - remove brackets and split by comma
+        String cleaned = jsonArray.substring(1, jsonArray.length() - 1);
+        if (cleaned.trim().isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        
+        // Split by comma and trim quotes
+        String[] moves = cleaned.split(",");
+        List<String> result = new java.util.ArrayList<>();
+        for (String move : moves) {
+            result.add(move.trim().replaceAll("\"", ""));
+        }
+        return result;
     }
 
-    private void sendErrorToPlayer(String gameId, String playerId, String errorMessage) {
-        GameMessage error = GameMessage.errorMessage(gameId, errorMessage);
-        sendToPlayer(gameId, playerId, error);
+    private String formatListToJsonArray(List<String> moves) {
+        if (moves.isEmpty()) {
+            return "[]";
+        }
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < moves.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append("\"").append(moves.get(i)).append("\"");
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }
