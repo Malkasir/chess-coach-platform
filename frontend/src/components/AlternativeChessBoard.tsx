@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Chessboard from 'chessboardjsx';
+import { Chessboard } from 'react-chessboard';
 
 // Alternative chess board using chessboardjsx
 export const AlternativeChessBoard: React.FC = () => {

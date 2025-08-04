@@ -635,5 +635,30 @@ const styles = {
     fontSize: '1.1rem',
     fontWeight: '500',
     textAlign: 'center' as const
+  },
+  loginContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '80vh'
+  },
+  loginForm: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '1rem',
+    padding: '2rem',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: '12px',
+    width: '300px'
+  },
+  errorMessage: {
+    color: '#ff6b6b',
+    textAlign: 'center' as const
+  },
+  testCredentials: {
+    marginTop: '1rem',
+    textAlign: 'center' as const,
+    fontSize: '0.9rem',
+    color: 'rgba(255,255,255,0.7)'
   }
 };
