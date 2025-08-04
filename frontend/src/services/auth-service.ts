@@ -26,7 +26,25 @@ export interface RegisterRequest {
 export class AuthService {
   private static readonly TOKEN_KEY = 'chess-coach-token';
   private static readonly USER_KEY = 'chess-coach-user';
-  private static readonly BASE_URL = 'http://localhost:8080/api/auth';
+  private baseUrl: string;
+  
+  constructor() {
+    this.baseUrl = this.determineBaseUrl();
+  }
+
+  private determineBaseUrl(): string {
+    const envUrl = import.meta.env.VITE_BACKEND_URL;
+    if (envUrl) {
+      return `${envUrl}/api/auth`;
+    }
+
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:8080/api/auth';
+    }
+
+    console.error('VITE_BACKEND_URL is not set for production build!');
+    return 'about:blank';
+  }
   
   private listeners: ((user: User | null) => void)[] = [];
 
@@ -65,7 +83,7 @@ export class AuthService {
 
   // Authentication actions
   async login(request: LoginRequest): Promise<AuthResponse> {
-    const response = await fetch(`${AuthService.BASE_URL}/login`, {
+    const response = await fetch(`${this.baseUrl}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -86,7 +104,7 @@ export class AuthService {
   }
 
   async register(request: RegisterRequest): Promise<AuthResponse> {
-    const response = await fetch(`${AuthService.BASE_URL}/register`, {
+    const response = await fetch(`${this.baseUrl}/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
