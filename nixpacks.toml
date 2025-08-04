@@ -1,6 +1,6 @@
 [phases.build]
 cmds = [
-  "cp -r backend/src ./src",
+  "cp -r backend/. ./",
   "mvn clean package -DskipTests"
 ]
 
