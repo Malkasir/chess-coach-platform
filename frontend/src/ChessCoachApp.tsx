@@ -371,11 +371,6 @@ export const ChessCoachAppReact: React.FC = () => {
             <button type="submit" style={styles.primaryButton}>
               Login
             </button>
-            <div style={styles.testCredentials}>
-              <p><strong>Test Users:</strong></p>
-              <p>user1@test.com / password123</p>
-              <p>user2@test.com / password123</p>
-            </div>
           </form>
         </div>
       </div>
