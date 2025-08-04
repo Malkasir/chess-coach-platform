@@ -29,7 +29,7 @@ export const AlternativeChessBoard: React.FC = () => {
           position={position}
           onPieceDrop={onPieceDrop}
           arePiecesDraggable={true}
-          width={400}
+          boardWidth={400}
         />
       </div>
       <button 
