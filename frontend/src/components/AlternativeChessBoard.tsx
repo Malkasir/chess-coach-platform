@@ -5,21 +5,17 @@ import { Chessboard } from 'react-chessboard';
 export const AlternativeChessBoard: React.FC = () => {
   const [position, setPosition] = useState('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
 
-  const onDrop = ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string }) => {
+  const onPieceDrop = (sourceSquare: string, targetSquare: string) => {
     console.log('🎯 ALTERNATIVE: Piece drop from', sourceSquare, 'to', targetSquare);
     
     // Test move: e2-e4
     if (sourceSquare === 'e2' && targetSquare === 'e4') {
       setPosition('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1');
-      return;
+      return true;
     }
     
     // For any other move, just log it
     console.log('✅ ALTERNATIVE: Move allowed');
-  };
-
-  const allowDrag = ({ piece, sourceSquare }: { piece: string; sourceSquare: string }) => {
-    console.log('🤏 ALTERNATIVE: allowDrag called for', piece, 'on', sourceSquare);
     return true;
   };
 
@@ -31,8 +27,8 @@ export const AlternativeChessBoard: React.FC = () => {
       <div style={{ width: '400px', margin: '0 auto' }}>
         <Chessboard
           position={position}
-          onDrop={onDrop}
-          allowDrag={allowDrag}
+          onPieceDrop={onPieceDrop}
+          arePiecesDraggable={true}
           width={400}
         />
       </div>
