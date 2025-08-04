@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 
 @Component
-@Profile("dev") // Only run in development profile
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
@@ -30,12 +29,10 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void createTestUsers() {
-        String hashedPassword = passwordEncoder.encode("password123");
-
         // Create test user 1
         User user1 = new User();
         user1.setEmail("user1@test.com");
-        user1.setPassword(hashedPassword);
+        user1.setPassword(passwordEncoder.encode("SecureP@ssw0rd1"));
         user1.setFirstName("Test");
         user1.setLastName("User1");
         user1.setEnabled(true);
@@ -47,7 +44,7 @@ public class DataInitializer implements CommandLineRunner {
         // Create test user 2
         User user2 = new User();
         user2.setEmail("user2@test.com");
-        user2.setPassword(hashedPassword);
+        user2.setPassword(passwordEncoder.encode("AnotherS3cureP@ss!"));
         user2.setFirstName("Test");
         user2.setLastName("User2");
         user2.setEnabled(true);
@@ -59,7 +56,7 @@ public class DataInitializer implements CommandLineRunner {
         // Create admin user
         User admin = new User();
         admin.setEmail("admin@test.com");
-        admin.setPassword(hashedPassword);
+        admin.setPassword(passwordEncoder.encode("AdminP@ssw0rd!23"));
         admin.setFirstName("Admin");
         admin.setLastName("User");
         admin.setEnabled(true);
@@ -68,9 +65,9 @@ public class DataInitializer implements CommandLineRunner {
         admin.setUpdatedAt(LocalDateTime.now());
         userRepository.save(admin);
 
-        System.out.println("✅ Development test users created:");
-        System.out.println("   📧 user1@test.com / password123");
-        System.out.println("   📧 user2@test.com / password123");
-        System.out.println("   📧 admin@test.com / password123");
+        System.out.println("✅ Development test users created with secure passwords.");
+        System.out.println("   📧 user1@test.com / SecureP@ssw0rd1");
+        System.out.println("   📧 user2@test.com / AnotherS3cureP@ss!");
+        System.out.println("   📧 admin@test.com / AdminP@ssw0rd!23");
     }
 }
