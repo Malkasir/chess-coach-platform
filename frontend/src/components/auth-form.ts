@@ -30,12 +30,6 @@ export class AuthForm extends LitElement {
     .name-row md-filled-text-field {
       flex: 1;
     }
-    .role-selector {
-      display: flex;
-      gap: 1rem;
-      margin-top: 0.5rem;
-      align-items: center;
-    }
     .error-message {
       color: var(--md-sys-color-error);
       margin-bottom: 1rem;
@@ -58,8 +52,7 @@ export class AuthForm extends LitElement {
     email: '',
     password: '',
     firstName: '',
-    lastName: '',
-    role: 'STUDENT' as 'COACH' | 'STUDENT'
+    lastName: ''
   };
 
   private switchMode(e: CustomEvent) {
@@ -71,8 +64,7 @@ export class AuthForm extends LitElement {
       email: '',
       password: '',
       firstName: '',
-      lastName: '',
-      role: 'STUDENT'
+      lastName: ''
     };
   }
 
@@ -80,9 +72,6 @@ export class AuthForm extends LitElement {
     this.formData = { ...this.formData, [field]: value };
   }
 
-  private selectRole(role: 'COACH' | 'STUDENT') {
-    this.formData = { ...this.formData, role };
-  }
 
   private async handleSubmit(e: Event) {
     e.preventDefault();
@@ -109,8 +98,7 @@ export class AuthForm extends LitElement {
           email: this.formData.email,
           password: this.formData.password,
           firstName: this.formData.firstName,
-          lastName: this.formData.lastName,
-          role: this.formData.role
+          lastName: this.formData.lastName
         };
         await this.authService.register(registerRequest);
         this.success = 'Registration successful! Welcome!';
@@ -185,17 +173,6 @@ export class AuthForm extends LitElement {
             ></md-filled-text-field>
           </div>
 
-          ${this.mode === 'signup' ? html`
-            <div class="form-group">
-              <label>I am a:</label>
-              <div class="role-selector">
-                <md-radio name="role" value="STUDENT" ?checked=${this.formData.role === 'STUDENT'} @change=${() => this.selectRole('STUDENT')}></md-radio>
-                <label for="student">Student</label>
-                <md-radio name="role" value="COACH" @change=${() => this.selectRole('COACH')}></md-radio>
-                <label for="coach">Coach</label>
-              </div>
-            </div>
-          ` : ''}
 
           <md-filled-button type="submit" ?disabled=${!this.isFormValid() || this.loading}>
             ${this.loading ? 'Loading...' : this.mode === 'login' ? 'Login' : 'Create Account'}

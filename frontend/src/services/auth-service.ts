@@ -3,7 +3,6 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'COACH' | 'STUDENT';
 }
 
 export interface AuthResponse {
@@ -22,7 +21,6 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  role: 'COACH' | 'STUDENT';
 }
 
 export class AuthService {
@@ -64,15 +62,6 @@ export class AuthService {
     }
   }
 
-  isCoach(): boolean {
-    const user = this.getCurrentUser();
-    return user?.role === 'COACH';
-  }
-
-  isStudent(): boolean {
-    const user = this.getCurrentUser();
-    return user?.role === 'STUDENT';
-  }
 
   // Authentication actions
   async login(request: LoginRequest): Promise<AuthResponse> {

@@ -46,7 +46,6 @@ public class AuthController {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setFirstName(request.getFirstName());
             user.setLastName(request.getLastName());
-            user.setRole(User.Role.valueOf(request.getRole().toUpperCase()));
             user.setEnabled(true);
 
             User savedUser = userRepository.save(user);
@@ -61,8 +60,7 @@ public class AuthController {
                 "id", savedUser.getId(),
                 "email", savedUser.getEmail(),
                 "firstName", savedUser.getFirstName(),
-                "lastName", savedUser.getLastName(),
-                "role", savedUser.getRole().toString()
+                "lastName", savedUser.getLastName()
             ));
 
             return ResponseEntity.ok(response);
@@ -101,8 +99,7 @@ public class AuthController {
                 "id", user.getId(),
                 "email", user.getEmail(),
                 "firstName", user.getFirstName(),
-                "lastName", user.getLastName(),
-                "role", user.getRole().toString()
+                "lastName", user.getLastName()
             ));
 
             return ResponseEntity.ok(response);
@@ -117,8 +114,6 @@ public class AuthController {
     public ResponseEntity<?> testDatabase() {
         try {
             long userCount = userRepository.count();
-            long coachCount = userRepository.countByRole(User.Role.COACH);
-            long studentCount = userRepository.countByRole(User.Role.STUDENT);
 
             // Auto-detect database type from URL
             String dbUrl = System.getProperty("spring.datasource.url", "H2 In-Memory");
@@ -134,8 +129,6 @@ public class AuthController {
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Database connection successful!");
             response.put("totalUsers", userCount);
-            response.put("coaches", coachCount);
-            response.put("students", studentCount);
             response.put("database", databaseType);
 
             return ResponseEntity.ok(response);
@@ -152,7 +145,6 @@ public class AuthController {
         private String password;
         private String firstName;
         private String lastName;
-        private String role; // "COACH" or "STUDENT"
 
         // Getters and setters
         public String getEmail() { return email; }
@@ -167,8 +159,6 @@ public class AuthController {
         public String getLastName() { return lastName; }
         public void setLastName(String lastName) { this.lastName = lastName; }
 
-        public String getRole() { return role; }
-        public void setRole(String role) { this.role = role; }
     }
 
     public static class LoginRequest {

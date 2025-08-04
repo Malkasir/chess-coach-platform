@@ -22,7 +22,7 @@ public class GameController {
     @PostMapping("/create")
     public ResponseEntity<?> createGame(@RequestBody CreateGameRequest request) {
         try {
-            Map<String, Object> newGame = gameService.createGame(request.getCoachId());
+            Map<String, Object> newGame = gameService.createGame(request.getHostId(), request.getColorPreference());
             return ResponseEntity.ok(newGame);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -32,7 +32,7 @@ public class GameController {
     @PostMapping("/{gameId}/join")
     public ResponseEntity<?> joinGame(@PathVariable String gameId, @RequestBody JoinGameRequest request) {
         try {
-            Map<String, Object> gameState = gameService.joinGame(gameId, request.getStudentId());
+            Map<String, Object> gameState = gameService.joinGame(gameId, request.getGuestId());
             return ResponseEntity.ok(gameState);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -52,7 +52,7 @@ public class GameController {
     @PostMapping("/join-by-code")
     public ResponseEntity<?> joinByRoomCode(@RequestBody JoinByCodeRequest request) {
         try {
-            Map<String, Object> gameState = gameService.joinGameByRoomCode(request.getRoomCode(), request.getStudentId());
+            Map<String, Object> gameState = gameService.joinGameByRoomCode(request.getRoomCode(), request.getGuestId());
             return ResponseEntity.ok(gameState);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -60,32 +60,41 @@ public class GameController {
     }
 
     public static class CreateGameRequest {
-        private String coachId;
+        private String hostId;
+        private String colorPreference = "random"; // default to random
 
-        public String getCoachId() {
-            return coachId;
+        public String getHostId() {
+            return hostId;
         }
 
-        public void setCoachId(String coachId) {
-            this.coachId = coachId;
+        public void setHostId(String hostId) {
+            this.hostId = hostId;
+        }
+
+        public String getColorPreference() {
+            return colorPreference;
+        }
+
+        public void setColorPreference(String colorPreference) {
+            this.colorPreference = colorPreference;
         }
     }
 
     public static class JoinGameRequest {
-        private String studentId;
+        private String guestId;
 
-        public String getStudentId() {
-            return studentId;
+        public String getGuestId() {
+            return guestId;
         }
 
-        public void setStudentId(String studentId) {
-            this.studentId = studentId;
+        public void setGuestId(String guestId) {
+            this.guestId = guestId;
         }
     }
 
     public static class JoinByCodeRequest {
         private String roomCode;
-        private String studentId;
+        private String guestId;
 
         public String getRoomCode() {
             return roomCode;
@@ -95,12 +104,12 @@ public class GameController {
             this.roomCode = roomCode;
         }
 
-        public String getStudentId() {
-            return studentId;
+        public String getGuestId() {
+            return guestId;
         }
 
-        public void setStudentId(String studentId) {
-            this.studentId = studentId;
+        public void setGuestId(String guestId) {
+            this.guestId = guestId;
         }
     }
 }

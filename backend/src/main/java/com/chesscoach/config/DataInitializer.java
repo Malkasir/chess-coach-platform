@@ -32,39 +32,36 @@ public class DataInitializer implements CommandLineRunner {
     private void createTestUsers() {
         String hashedPassword = passwordEncoder.encode("password123");
 
-        // Create test student
-        User student = new User();
-        student.setEmail("student@test.com");
-        student.setPassword(hashedPassword);
-        student.setFirstName("Test");
-        student.setLastName("Student");
-        student.setRole(User.Role.STUDENT);
-        student.setEnabled(true);
-        student.setRating(1200);
-        student.setCreatedAt(LocalDateTime.now());
-        student.setUpdatedAt(LocalDateTime.now());
-        userRepository.save(student);
+        // Create test user 1
+        User user1 = new User();
+        user1.setEmail("user1@test.com");
+        user1.setPassword(hashedPassword);
+        user1.setFirstName("Test");
+        user1.setLastName("User1");
+        user1.setEnabled(true);
+        user1.setRating(1200);
+        user1.setCreatedAt(LocalDateTime.now());
+        user1.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user1);
 
-        // Create test coach
-        User coach = new User();
-        coach.setEmail("coach@test.com");
-        coach.setPassword(hashedPassword);
-        coach.setFirstName("Test");
-        coach.setLastName("Coach");
-        coach.setRole(User.Role.COACH);
-        coach.setEnabled(true);
-        coach.setRating(1800);
-        coach.setCreatedAt(LocalDateTime.now());
-        coach.setUpdatedAt(LocalDateTime.now());
-        userRepository.save(coach);
+        // Create test user 2
+        User user2 = new User();
+        user2.setEmail("user2@test.com");
+        user2.setPassword(hashedPassword);
+        user2.setFirstName("Test");
+        user2.setLastName("User2");
+        user2.setEnabled(true);
+        user2.setRating(1800);
+        user2.setCreatedAt(LocalDateTime.now());
+        user2.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user2);
 
-        // Create admin coach
+        // Create admin user
         User admin = new User();
         admin.setEmail("admin@test.com");
         admin.setPassword(hashedPassword);
         admin.setFirstName("Admin");
         admin.setLastName("User");
-        admin.setRole(User.Role.COACH);
         admin.setEnabled(true);
         admin.setRating(2000);
         admin.setCreatedAt(LocalDateTime.now());
@@ -72,8 +69,8 @@ public class DataInitializer implements CommandLineRunner {
         userRepository.save(admin);
 
         System.out.println("✅ Development test users created:");
-        System.out.println("   📧 student@test.com / password123 (Student)");
-        System.out.println("   📧 coach@test.com / password123 (Coach)");
-        System.out.println("   📧 admin@test.com / password123 (Admin Coach)");
+        System.out.println("   📧 user1@test.com / password123");
+        System.out.println("   📧 user2@test.com / password123");
+        System.out.println("   📧 admin@test.com / password123");
     }
 }

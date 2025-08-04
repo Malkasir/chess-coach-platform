@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  plugins: [react()],
   root: '.',
   build: {
     outDir: 'dist',
@@ -11,7 +13,11 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/ws': {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
+      },
+      '/chess-websocket': {
         target: 'http://localhost:8080',
         ws: true,
         changeOrigin: true
@@ -20,11 +26,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: [
-      'cm-chessboard/src/extensions/markers/Markers.js',
       'sockjs-client'
     ]
-  },
-  resolve: { 
-    dedupe: ['lit'] 
   }
 });

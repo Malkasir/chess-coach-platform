@@ -40,9 +40,6 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String lastName;
     
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
     
     @Column(nullable = false)
     private Boolean enabled = true;
@@ -60,9 +57,6 @@ public class User implements UserDetails {
     // Chess rating (optional)
     private Integer rating;
     
-    public enum Role {
-        COACH, STUDENT
-    }
     
     @PrePersist
     protected void onCreate() {
@@ -78,18 +72,17 @@ public class User implements UserDetails {
     // Constructors
     public User() {}
     
-    public User(String email, String password, String firstName, String lastName, Role role) {
+    public User(String email, String password, String firstName, String lastName) {
         this.email = email;
         this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.role = role;
     }
     
     // UserDetails implementation
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
     
     @Override
@@ -162,13 +155,6 @@ public class User implements UserDetails {
         return firstName + " " + lastName;
     }
     
-    public Role getRole() {
-        return role;
-    }
-    
-    public void setRole(Role role) {
-        this.role = role;
-    }
     
     public Boolean getEnabled() {
         return enabled;

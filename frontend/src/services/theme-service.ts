@@ -306,7 +306,6 @@ export class ThemeService {
       }
       
       chess-coach-app .controls-panel,
-      chess-coach-app .status-card,
       chess-coach-app .video-panel,
       chess-coach-app .chess-panel {
         background: ${appTheme.glassBackground} !important;

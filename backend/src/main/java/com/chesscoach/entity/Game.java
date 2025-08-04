@@ -20,12 +20,12 @@ public class Game {
     private String roomCode; // Short room code for easy sharing (e.g., "ABC123")
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "coach_id", nullable = false)
-    private User coach;
+    @JoinColumn(name = "host_id", nullable = false)
+    private User host;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id")
-    private User student;
+    @JoinColumn(name = "guest_id")
+    private User guest;
     
     @Column(nullable = false)
     private String currentFen;
@@ -36,10 +36,10 @@ public class Game {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PlayerColor coachColor;
+    private PlayerColor hostColor;
     
     @Enumerated(EnumType.STRING)
-    private PlayerColor studentColor;
+    private PlayerColor guestColor;
     
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -57,7 +57,7 @@ public class Game {
     private String result;
     
     public enum GameStatus {
-        WAITING_FOR_STUDENT, ACTIVE, PAUSED, ENDED
+        WAITING_FOR_GUEST, ACTIVE, PAUSED, ENDED
     }
     
     public enum PlayerColor {
@@ -84,17 +84,17 @@ public class Game {
     // Constructors
     public Game() {}
     
-    public Game(String gameId, User coach, PlayerColor coachColor) {
+    public Game(String gameId, User host, PlayerColor hostColor) {
         this.gameId = gameId;
-        this.coach = coach;
-        this.coachColor = coachColor;
-        this.studentColor = (coachColor == PlayerColor.WHITE) ? PlayerColor.BLACK : PlayerColor.WHITE;
-        this.status = GameStatus.WAITING_FOR_STUDENT;
+        this.host = host;
+        this.hostColor = hostColor;
+        this.guestColor = (hostColor == PlayerColor.WHITE) ? PlayerColor.BLACK : PlayerColor.WHITE;
+        this.status = GameStatus.WAITING_FOR_GUEST;
     }
     
     // Business methods
-    public void addStudent(User student) {
-        this.student = student;
+    public void addGuest(User guest) {
+        this.guest = guest;
         this.status = GameStatus.ACTIVE;
     }
     
@@ -108,8 +108,8 @@ public class Game {
         return status == GameStatus.ACTIVE;
     }
     
-    public boolean isWaitingForStudent() {
-        return status == GameStatus.WAITING_FOR_STUDENT;
+    public boolean isWaitingForGuest() {
+        return status == GameStatus.WAITING_FOR_GUEST;
     }
     
     // Getters and Setters
@@ -137,20 +137,20 @@ public class Game {
         this.roomCode = roomCode;
     }
     
-    public User getCoach() {
-        return coach;
+    public User getHost() {
+        return host;
     }
     
-    public void setCoach(User coach) {
-        this.coach = coach;
+    public void setHost(User host) {
+        this.host = host;
     }
     
-    public User getStudent() {
-        return student;
+    public User getGuest() {
+        return guest;
     }
     
-    public void setStudent(User student) {
-        this.student = student;
+    public void setGuest(User guest) {
+        this.guest = guest;
     }
     
     public String getCurrentFen() {
@@ -169,20 +169,20 @@ public class Game {
         this.status = status;
     }
     
-    public PlayerColor getCoachColor() {
-        return coachColor;
+    public PlayerColor getHostColor() {
+        return hostColor;
     }
     
-    public void setCoachColor(PlayerColor coachColor) {
-        this.coachColor = coachColor;
+    public void setHostColor(PlayerColor hostColor) {
+        this.hostColor = hostColor;
     }
     
-    public PlayerColor getStudentColor() {
-        return studentColor;
+    public PlayerColor getGuestColor() {
+        return guestColor;
     }
     
-    public void setStudentColor(PlayerColor studentColor) {
-        this.studentColor = studentColor;
+    public void setGuestColor(PlayerColor guestColor) {
+        this.guestColor = guestColor;
     }
     
     public LocalDateTime getCreatedAt() {

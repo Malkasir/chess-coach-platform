@@ -85,10 +85,10 @@ public class GameWebSocketController {
             }
 
             User player = playerOpt.get();
-            boolean isCoach = game.getCoach().getId().equals(player.getId());
-            boolean isStudent = game.getStudent() != null && game.getStudent().getId().equals(player.getId());
+            boolean isHost = game.getHost().getId().equals(player.getId());
+            boolean isGuest = game.getGuest() != null && game.getGuest().getId().equals(player.getId());
 
-            if (!isCoach && !isStudent) {
+            if (!isHost && !isGuest) {
                 sendError(message.getGameId(), message.getPlayerId(), "Player not part of this game");
                 return;
             }

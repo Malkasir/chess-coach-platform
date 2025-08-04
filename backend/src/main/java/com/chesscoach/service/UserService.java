@@ -27,7 +27,7 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
 
-    public User createUser(String email, String password, String firstName, String lastName, User.Role role) {
+    public User createUser(String email, String password, String firstName, String lastName) {
         if (userRepository.existsByEmail(email)) {
             throw new RuntimeException("User already exists with email: " + email);
         }
@@ -37,7 +37,6 @@ public class UserService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(password));
         user.setFirstName(firstName);
         user.setLastName(lastName);
-        user.setRole(role);
         user.setEnabled(true);
 
         return userRepository.save(user);
@@ -51,13 +50,6 @@ public class UserService implements UserDetailsService {
         return userRepository.findById(id);
     }
 
-    public List<User> findAllCoaches() {
-        return userRepository.findActiveUsersByRole(User.Role.COACH);
-    }
-
-    public List<User> findAllStudents() {
-        return userRepository.findActiveUsersByRole(User.Role.STUDENT);
-    }
 
     public User updateUser(User user) {
         return userRepository.save(user);
@@ -89,13 +81,6 @@ public class UserService implements UserDetailsService {
         }
     }
 
-    public long getCoachCount() {
-        return userRepository.countByRole(User.Role.COACH);
-    }
-
-    public long getStudentCount() {
-        return userRepository.countByRole(User.Role.STUDENT);
-    }
 
     public List<User> searchUsersByName(String name) {
         return userRepository.findByNameContaining(name);

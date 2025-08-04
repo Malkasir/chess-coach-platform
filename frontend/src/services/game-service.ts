@@ -13,10 +13,10 @@ export interface GameMessage {
 
 export interface GameState {
   gameId: string;
-  coachId: string;
-  studentId: string;
-  coachColor: 'white' | 'black';
-  studentColor: 'white' | 'black';
+  hostId: string;
+  guestId: string;
+  hostColor: 'white' | 'black';
+  guestColor: 'white' | 'black';
   fen: string;
   status: string;
   moveHistory: string[];
@@ -32,11 +32,11 @@ export class GameService {
 
   constructor() {
     // Determine base URL based on environment
-    this.baseUrl = this.getBaseUrl();
+    this.baseUrl = this.determineBaseUrl();
     this.setupWebSocket();
   }
 
-  private getBaseUrl(): string {
+  private determineBaseUrl(): string {
     // Always prioritize the environment variable if it's set.
     const envUrl = import.meta.env.VITE_BACKEND_URL;
     if (envUrl) {
@@ -69,11 +69,11 @@ export class GameService {
     });
   }
 
-  async createGame(coachId: string): Promise<{ gameId: string, roomCode: string, coachColor: 'white' | 'black' }> {
+  async createGame(hostId: string, colorPreference: string = 'random'): Promise<{ gameId: string, roomCode: string, hostColor: 'white' | 'black' }> {
     const response = await fetch(`${this.baseUrl}/api/games/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ coachId })
+      body: JSON.stringify({ hostId, colorPreference })
     });
 
     if (!response.ok) {
@@ -83,11 +83,11 @@ export class GameService {
     return response.json();
   }
 
-  async joinGameByCode(roomCode: string, studentId: string): Promise<GameState> {
+  async joinGameByCode(roomCode: string, guestId: string): Promise<GameState> {
     const response = await fetch(`${this.baseUrl}/api/games/join-by-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomCode: roomCode.toUpperCase(), studentId })
+      body: JSON.stringify({ roomCode: roomCode.toUpperCase(), guestId })
     });
 
     if (!response.ok) {
@@ -97,7 +97,7 @@ export class GameService {
     return response.json();
   }
 
-  async joinGame(gameId: string, playerId: string, isCoach: boolean = false): Promise<void> {
+  async joinGame(gameId: string, playerId: string, isHost: boolean = false): Promise<void> {
     this.gameId = gameId;
     this.playerId = playerId;
 
@@ -119,7 +119,6 @@ export class GameService {
     // Subscribe to game messages
     this.client?.subscribe(`/topic/game/${gameId}`, (message) => {
       const gameMessage: GameMessage = JSON.parse(message.body);
-      console.log('📥 Received WebSocket message:', gameMessage);
       if (this.onGameUpdate) {
         this.onGameUpdate(gameMessage);
       }
@@ -133,12 +132,12 @@ export class GameService {
       }
     });
 
-    // If student joining, call REST API first
-    if (!isCoach) {
+    // If guest joining, call REST API first
+    if (!isHost) {
       const response = await fetch(`${this.baseUrl}/api/games/${gameId}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId: playerId })
+        body: JSON.stringify({ guestId: playerId })
       });
 
       if (!response.ok) {
@@ -163,7 +162,6 @@ export class GameService {
       return;
     }
 
-    console.log('📤 Sending move:', move, 'FEN:', fen, 'from player:', this.playerId, 'in game:', this.gameId);
     this.client.publish({
       destination: '/app/game/move',
       body: JSON.stringify({
@@ -195,5 +193,9 @@ export class GameService {
     this.gameId = null;
     this.playerId = null;
     this.onGameUpdate = null;
+  }
+
+  getBaseUrl(): string {
+    return this.baseUrl;
   }
 }

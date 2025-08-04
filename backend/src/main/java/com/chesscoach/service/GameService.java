@@ -23,40 +23,67 @@ public class GameService {
         this.userRepository = userRepository;
     }
 
-    public Map<String, Object> createGame(String coachId) {
-        User coach = userRepository.findById(Long.parseLong(coachId))
-                .orElseThrow(() -> new RuntimeException("Coach not found"));
+    public Map<String, Object> createGame(String hostId) {
+        return createGame(hostId, "random");
+    }
+
+    public Map<String, Object> createGame(String hostId, String colorPreference) {
+        User host = userRepository.findById(Long.parseLong(hostId))
+                .orElseThrow(() -> new RuntimeException("Host not found"));
 
         Game game = new Game();
         game.setGameId(UUID.randomUUID().toString());
         game.setRoomCode(generateRoomCode());
-        game.setCoach(coach);
-        game.setStatus(Game.GameStatus.WAITING_FOR_STUDENT);
+        game.setHost(host);
+        game.setStatus(Game.GameStatus.WAITING_FOR_GUEST);
         game.setCurrentFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-        game.setCoachColor(Game.PlayerColor.WHITE);
-        game.setStudentColor(Game.PlayerColor.BLACK);
+        
+        // Assign colors based on preference
+        Game.PlayerColor hostColor;
+        Game.PlayerColor guestColor;
+        
+        switch (colorPreference.toLowerCase()) {
+            case "white":
+                hostColor = Game.PlayerColor.WHITE;
+                guestColor = Game.PlayerColor.BLACK;
+                break;
+            case "black":
+                hostColor = Game.PlayerColor.BLACK;
+                guestColor = Game.PlayerColor.WHITE;
+                break;
+            case "random":
+            default:
+                // Randomly assign colors
+                boolean hostIsWhite = new Random().nextBoolean();
+                hostColor = hostIsWhite ? Game.PlayerColor.WHITE : Game.PlayerColor.BLACK;
+                guestColor = hostIsWhite ? Game.PlayerColor.BLACK : Game.PlayerColor.WHITE;
+                break;
+        }
+        
+        game.setHostColor(hostColor);
+        game.setGuestColor(guestColor);
 
         Game savedGame = gameRepository.save(game);
-
+        
         return Map.of(
                 "gameId", savedGame.getGameId(),
                 "roomCode", savedGame.getRoomCode(),
-                "coachColor", savedGame.getCoachColor().toString().toLowerCase()
+                "hostColor", savedGame.getHostColor().toString().toLowerCase()
         );
     }
 
-    public Map<String, Object> joinGame(String gameId, String studentId) {
+    public Map<String, Object> joinGame(String gameId, String guestId) {
         Game game = gameRepository.findByGameId(gameId)
                 .orElseThrow(() -> new RuntimeException("Game not found"));
 
-        if (game.getStatus() != Game.GameStatus.WAITING_FOR_STUDENT) {
-            throw new RuntimeException("Game is not waiting for a student");
+        if (game.getStatus() != Game.GameStatus.WAITING_FOR_GUEST) {
+            throw new RuntimeException("Game is not waiting for a guest");
         }
 
-        User student = userRepository.findById(Long.parseLong(studentId))
-                .orElseThrow(() -> new RuntimeException("Student not found"));
+        User guest = userRepository.findById(Long.parseLong(guestId))
+                .orElseThrow(() -> new RuntimeException("Guest not found"));
 
-        game.addStudent(student);
+        game.addGuest(guest);
         Game savedGame = gameRepository.save(game);
 
         return buildGameStateResponse(savedGame);
@@ -69,18 +96,18 @@ public class GameService {
         return buildGameStateResponse(game);
     }
 
-    public Map<String, Object> joinGameByRoomCode(String roomCode, String studentId) {
+    public Map<String, Object> joinGameByRoomCode(String roomCode, String guestId) {
         Game game = gameRepository.findByRoomCode(roomCode.toUpperCase())
                 .orElseThrow(() -> new RuntimeException("Game not found with room code: " + roomCode));
 
-        if (game.getStatus() != Game.GameStatus.WAITING_FOR_STUDENT) {
-            throw new RuntimeException("Game is not waiting for a student");
+        if (game.getStatus() != Game.GameStatus.WAITING_FOR_GUEST) {
+            throw new RuntimeException("Game is not waiting for a guest");
         }
 
-        User student = userRepository.findById(Long.parseLong(studentId))
-                .orElseThrow(() -> new RuntimeException("Student not found"));
+        User guest = userRepository.findById(Long.parseLong(guestId))
+                .orElseThrow(() -> new RuntimeException("Guest not found"));
 
-        game.addStudent(student);
+        game.addGuest(guest);
         Game savedGame = gameRepository.save(game);
 
         return buildGameStateResponse(savedGame);
@@ -107,10 +134,10 @@ public class GameService {
         return Map.of(
                 "gameId", game.getGameId(),
                 "roomCode", game.getRoomCode(),
-                "coachId", game.getCoach().getId().toString(),
-                "studentId", game.getStudent() != null ? game.getStudent().getId().toString() : "",
-                "coachColor", game.getCoachColor().toString().toLowerCase(),
-                "studentColor", game.getStudentColor().toString().toLowerCase(),
+                "hostId", game.getHost().getId().toString(),
+                "guestId", game.getGuest() != null ? game.getGuest().getId().toString() : "",
+                "hostColor", game.getHostColor().toString().toLowerCase(),
+                "guestColor", game.getGuestColor().toString().toLowerCase(),
                 "fen", game.getCurrentFen(),
                 "status", game.getStatus().toString(),
                 "moveHistory", parseJsonArray(game.getMoveHistory())
