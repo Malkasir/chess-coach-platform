@@ -44,4 +44,12 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     // Find active games that haven't been updated in a while (for cleanup)
     @Query("SELECT g FROM Game g WHERE g.status IN ('ACTIVE', 'WAITING_FOR_GUEST') AND g.updatedAt < :cutoffTime")
     List<Game> findStaleGames(LocalDateTime cutoffTime);
+    
+    // Find completed games older than specified time (for cleanup)
+    @Query("SELECT g FROM Game g WHERE g.status = 'ENDED' AND g.updatedAt < :cutoffTime")
+    List<Game> findCompletedGamesBefore(LocalDateTime cutoffTime);
+    
+    // Find games with very long move histories (potential memory issues)
+    @Query(value = "SELECT * FROM games WHERE LENGTH(move_history) > 10000", nativeQuery = true)
+    List<Game> findGamesWithLongMoveHistory();
 }
