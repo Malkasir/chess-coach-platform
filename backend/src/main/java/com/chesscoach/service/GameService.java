@@ -107,6 +107,11 @@ public class GameService {
         User guest = userRepository.findById(Long.parseLong(guestId))
                 .orElseThrow(() -> new RuntimeException("Guest not found"));
 
+        // Prevent the host from joining as guest
+        if (game.getHost().getId().equals(guest.getId())) {
+            throw new RuntimeException("Host cannot join as guest");
+        }
+
         game.addGuest(guest);
         Game savedGame = gameRepository.save(game);
 

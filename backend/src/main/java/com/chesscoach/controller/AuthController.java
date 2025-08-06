@@ -9,6 +9,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -66,8 +69,10 @@ public class AuthController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
+            // Log the actual error for debugging but don't expose it
+            System.err.println("Registration error: " + e.getMessage());
             return ResponseEntity.badRequest()
-                .body(Map.of("error", "Registration failed: " + e.getMessage()));
+                .body(Map.of("error", "Registration failed. Please try again."));
         }
     }
 
@@ -105,8 +110,10 @@ public class AuthController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
+            // Log the actual error for debugging but don't expose it
+            System.err.println("Login error: " + e.getMessage());
             return ResponseEntity.badRequest()
-                .body(Map.of("error", "Login failed: " + e.getMessage()));
+                .body(Map.of("error", "Login failed. Please check your credentials."));
         }
     }
 
@@ -134,16 +141,29 @@ public class AuthController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
+            // Log the actual error for debugging but don't expose it
+            System.err.println("Database test error: " + e.getMessage());
             return ResponseEntity.badRequest()
-                .body(Map.of("error", "Database connection failed: " + e.getMessage()));
+                .body(Map.of("error", "Database connection test failed"));
         }
     }
 
     // Request DTOs
     public static class RegisterRequest {
+        @NotBlank(message = "Email is required")
+        @Email(message = "Email must be valid")
         private String email;
+        
+        @NotBlank(message = "Password is required")
+        @Size(min = 8, message = "Password must be at least 8 characters")
         private String password;
+        
+        @NotBlank(message = "First name is required")
+        @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
         private String firstName;
+        
+        @NotBlank(message = "Last name is required")
+        @Size(min = 2, max = 50, message = "Last name must be between 2 and 50 characters")
         private String lastName;
 
         // Getters and setters
@@ -158,11 +178,14 @@ public class AuthController {
 
         public String getLastName() { return lastName; }
         public void setLastName(String lastName) { this.lastName = lastName; }
-
     }
 
     public static class LoginRequest {
+        @NotBlank(message = "Email is required")
+        @Email(message = "Email must be valid")
         private String email;
+        
+        @NotBlank(message = "Password is required")
         private String password;
 
         // Getters and setters

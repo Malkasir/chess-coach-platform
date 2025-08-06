@@ -51,14 +51,23 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthFilter) throws Exception {
         http.csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Allow all requests for testing
-                .anyRequest().permitAll()
-            );
+                // Public endpoints
+                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/test-db").permitAll()
+                .requestMatchers("/h2-console/**").permitAll() // H2 console for development
+                .requestMatchers("/actuator/health").permitAll() // Health check
+                // WebSocket endpoints
+                .requestMatchers("/chess-websocket/**").permitAll() // WebSocket handshake
+                .requestMatchers("/app/**").permitAll() // WebSocket app destinations
+                .requestMatchers("/topic/**").permitAll() // WebSocket topic subscriptions
+                // All other endpoints require authentication
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -66,13 +75,28 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*")); // In production, specify exact origins
+        
+        // Set allowed origins based on environment
+        String allowedOrigins = System.getenv("ALLOWED_ORIGINS");
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        } else {
+            // Development defaults - restrict in production
+            configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000", 
+                "http://localhost:5173", 
+                "http://127.0.0.1:3000", 
+                "http://127.0.0.1:5173"
+            ));
+        }
+        
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // Cache preflight for 1 hour
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/api/**", configuration);
         return source;
     }
 }

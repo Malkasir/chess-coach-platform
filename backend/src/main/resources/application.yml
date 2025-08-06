@@ -38,8 +38,8 @@ spring:
   # Security Configuration
   security:
     jwt:
-      secret: ${JWT_SECRET:mySecretKey123456789012345678901234567890}
-      expiration: 86400000 # 24 hours in milliseconds
+      secret: ${JWT_SECRET:aVerySecureRandomSecretKeyThatShouldBeChangedInProduction1234567890ABCDEF}
+      expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds (configurable)
 
 # Server Configuration
 server:

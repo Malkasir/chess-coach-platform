@@ -54,6 +54,14 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, userDetails.getUsername());
     }
+    
+    public String generateToken(com.chesscoach.entity.User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("firstName", user.getFirstName());
+        claims.put("lastName", user.getLastName());
+        claims.put("userId", user.getId());
+        return createToken(claims, user.getEmail());
+    }
 
     public String generateToken(UserDetails userDetails, Map<String, Object> extraClaims) {
         Map<String, Object> claims = new HashMap<>(extraClaims);

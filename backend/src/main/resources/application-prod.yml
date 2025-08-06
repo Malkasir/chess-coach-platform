@@ -1,9 +1,9 @@
 # Production Profile Configuration
 spring:
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://ep-plain-hall-a2lepycf-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require}
-    username: ${DATABASE_USERNAME:neondb_owner}
-    password: ${DATABASE_PASSWORD:npg_UVT6glsqmFH2}
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   
   jpa:
