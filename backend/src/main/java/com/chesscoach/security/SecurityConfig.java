@@ -81,13 +81,23 @@ public class SecurityConfig {
         if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
             configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         } else {
-            // Development defaults - restrict in production
-            configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000", 
-                "http://localhost:5173", 
-                "http://127.0.0.1:3000", 
-                "http://127.0.0.1:5173"
-            ));
+            // Check if this is production (Railway) or development
+            String springProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+            if ("prod".equals(springProfile)) {
+                // Production fallback - allow common domains
+                configuration.setAllowedOrigins(Arrays.asList(
+                    "https://clever-centaur-198ab4.netlify.app",
+                    "https://*.netlify.app"
+                ));
+            } else {
+                // Development defaults
+                configuration.setAllowedOrigins(Arrays.asList(
+                    "http://localhost:3000", 
+                    "http://localhost:5173", 
+                    "http://127.0.0.1:3000", 
+                    "http://127.0.0.1:5173"
+                ));
+            }
         }
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
