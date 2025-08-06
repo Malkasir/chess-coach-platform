@@ -1,5 +1,6 @@
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { AuthService } from './auth-service';
 
 export interface GameMessage {
   type: string;
@@ -29,11 +30,16 @@ export class GameService {
   private playerId: string | null = null;
   private onGameUpdate: ((message: GameMessage) => void) | null = null;
   private baseUrl: string;
+  private authService: AuthService | null = null;
 
   constructor() {
     // Determine base URL based on environment
     this.baseUrl = this.determineBaseUrl();
     this.setupWebSocket();
+  }
+
+  setAuthService(authService: AuthService) {
+    this.authService = authService;
   }
 
   private determineBaseUrl(): string {
@@ -56,42 +62,52 @@ export class GameService {
   private setupWebSocket() {
     this.client = new Client({
       webSocketFactory: () => new SockJS(`${this.baseUrl}/chess-websocket`),
-      debug: (str) => console.log('STOMP: ' + str),
+      debug: (str) => console.log('🔌 STOMP: ' + str),
       onConnect: () => {
-        console.log('Connected to WebSocket');
+        console.log('✅ Connected to WebSocket');
       },
       onDisconnect: () => {
-        console.log('Disconnected from WebSocket');
+        console.log('❌ Disconnected from WebSocket');
       },
       onStompError: (frame) => {
-        console.error('STOMP error:', frame);
-      }
+        console.error('💥 STOMP error:', frame);
+      },
+      // Add heartbeat and reconnect settings for better browser compatibility
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
+      reconnectDelay: 5000
     });
   }
 
   async createGame(hostId: string, colorPreference: string = 'random'): Promise<{ gameId: string, roomCode: string, hostColor: 'white' | 'black' }> {
+    const headers = this.authService ? this.authService.getAuthHeaders() : { 'Content-Type': 'application/json' };
+    
     const response = await fetch(`${this.baseUrl}/api/games/create`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ hostId, colorPreference })
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create game');
+      const error = await response.json().catch(() => ({ error: 'Failed to create game' }));
+      throw new Error(error.error || 'Failed to create game');
     }
 
     return response.json();
   }
 
   async joinGameByCode(roomCode: string, guestId: string): Promise<GameState> {
+    const headers = this.authService ? this.authService.getAuthHeaders() : { 'Content-Type': 'application/json' };
+    
     const response = await fetch(`${this.baseUrl}/api/games/join-by-code`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ roomCode: roomCode.toUpperCase(), guestId })
     });
 
     if (!response.ok) {
-      throw new Error('Failed to join game with room code');
+      const error = await response.json().catch(() => ({ error: 'Failed to join game' }));
+      throw new Error(error.error || 'Failed to join game with room code');
     }
 
     return response.json();
@@ -134,14 +150,17 @@ export class GameService {
 
     // If guest joining, call REST API first
     if (!isHost) {
+      const headers = this.authService ? this.authService.getAuthHeaders() : { 'Content-Type': 'application/json' };
+      
       const response = await fetch(`${this.baseUrl}/api/games/${gameId}/join`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ guestId: playerId })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to join game');
+        const error = await response.json().catch(() => ({ error: 'Failed to join game' }));
+        throw new Error(error.error || 'Failed to join game');
       }
     }
 
@@ -175,10 +194,15 @@ export class GameService {
   }
 
   async getGameState(gameId: string): Promise<GameState> {
-    const response = await fetch(`${this.baseUrl}/api/games/${gameId}`);
+    const headers = this.authService ? this.authService.getAuthHeaders() : { 'Content-Type': 'application/json' };
+    
+    const response = await fetch(`${this.baseUrl}/api/games/${gameId}`, {
+      headers
+    });
     
     if (!response.ok) {
-      throw new Error('Failed to get game state');
+      const error = await response.json().catch(() => ({ error: 'Failed to get game state' }));
+      throw new Error(error.error || 'Failed to get game state');
     }
 
     return response.json();

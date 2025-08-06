@@ -30,6 +30,12 @@ interface ChessCoachAppState {
   loginPassword: string;
   loginError: string;
   colorPreference: 'white' | 'black' | 'random';
+  isRegistering: boolean;
+  registerEmail: string;
+  registerPassword: string;
+  registerFirstName: string;
+  registerLastName: string;
+  registerError: string;
 }
 
 export const ChessCoachAppReact: React.FC = () => {
@@ -48,7 +54,13 @@ export const ChessCoachAppReact: React.FC = () => {
     loginEmail: '',
     loginPassword: '',
     loginError: '',
-    colorPreference: 'random'
+    colorPreference: 'random',
+    isRegistering: false,
+    registerEmail: '',
+    registerPassword: '',
+    registerFirstName: '',
+    registerLastName: '',
+    registerError: ''
   });
 
   const gameRef = useRef(new Chess());
@@ -59,8 +71,23 @@ export const ChessCoachAppReact: React.FC = () => {
     const gameService = gameServiceRef.current;
     const authService = authServiceRef.current;
 
+    // Inject auth service into game service for authenticated requests
+    gameService.setAuthService(authService);
+
     // Set up game message listener
     gameService.setGameUpdateListener(handleGameMessage);
+
+    // Check authentication state on app load (for browser compatibility)
+    const currentUser = authService.getCurrentUser();
+    const isAuthenticated = authService.isAuthenticated();
+    
+    if (currentUser && isAuthenticated) {
+      setState(prev => ({
+        ...prev,
+        currentUser,
+        isAuthenticated
+      }));
+    }
 
     // Initialize test users
     initializeTestUsers();
@@ -153,10 +180,59 @@ export const ChessCoachAppReact: React.FC = () => {
     }
   };
 
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setState(prev => ({ ...prev, registerError: '' }));
+
+    try {
+      const authResponse = await authServiceRef.current.register({
+        email: state.registerEmail,
+        password: state.registerPassword,
+        firstName: state.registerFirstName,
+        lastName: state.registerLastName
+      });
+
+      setState(prev => ({
+        ...prev,
+        currentUser: authResponse.user,
+        isAuthenticated: true,
+        registerEmail: '',
+        registerPassword: '',
+        registerFirstName: '',
+        registerLastName: '',
+        registerError: '',
+        isRegistering: false
+      }));
+    } catch (error) {
+      setState(prev => ({ 
+        ...prev, 
+        registerError: error instanceof Error ? error.message : 'Registration failed'
+      }));
+    }
+  };
+
+  const toggleRegistration = () => {
+    setState(prev => ({
+      ...prev,
+      isRegistering: !prev.isRegistering,
+      loginError: '',
+      registerError: '',
+      loginEmail: '',
+      loginPassword: '',
+      registerEmail: '',
+      registerPassword: '',
+      registerFirstName: '',
+      registerLastName: ''
+    }));
+  };
+
   const handleGameMessage = (message: GameMessage) => {
+    console.log('📥 Received game message:', message);
+    
     switch (message.type) {
       case 'MOVE':
         if (message.fen && message.move) {
+          console.log('♟️ Processing move:', message.move, 'New FEN:', message.fen);
           gameRef.current.load(message.fen);
           setState(prev => ({
             ...prev,
@@ -167,6 +243,7 @@ export const ChessCoachAppReact: React.FC = () => {
         break;
       case 'GAME_STATE':
         if (message.fen) {
+          console.log('🎲 Loading game state, FEN:', message.fen);
           gameRef.current.load(message.fen);
           setState(prev => ({
             ...prev,
@@ -177,10 +254,11 @@ export const ChessCoachAppReact: React.FC = () => {
         }
         break;
       case 'PLAYER_JOINED':
+        console.log('👤 Player joined, setting game to active');
         setState(prev => ({ ...prev, gameStatus: 'active' }));
         break;
       case 'ERROR':
-        console.error('Game error:', message.message);
+        console.error('❌ Game error:', message.message);
         break;
     }
   };
@@ -347,31 +425,100 @@ export const ChessCoachAppReact: React.FC = () => {
           <h1>Chess Coach Platform</h1>
         </header>
         <div style={styles.loginContainer}>
-          <form onSubmit={handleLogin} style={styles.loginForm}>
-            <h2>Login</h2>
-            {state.loginError && (
-              <div style={styles.errorMessage}>{state.loginError}</div>
-            )}
-            <input
-              type="email"
-              placeholder="Email"
-              value={state.loginEmail}
-              onChange={(e) => setState(prev => ({ ...prev, loginEmail: e.target.value }))}
-              style={styles.input}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={state.loginPassword}
-              onChange={(e) => setState(prev => ({ ...prev, loginPassword: e.target.value }))}
-              style={styles.input}
-              required
-            />
-            <button type="submit" style={styles.primaryButton}>
-              Login
-            </button>
-          </form>
+          {!state.isRegistering ? (
+            <form onSubmit={handleLogin} style={styles.loginForm}>
+              <h2>Login</h2>
+              {state.loginError && (
+                <div style={styles.errorMessage}>{state.loginError}</div>
+              )}
+              <input
+                type="email"
+                placeholder="Email"
+                value={state.loginEmail}
+                onChange={(e) => setState(prev => ({ ...prev, loginEmail: e.target.value }))}
+                style={styles.input}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={state.loginPassword}
+                onChange={(e) => setState(prev => ({ ...prev, loginPassword: e.target.value }))}
+                style={styles.input}
+                required
+              />
+              <button type="submit" style={styles.primaryButton}>
+                Login
+              </button>
+              <div style={styles.formToggle}>
+                <span>Don't have an account? </span>
+                <button 
+                  type="button" 
+                  onClick={toggleRegistration}
+                  style={styles.linkButton}
+                >
+                  Sign up
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleRegister} style={styles.loginForm}>
+              <h2>Create Account</h2>
+              {state.registerError && (
+                <div style={styles.errorMessage}>{state.registerError}</div>
+              )}
+              <input
+                type="text"
+                placeholder="First Name"
+                value={state.registerFirstName}
+                onChange={(e) => setState(prev => ({ ...prev, registerFirstName: e.target.value }))}
+                style={styles.input}
+                required
+                minLength={2}
+                maxLength={50}
+              />
+              <input
+                type="text"
+                placeholder="Last Name"
+                value={state.registerLastName}
+                onChange={(e) => setState(prev => ({ ...prev, registerLastName: e.target.value }))}
+                style={styles.input}
+                required
+                minLength={2}
+                maxLength={50}
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={state.registerEmail}
+                onChange={(e) => setState(prev => ({ ...prev, registerEmail: e.target.value }))}
+                style={styles.input}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password (min 8 characters)"
+                value={state.registerPassword}
+                onChange={(e) => setState(prev => ({ ...prev, registerPassword: e.target.value }))}
+                style={styles.input}
+                required
+                minLength={8}
+              />
+              <button type="submit" style={styles.primaryButton}>
+                Create Account
+              </button>
+              <div style={styles.formToggle}>
+                <span>Already have an account? </span>
+                <button 
+                  type="button" 
+                  onClick={toggleRegistration}
+                  style={styles.linkButton}
+                >
+                  Sign in
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     );
@@ -655,5 +802,20 @@ const styles = {
     textAlign: 'center' as const,
     fontSize: '0.9rem',
     color: 'rgba(255,255,255,0.7)'
+  },
+  formToggle: {
+    textAlign: 'center' as const,
+    marginTop: '1rem',
+    fontSize: '0.9rem',
+    color: 'rgba(255,255,255,0.8)'
+  },
+  linkButton: {
+    background: 'none',
+    border: 'none',
+    color: '#6750a4',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    fontSize: '0.9rem',
+    fontWeight: '500'
   }
 };
