@@ -81,23 +81,14 @@ public class SecurityConfig {
         if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
             configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         } else {
-            // Check if this is production (Railway) or development
-            String springProfile = System.getenv("SPRING_PROFILES_ACTIVE");
-            if ("prod".equals(springProfile)) {
-                // Production fallback - allow common domains
-                configuration.setAllowedOrigins(Arrays.asList(
-                    "https://clever-centaur-198ab4.netlify.app",
-                    "https://*.netlify.app"
-                ));
-            } else {
-                // Development defaults
-                configuration.setAllowedOrigins(Arrays.asList(
-                    "http://localhost:3000", 
-                    "http://localhost:5173", 
-                    "http://127.0.0.1:3000", 
-                    "http://127.0.0.1:5173"
-                ));
-            }
+            // Allow both development and production domains by default
+            configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000", 
+                "http://localhost:5173", 
+                "http://127.0.0.1:3000", 
+                "http://127.0.0.1:5173",
+                "https://clever-centaur-198ab4.netlify.app"
+            ));
         }
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -106,7 +97,7 @@ public class SecurityConfig {
         configuration.setMaxAge(3600L); // Cache preflight for 1 hour
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
+        source.registerCorsConfiguration("/**", configuration); // Apply to all endpoints
         return source;
     }
 }
