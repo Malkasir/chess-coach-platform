@@ -1,5 +1,31 @@
 /* Shared styles across components */
 
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Accessibility utilities */
+:global(.sr-only) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .app {
   min-height: 100vh;
   background-color: transparent;
@@ -241,4 +267,427 @@
 
 .linkButton:hover {
   color: #5a4794;
+}
+
+/* Online Players List and Modals */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background-color: rgba(40, 40, 40, 0.95);
+  border-radius: 12px;
+  padding: 1.5rem;
+  min-width: 400px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 1rem;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  color: white;
+  font-size: 1.3rem;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  font-size: 1.5rem;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 107, 107, 0.2);
+}
+
+.searchContainer {
+  margin-bottom: 1rem;
+}
+
+.searchInput {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: white;
+  outline: none;
+  font-size: 1rem;
+}
+
+.searchInput::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.playersList {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+.playerCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s;
+}
+
+.playerCard:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.playerInfo {
+  flex: 1;
+}
+
+.playerHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.playerName {
+  font-weight: 600;
+  color: white;
+  font-size: 1rem;
+}
+
+.playerRating {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.playerStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.statusIcon {
+  font-size: 0.8rem;
+}
+
+.statusText {
+  font-weight: 500;
+}
+
+.lastSeen {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.statusMessage {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+}
+
+.playerActions {
+  display: flex;
+  align-items: center;
+}
+
+.inviteButton {
+  background-color: #6750a4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.inviteButton:hover {
+  background-color: #5a4794;
+}
+
+.unavailableText {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.loadingMessage, .errorMessage, .emptyMessage {
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.errorMessage {
+  color: #ff6b6b;
+}
+
+.retryButton {
+  background-color: transparent;
+  color: #6750a4;
+  border: 1px solid #6750a4;
+  border-radius: 4px;
+  padding: 0.3rem 0.8rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+/* Game Invitation Modal */
+.invitationForm {
+  margin-bottom: 1.5rem;
+}
+
+.formSection {
+  margin-bottom: 1.5rem;
+}
+
+.formLabel {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.gameTypeOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gameTypeOption {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.gameTypeOption:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.gameTypeOption.selected {
+  background-color: rgba(103, 80, 164, 0.2);
+  border-color: #6750a4;
+}
+
+.gameTypeIcon {
+  font-size: 1.5rem;
+  margin-right: 1rem;
+}
+
+.gameTypeText {
+  flex: 1;
+}
+
+.gameTypeName {
+  font-weight: 600;
+  color: white;
+  margin-bottom: 0.2rem;
+}
+
+.gameTypeDescription {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.messageTextarea {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: white;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.messageTextarea::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.characterCount {
+  text-align: right;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 0.3rem;
+}
+
+/* Notification Banner */
+.notificationBanner {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  min-width: 400px;
+  max-width: 600px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.notificationContent {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: rgba(40, 40, 40, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.notificationIcon {
+  font-size: 1.5rem;
+  margin-right: 1rem;
+}
+
+.notificationInfo {
+  flex: 1;
+}
+
+.notificationTitle {
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.notificationMessage {
+  color: rgba(255, 255, 255, 0.8);
+  font-style: italic;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.notificationMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.timeRemaining {
+  color: #ff9800;
+}
+
+.colorInfo {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.notificationActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1rem;
+}
+
+.acceptButton {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.acceptButton:hover {
+  background-color: #45a049;
+}
+
+.declineButton {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.declineButton:hover {
+  background-color: #da190b;
+}
+
+.dismissButton {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.2rem;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.dismissButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
 }

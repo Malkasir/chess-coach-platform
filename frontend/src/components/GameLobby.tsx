@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User } from '../services/auth-service';
 import styles from '../styles/shared.module.css';
+import { OnlinePlayersList } from './OnlinePlayersList';
+import { GameInvitationModal, InvitationData } from './GameInvitationModal';
 
 interface GameLobbyProps {
   currentUser: User;
@@ -31,6 +33,49 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   onRoomCodeInputChange,
   onColorPreferenceChange,
 }) => {
+  const [showOnlinePlayers, setShowOnlinePlayers] = useState(false);
+  const [showInvitationModal, setShowInvitationModal] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<{ id: number; name: string } | null>(null);
+
+  const handleInvitePlayer = (playerId: number, playerName: string) => {
+    setSelectedPlayer({ id: playerId, name: playerName });
+    setShowOnlinePlayers(false);
+    setShowInvitationModal(true);
+  };
+
+  const handleSendInvitation = async (invitationData: InvitationData) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('http://localhost:8080/api/invitations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          recipientId: invitationData.recipientId,
+          type: invitationData.type.toUpperCase(),
+          message: invitationData.message,
+          senderColor: invitationData.colorPreference.toUpperCase()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send invitation: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Invitation sent successfully:', result);
+      
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      throw error;
+    }
+  };
   return (
     <div className={styles.app}>
       <header className={styles.header}>
@@ -49,8 +94,10 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
             <>
               <div className={styles.controlsRow}>
                 <div className={styles.colorSelection}>
-                  <label className={styles.label}>Your Color:</label>
+                  <label htmlFor="color-preference" className={styles.label}>Your Color:</label>
                   <select
+                    id="color-preference"
+                    name="colorPreference"
                     value={colorPreference}
                     onChange={(e) => onColorPreferenceChange(e.target.value as 'white' | 'black' | 'random')}
                     className={styles.select}
@@ -63,10 +110,20 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 <button onClick={onCreateGame} className={styles.primaryButton}>
                   Create New Game
                 </button>
+                <button 
+                  onClick={() => setShowOnlinePlayers(true)} 
+                  className={styles.secondaryButton}
+                  style={{ marginLeft: '1rem' }}
+                >
+                  🟢 Find Players
+                </button>
               </div>
               <div className={styles.controlsRow}>
                 <span style={{ margin: '0 1rem' }}>OR</span>
+                <label htmlFor="room-code-input" className="sr-only">Enter Room Code</label>
                 <input
+                  id="room-code-input"
+                  name="roomCode"
                   type="text"
                   placeholder="Enter Room Code (ABC123)"
                   maxLength={6}
@@ -110,6 +167,27 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
           {gameStatus === 'waiting' && <div className={styles.statusCard}>Share this room code with your opponent!</div>}
         </div>
       </div>
+
+      <OnlinePlayersList
+        currentUserId={currentUser.id}
+        onInvitePlayer={handleInvitePlayer}
+        isVisible={showOnlinePlayers}
+        onClose={() => setShowOnlinePlayers(false)}
+      />
+
+      {selectedPlayer && (
+        <GameInvitationModal
+          isVisible={showInvitationModal}
+          playerName={selectedPlayer.name}
+          playerId={selectedPlayer.id}
+          currentUserId={currentUser.id}
+          onSendInvitation={handleSendInvitation}
+          onClose={() => {
+            setShowInvitationModal(false);
+            setSelectedPlayer(null);
+          }}
+        />
+      )}
     </div>
   );
 };

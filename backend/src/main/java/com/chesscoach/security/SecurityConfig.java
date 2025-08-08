@@ -60,6 +60,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/test-db").permitAll()
                 .requestMatchers("/h2-console/**").permitAll() // H2 console for development
                 .requestMatchers("/actuator/health").permitAll() // Health check
+                // Presence and invitation endpoints (require authentication but allow access)
+                .requestMatchers("/api/presence/**").authenticated()
+                .requestMatchers("/api/invitations/**").authenticated()
+                // Game endpoints (existing)
+                .requestMatchers("/api/games/**").authenticated()
                 // WebSocket endpoints
                 .requestMatchers("/chess-websocket/**").permitAll() // WebSocket handshake
                 .requestMatchers("/app/**").permitAll() // WebSocket app destinations
