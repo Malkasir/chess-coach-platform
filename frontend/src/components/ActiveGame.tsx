@@ -3,6 +3,7 @@ import { Chess } from 'chess.js';
 import { User } from '../services/auth-service';
 import { ChessBoard } from './ChessBoard';
 import { VideoCall } from './VideoCall';
+import { AppHeader } from './AppHeader';
 import styles from '../styles/shared.module.css';
 
 interface ActiveGameProps {
@@ -40,15 +41,10 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
 }) => {
   return (
     <div className={styles.app}>
-      <header className={styles.header}>
-        <h1>Chess Coach Platform</h1>
-        <div className={styles.userInfo}>
-          <span>Welcome, {currentUser.firstName} ({currentUser.email})</span>
-          <button onClick={onLogout} className={styles.logoutButton}>
-            Logout
-          </button>
-        </div>
-      </header>
+      <AppHeader 
+        currentUser={currentUser}
+        onLogout={onLogout}
+      />
 
       <div className={styles.container}>
         <div className={styles.controlsPanel}>
@@ -87,7 +83,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
         <div className={styles.gameArea}>
           <VideoCall gameId={gameId} />
           <div className={styles.chessPanel}>
-            <div className={styles.turnIndicator}>
+            <div className={`${styles.turnIndicator} turn-indicator`}>
               {getCurrentTurnDisplay()}
             </div>
             

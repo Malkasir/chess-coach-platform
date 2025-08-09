@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess, Square } from 'chess.js';
 import { debugLog, debugError } from '../utils/debug';
+import '../styles/chessboard-themes.css';
 
 interface ChessBoardProps {
   position: string;
@@ -145,15 +146,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <div style={{ 
-        width: '450px', 
-        margin: '0 auto',
-        border: '2px solid rgba(255,255,255,0.3)',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
-      }}>
-        
+      <div className="chess-board-container">        
         <Chessboard
           position={localPosition}
           onPieceDrop={onDrop}
@@ -162,7 +155,13 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
           boardWidth={450}
           arePiecesDraggable={true}
           customBoardStyle={{
-            borderRadius: '12px'
+            borderRadius: '8px'
+          }}
+          customLightSquareStyle={{ 
+            backgroundColor: 'var(--board-light)' 
+          }}
+          customDarkSquareStyle={{ 
+            backgroundColor: 'var(--board-dark)' 
           }}
         />
       </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User } from '../services/auth-service';
 import styles from '../styles/shared.module.css';
+import { AppHeader } from './AppHeader';
 import { OnlinePlayersList } from './OnlinePlayersList';
 import { GameInvitationModal, InvitationData } from './GameInvitationModal';
 import { apiClient } from '../services/api-client';
@@ -63,15 +64,10 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   };
   return (
     <div className={styles.app}>
-      <header className={styles.header}>
-        <h1>Chess Coach Platform</h1>
-        <div className={styles.userInfo}>
-          <span>Welcome, {currentUser.firstName} ({currentUser.email})</span>
-          <button onClick={onLogout} className={styles.logoutButton}>
-            Logout
-          </button>
-        </div>
-      </header>
+      <AppHeader 
+        currentUser={currentUser}
+        onLogout={onLogout}
+      />
 
       <div className={styles.container}>
         <div className={styles.controlsPanel}>

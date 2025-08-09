@@ -1,0 +1,399 @@
+/* Enhanced Chess Board Theming with Visual Effects */
+
+/* ====================================== */
+/* BASE CHESS BOARD STYLES */
+/* ====================================== */
+.chess-board-container {
+  position: relative;
+  display: inline-block;
+  border-radius: 12px;
+  padding: 8px;
+  background: var(--board-border, #8b4513);
+  box-shadow: var(--drop-shadow);
+  transition: all 0.3s ease;
+}
+
+.chess-board-container::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: conic-gradient(
+    from 0deg,
+    var(--accent-color),
+    transparent,
+    var(--accent-color)
+  );
+  border-radius: 16px;
+  opacity: 0.3;
+  z-index: -1;
+  animation: borderRotate 8s linear infinite;
+}
+
+@keyframes borderRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ====================================== */
+/* THEME-SPECIFIC BOARD STYLES */
+/* ====================================== */
+
+/* Classic Wood Theme */
+[data-theme="classic"] .chess-board-container {
+  background: linear-gradient(135deg, #8b4513 0%, #a0522d 50%, #8b4513 100%);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="classic"] .chess-board-container::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(139, 69, 19, 0.1),
+    rgba(139, 69, 19, 0.1) 2px,
+    transparent 2px,
+    transparent 8px
+  );
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+/* Marble Theme */
+[data-theme="marble"] .chess-board-container {
+  background: linear-gradient(135deg, #2f4f4f 0%, #708090 50%, #2f4f4f 100%);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    inset 0 2px 6px rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="marble"] .chess-board-container::before {
+  background: conic-gradient(
+    from 0deg,
+    #4169e1,
+    #1e90ff,
+    #87ceeb,
+    #4169e1
+  );
+  opacity: 0.4;
+}
+
+/* Neon Cyberpunk Theme */
+[data-theme="neon"] .chess-board-container {
+  background: linear-gradient(135deg, #000 0%, #001428 50%, #000 100%);
+  border: 2px solid var(--accent-color);
+  box-shadow: 
+    0 0 50px rgba(0, 255, 255, 0.4),
+    inset 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
+[data-theme="neon"] .chess-board-container::before {
+  background: conic-gradient(
+    from 0deg,
+    #00ffff,
+    #ff00ff,
+    #ffff00,
+    #00ffff
+  );
+  opacity: 0.6;
+  animation: borderRotate 4s linear infinite;
+}
+
+[data-theme="neon"] .chess-board-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 0, 255, 0.1) 0%, transparent 50%);
+  border-radius: 12px;
+  pointer-events: none;
+  animation: pulseGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGlow {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.7; }
+}
+
+/* Glass Modern Theme */
+[data-theme="glass"] .chess-board-container {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.15),
+    inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="glass"] .chess-board-container::before {
+  background: conic-gradient(
+    from 0deg,
+    rgba(139, 92, 246, 0.5),
+    rgba(236, 72, 153, 0.5),
+    rgba(59, 130, 246, 0.5),
+    rgba(139, 92, 246, 0.5)
+  );
+  opacity: 0.5;
+  filter: blur(2px);
+}
+
+/* Medieval Theme */
+[data-theme="medieval"] .chess-board-container {
+  background: linear-gradient(135deg, #2f1b14 0%, #5d4e37 50%, #2f1b14 100%);
+  border: 3px solid var(--accent-color);
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.8),
+    inset 0 2px 4px rgba(255, 215, 0, 0.2);
+  position: relative;
+}
+
+[data-theme="medieval"] .chess-board-container::before {
+  background: conic-gradient(
+    from 0deg,
+    #ffd700,
+    #ffed4e,
+    #daa520,
+    #ffd700
+  );
+  opacity: 0.5;
+}
+
+[data-theme="medieval"] .chess-board-container::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255, 215, 0, 0.2) 45deg,
+    transparent 90deg
+  );
+  border-radius: 18px;
+  pointer-events: none;
+  animation: medievalGlow 6s ease-in-out infinite alternate;
+}
+
+@keyframes medievalGlow {
+  0% { opacity: 0.3; transform: rotate(0deg); }
+  100% { opacity: 0.6; transform: rotate(180deg); }
+}
+
+/* ====================================== */
+/* PIECE MOVEMENT ANIMATIONS */
+/* ====================================== */
+
+/* Enhanced move highlighting */
+.chess-square-highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--accent-color);
+  opacity: 0.4;
+  border-radius: 4px;
+  animation: highlightPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes highlightPulse {
+  0% { opacity: 0.4; transform: scale(1); }
+  100% { opacity: 0.6; transform: scale(1.05); }
+}
+
+/* Last move indicator */
+.last-move-highlight {
+  background: rgba(255, 215, 0, 0.3);
+  box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+[data-theme="neon"] .last-move-highlight {
+  background: rgba(0, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+}
+
+/* Possible moves indicators */
+.possible-move {
+  position: relative;
+}
+
+.possible-move::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  opacity: 0.6;
+  transform: translate(-50%, -50%);
+  animation: possibleMovePulse 2s ease-in-out infinite;
+}
+
+@keyframes possibleMovePulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+}
+
+/* Capture move indicators */
+.capture-move::before {
+  border: 3px solid var(--error-color);
+  background: transparent;
+  animation: captureMovePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes captureMovePulse {
+  0%, 100% { border-color: var(--error-color); opacity: 0.7; }
+  50% { border-color: var(--warning-color); opacity: 1; }
+}
+
+/* ====================================== */
+/* PIECE SHADOW EFFECTS */
+/* ====================================== */
+.chess-piece {
+  filter: drop-shadow(2px 2px 4px var(--piece-shadow));
+  transition: all 0.2s ease;
+}
+
+.chess-piece:hover {
+  filter: drop-shadow(3px 3px 8px var(--piece-shadow));
+  transform: translateY(-2px);
+}
+
+[data-theme="neon"] .chess-piece {
+  filter: 
+    drop-shadow(2px 2px 4px rgba(0, 255, 255, 0.5))
+    drop-shadow(0 0 8px rgba(255, 0, 255, 0.3));
+}
+
+[data-theme="neon"] .chess-piece:hover {
+  filter: 
+    drop-shadow(3px 3px 8px rgba(0, 255, 255, 0.7))
+    drop-shadow(0 0 15px rgba(255, 0, 255, 0.5));
+}
+
+[data-theme="glass"] .chess-piece {
+  filter: 
+    drop-shadow(1px 1px 3px rgba(0, 0, 0, 0.3))
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.2));
+}
+
+/* ====================================== */
+/* TURN INDICATOR ENHANCEMENTS */
+/* ====================================== */
+.turn-indicator {
+  position: relative;
+  overflow: hidden;
+}
+
+.turn-indicator::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+[data-theme="neon"] .turn-indicator::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 255, 255, 0.4),
+    transparent
+  );
+}
+
+/* ====================================== */
+/* GAME STATUS EFFECTS */
+/* ====================================== */
+.game-victory {
+  animation: victoryGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes victoryGlow {
+  0% { 
+    box-shadow: 0 0 20px var(--success-color);
+    transform: scale(1);
+  }
+  100% { 
+    box-shadow: 0 0 40px var(--success-color);
+    transform: scale(1.02);
+  }
+}
+
+.game-check {
+  animation: checkWarning 1s ease-in-out infinite;
+}
+
+@keyframes checkWarning {
+  0%, 100% { 
+    box-shadow: 0 0 15px var(--error-color);
+    border-color: var(--error-color);
+  }
+  50% { 
+    box-shadow: 0 0 30px var(--warning-color);
+    border-color: var(--warning-color);
+  }
+}
+
+/* ====================================== */
+/* RESPONSIVE BOARD EFFECTS */
+/* ====================================== */
+@media (max-width: 768px) {
+  .chess-board-container::before {
+    animation: none; /* Reduce animations on mobile */
+  }
+  
+  [data-theme="neon"] .chess-board-container::after {
+    animation: none;
+  }
+  
+  .chess-piece:hover {
+    transform: none; /* Disable hover effects on touch devices */
+  }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .chess-board-container::before,
+  .chess-board-container::after,
+  .chess-square-highlight,
+  .possible-move::before,
+  .turn-indicator::before,
+  .game-victory,
+  .game-check {
+    animation: none !important;
+  }
+  
+  .chess-piece:hover {
+    transform: none;
+  }
+}
