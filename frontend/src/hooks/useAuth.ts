@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { AuthService, User } from '../services/auth-service';
+import { debugLog, debugWarn, debugError } from '../utils/debug';
 
 interface AuthState {
   currentUser: User | null;
@@ -69,26 +70,20 @@ export const useAuth = () => {
 
       for (const user of testUsers) {
         try {
-          const response = await fetch(`http://localhost:8080/api/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: user.email,
-              password: 'password123',
-              firstName: user.firstName,
-              lastName: user.lastName
-            })
+          await authServiceRef.current.register({
+            email: user.email,
+            password: 'password123456',
+            firstName: user.firstName,
+            lastName: user.lastName
           });
-          
-          if (response.ok) {
-            console.log(`✅ Created test user: ${user.email}`);
-          } else if (response.status === 400) {
-            // User already exists, which is fine - suppress repetitive logging
+          debugLog(`✅ Created test user: ${user.email}`);
+        } catch (error: any) {
+          // User already exists or other error - suppress repetitive logging
+          if (error.message?.includes('already exists') || error.message?.includes('400')) {
+            // User already exists, which is fine
           } else {
-            console.warn(`⚠️ Unexpected response for ${user.email}:`, response.status);
+            debugWarn(`⚠️ Failed to check/create test user ${user.email}:`, error.message);
           }
-        } catch (error) {
-          console.warn(`⚠️ Failed to check/create test user ${user.email}:`, error);
         }
       }
 
@@ -102,7 +97,7 @@ export const useAuth = () => {
         isAuthenticated
       }));
     } catch (error) {
-      console.error('Failed to initialize test users:', error);
+      debugError('Failed to initialize test users:', error);
     }
   };
 

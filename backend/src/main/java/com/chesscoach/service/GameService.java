@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.Random;
 
@@ -147,6 +148,17 @@ public class GameService {
                 "status", game.getStatus().toString(),
                 "moveHistory", parseJsonArray(game.getMoveHistory())
         );
+    }
+
+    public Map<String, Object> getCurrentGameForUser(Long userId) {
+        // Find the most recent active game where user is either host or guest
+        Optional<Game> activeGame = gameRepository.findActiveGameByUser(userId);
+        
+        if (activeGame.isEmpty()) {
+            return null;
+        }
+        
+        return buildGameStateResponse(activeGame.get());
     }
 
     private String[] parseJsonArray(String jsonArray) {

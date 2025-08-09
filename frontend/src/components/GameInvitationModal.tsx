@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from '../styles/shared.module.css';
 
 interface GameInvitationModalProps {
@@ -29,6 +29,43 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
   const [colorPreference, setColorPreference] = useState<'white' | 'black' | 'random'>('random');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const firstInputRef = useRef<HTMLSelectElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Focus management and keyboard navigation
+  useEffect(() => {
+    if (isVisible && firstInputRef.current) {
+      firstInputRef.current.focus();
+      
+      // Prevent body scroll
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [isVisible]);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isVisible) {
+        onClose();
+      }
+    };
+
+    if (isVisible) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isVisible, onClose]);
+
+  // Handle click outside modal
+  const handleOverlayClick = (event: React.MouseEvent) => {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  };
 
   const handleSendInvitation = async () => {
     if (sending) return;
@@ -89,11 +126,21 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
+    <div 
+      className={styles.modalOverlay} 
+      onClick={handleOverlayClick}
+      role="dialog" 
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <div className={styles.modalContent} ref={modalRef}>
         <div className={styles.modalHeader}>
-          <h2>Invite {playerName} to Play</h2>
-          <button onClick={onClose} className={styles.closeButton}>
+          <h2 id="modal-title">Invite {playerName} to Play</h2>
+          <button 
+            onClick={onClose} 
+            className={styles.closeButton}
+            aria-label="Close modal"
+          >
             ×
           </button>
         </div>
@@ -130,6 +177,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
             <label htmlFor="invitation-color" className={styles.formLabel}>Your Color Preference:</label>
             <div className={styles.colorSelection}>
               <select
+                ref={firstInputRef}
                 id="invitation-color"
                 name="colorPreference"
                 value={colorPreference}
@@ -172,7 +220,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
           <button 
             onClick={handleSendInvitation} 
             className={styles.primaryButton}
-            disabled={sending}
+            disabled={sending || message.length > 500}
           >
             {sending ? 'Sending...' : 'Send Invitation'}
           </button>

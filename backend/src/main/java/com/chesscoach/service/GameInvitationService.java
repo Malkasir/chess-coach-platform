@@ -6,6 +6,7 @@ import com.chesscoach.entity.GameInvitation.InvitationStatus;
 import com.chesscoach.entity.GameInvitation.InvitationType;
 import com.chesscoach.entity.User;
 import com.chesscoach.repository.GameInvitationRepository;
+import com.chesscoach.repository.GameRepository;
 import com.chesscoach.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -24,6 +25,7 @@ public class GameInvitationService {
 
     private final GameInvitationRepository invitationRepository;
     private final UserRepository userRepository;
+    private final GameRepository gameRepository;
     private final GameService gameService;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -31,10 +33,12 @@ public class GameInvitationService {
     public GameInvitationService(
             GameInvitationRepository invitationRepository,
             UserRepository userRepository,
+            GameRepository gameRepository,
             GameService gameService,
             SimpMessagingTemplate messagingTemplate) {
         this.invitationRepository = invitationRepository;
         this.userRepository = userRepository;
+        this.gameRepository = gameRepository;
         this.gameService = gameService;
         this.messagingTemplate = messagingTemplate;
     }
@@ -124,9 +128,22 @@ public class GameInvitationService {
                     hostColorPreference
             );
             
-            // Link the game to the invitation for tracking
+            // Store game reference in invitation for future queries
             String gameId = (String) gameResponse.get("gameId");
-            // Note: We'd need to modify GameService to return the Game entity to link it properly
+            if (gameId != null) {
+                // Find the created game entity and link it to the invitation
+                // This allows both players to find the same game through the invitation
+                Optional<com.chesscoach.entity.Game> gameEntity = gameRepository.findByGameId(gameId);
+                if (gameEntity.isPresent()) {
+                    invitation.setGame(gameEntity.get());
+                    System.out.println("✅ Linked game " + gameId + " to invitation " + invitation.getId());
+                } else {
+                    System.out.println("⚠️ Could not find game entity for gameId: " + gameId);
+                }
+            }
+            
+            // Save the updated invitation with game reference
+            invitation = invitationRepository.save(invitation);
             
             // Notify both users about the game creation
             sendGameCreatedNotification(invitation, gameResponse);
@@ -202,8 +219,17 @@ public class GameInvitationService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getSentInvitationsByUser(Long userId) {
-        List<GameInvitation> invitations = invitationRepository.findPendingInvitationsBySender(userId, LocalDateTime.now());
-        return invitations.stream()
+        // Get all recent invitations sent by the user (not just pending ones)
+        // This allows the sender to detect when their invitations are accepted
+        List<GameInvitation> invitations = invitationRepository.findBySenderIdOrderByCreatedAtDesc(userId);
+        
+        // Filter to only recent invitations (last 24 hours) to avoid returning too much data
+        LocalDateTime yesterday = LocalDateTime.now().minusHours(24);
+        List<GameInvitation> recentInvitations = invitations.stream()
+                .filter(inv -> inv.getCreatedAt().isAfter(yesterday))
+                .toList();
+        
+        return recentInvitations.stream()
                 .map(this::buildInvitationResponse)
                 .toList();
     }
@@ -239,6 +265,19 @@ public class GameInvitationService {
         // Game preferences
         if (invitation.getSenderColor() != null) {
             response.put("senderColor", invitation.getSenderColor().toString().toLowerCase());
+        }
+        
+        // If invitation is accepted and has a linked game, include game info
+        if (invitation.getStatus() == InvitationStatus.ACCEPTED && invitation.getGame() != null) {
+            Game game = invitation.getGame();
+            Map<String, Object> gameInfo = new HashMap<>();
+            gameInfo.put("gameId", game.getGameId());
+            gameInfo.put("roomCode", game.getRoomCode());
+            gameInfo.put("status", game.getStatus().toString().toLowerCase());
+            gameInfo.put("hostColor", game.getHostColor() != null ? game.getHostColor().toString().toLowerCase() : null);
+            gameInfo.put("guestColor", game.getGuestColor() != null ? game.getGuestColor().toString().toLowerCase() : null);
+            response.put("game", gameInfo);
+            System.out.println("✅ Including game info in invitation response: " + game.getGameId());
         }
         
         return response;

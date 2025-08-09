@@ -33,7 +33,7 @@ export class AuthService {
   }
 
   private determineBaseUrl(): string {
-    const envUrl = import.meta.env.VITE_BACKEND_URL;
+    const envUrl = import.meta.env.VITE_API_BASE_URL;
     if (envUrl) {
       return `${envUrl}/api/auth`;
     }
@@ -42,7 +42,7 @@ export class AuthService {
       return 'http://localhost:8080/api/auth';
     }
 
-    console.error('VITE_BACKEND_URL is not set for production build!');
+    console.error('VITE_API_BASE_URL is not set for production build!');
     return 'about:blank';
   }
   
@@ -100,6 +100,13 @@ export class AuthService {
     this.setAuthData(authResponse.token, authResponse.user);
     this.notifyListeners(authResponse.user);
     
+    // Set user as online
+    try {
+      await this.setUserOnline(authResponse.user.id);
+    } catch (error) {
+      console.warn('Failed to set user online:', error);
+    }
+    
     return authResponse;
   }
 
@@ -121,10 +128,28 @@ export class AuthService {
     this.setAuthData(authResponse.token, authResponse.user);
     this.notifyListeners(authResponse.user);
     
+    // Set user as online
+    try {
+      await this.setUserOnline(authResponse.user.id);
+    } catch (error) {
+      console.warn('Failed to set user online:', error);
+    }
+    
     return authResponse;
   }
 
   logout(): void {
+    const currentUser = this.getCurrentUser();
+    
+    // Set user as offline
+    if (currentUser) {
+      try {
+        this.setUserOffline(currentUser.id);
+      } catch (error) {
+        console.warn('Failed to set user offline:', error);
+      }
+    }
+    
     localStorage.removeItem(AuthService.TOKEN_KEY);
     localStorage.removeItem(AuthService.USER_KEY);
     this.notifyListeners(null);
@@ -145,12 +170,31 @@ export class AuthService {
   }
 
   async authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    const token = this.getToken();
+    const headers = this.getAuthHeaders();
+    
+    console.log('🔐 AuthenticatedFetch Debug:', {
+      url,
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+      tokenPreview: token ? `${token.substring(0, 20)}...` : 'null',
+      headers: Object.keys(headers),
+      hasAuthHeader: !!headers.Authorization
+    });
+
     const response = await fetch(url, {
       ...options,
       headers: {
-        ...this.getAuthHeaders(),
+        ...headers,
         ...options.headers,
       },
+    });
+
+    console.log('📡 Response:', {
+      url,
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
     });
 
     // If unauthorized, logout and redirect
@@ -172,6 +216,36 @@ export class AuthService {
     if (index > -1) {
       this.listeners.splice(index, 1);
     }
+  }
+
+  // Presence methods
+  private async setUserOnline(userId: number): Promise<void> {
+    const sessionId = Date.now().toString();
+    await this.authenticatedFetch(`${this.determineApiBaseUrl()}/api/presence/online`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, sessionId }),
+    });
+  }
+
+  private async setUserOffline(userId: number): Promise<void> {
+    await this.authenticatedFetch(`${this.determineApiBaseUrl()}/api/presence/offline`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+  }
+
+  private determineApiBaseUrl(): string {
+    const envUrl = import.meta.env.VITE_API_BASE_URL;
+    if (envUrl) {
+      return envUrl;
+    }
+
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:8080';
+    }
+
+    console.error('VITE_API_BASE_URL is not set for production build!');
+    return 'about:blank';
   }
 
   // Private methods

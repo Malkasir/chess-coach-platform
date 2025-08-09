@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styles from '../styles/shared.module.css';
+import { apiClient } from '../services/api-client';
 
 interface OnlinePlayer {
   userId: number;
@@ -30,41 +31,37 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isVisible) {
       fetchOnlinePlayers();
       const interval = setInterval(fetchOnlinePlayers, 30000); // Refresh every 30 seconds
-      return () => clearInterval(interval);
+      
+      // Focus search input and prevent body scroll
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        clearInterval(interval);
+        document.body.style.overflow = 'unset';
+      };
     }
   }, [isVisible]);
 
-  const fetchOnlinePlayers = async () => {
+  const fetchOnlinePlayers = useCallback(async (searchQuery?: string) => {
     try {
       setLoading(true);
       setError('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const endpoint = searchTerm 
-        ? `/api/presence/search?q=${encodeURIComponent(searchTerm)}`
-        : '/api/presence/online';
-      
-      const response = await fetch(`http://localhost:8080${endpoint}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch online players: ${response.status}`);
-      }
-      
-      const players = await response.json();
+      const currentQuery = searchQuery ?? searchTerm;
+      const players: OnlinePlayer[] = currentQuery.trim() 
+        ? await apiClient.searchPlayers(currentQuery)
+        : await apiClient.getOnlinePlayers();
       
       // Filter out current user
       const filteredPlayers = players.filter((player: OnlinePlayer) => 
@@ -77,21 +74,41 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
     } finally {
       setLoading(false);
     }
+  }, [currentUserId, searchTerm]);
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    
+    // Clear previous timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    // Set new timeout
+    debounceTimeoutRef.current = setTimeout(() => {
+      fetchOnlinePlayers(term);
+    }, 500);
   };
 
-  const handleSearch = async (term: string) => {
-    setSearchTerm(term);
-    if (term.trim()) {
-      // Debounce search
-      setTimeout(() => {
-        if (searchTerm === term) {
-          fetchOnlinePlayers();
-        }
-      }, 500);
-    } else {
-      fetchOnlinePlayers();
+  // Handle escape key and cleanup timeout
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isVisible) {
+        onClose();
+      }
+    };
+
+    if (isVisible) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  };
+    
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [isVisible, onClose]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -129,14 +146,31 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
     return `${diffDays}d ago`;
   };
 
+  // Handle click outside modal
+  const handleOverlayClick = (event: React.MouseEvent) => {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  };
+
   if (!isVisible) return null;
 
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
+    <div 
+      className={styles.modalOverlay} 
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="players-modal-title"
+    >
+      <div className={styles.modalContent} ref={modalRef}>
         <div className={styles.modalHeader}>
-          <h2>Online Players ({onlinePlayers.length})</h2>
-          <button onClick={onClose} className={styles.closeButton}>
+          <h2 id="players-modal-title">Online Players ({onlinePlayers.length})</h2>
+          <button 
+            onClick={onClose} 
+            className={styles.closeButton}
+            aria-label="Close players list"
+          >
             ×
           </button>
         </div>
@@ -144,6 +178,7 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
         <div className={styles.searchContainer}>
           <label htmlFor="player-search" className="sr-only">Search players</label>
           <input
+            ref={searchInputRef}
             id="player-search"
             name="playerSearch"
             type="text"
@@ -162,7 +197,7 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
           {error && (
             <div className={styles.errorMessage}>
               {error}
-              <button onClick={fetchOnlinePlayers} className={styles.retryButton}>
+              <button onClick={() => fetchOnlinePlayers()} className={styles.retryButton}>
                 Retry
               </button>
             </div>
@@ -227,7 +262,7 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
           <button onClick={onClose} className={styles.secondaryButton}>
             Close
           </button>
-          <button onClick={fetchOnlinePlayers} className={styles.primaryButton}>
+          <button onClick={() => fetchOnlinePlayers()} className={styles.primaryButton}>
             Refresh
           </button>
         </div>

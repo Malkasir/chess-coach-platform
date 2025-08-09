@@ -17,6 +17,7 @@ interface ActiveGameProps {
   getCurrentTurnDisplay: () => string;
   onMove: (move: string, fen: string) => void;
   onResetGame: () => void;
+  onExitGame: () => void;
   onCopyRoomCode: () => void;
   onLogout: () => void;
 }
@@ -33,6 +34,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
   getCurrentTurnDisplay,
   onMove,
   onResetGame,
+  onExitGame,
   onCopyRoomCode,
   onLogout,
 }) => {
@@ -54,6 +56,9 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
             <button onClick={onResetGame} className={styles.secondaryButton}>
               New Game
             </button>
+            <button onClick={onExitGame} className={styles.secondaryButton} style={{ marginLeft: '1rem', backgroundColor: '#dc3545' }}>
+              Exit Game
+            </button>
             {gameStatus === 'waiting' && roomCode && (
               <>
                 <input
@@ -62,6 +67,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                   value={roomCode}
                   readOnly
                   className={styles.input}
+                  style={{ marginLeft: '1rem' }}
                 />
                 <button id="copy-button" onClick={onCopyRoomCode} className={styles.secondaryButton}>
                   Copy Code

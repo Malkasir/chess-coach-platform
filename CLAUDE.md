@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a chess coaching platform with video calling capabilities, built as a full-stack application:
 
-- **Frontend**: Lit-based web components with TypeScript, using Vite for development and building
+- **Frontend**: React-based application with TypeScript, using Vite for development and building
 - **Backend**: Spring Boot application with Java 17, Maven for dependency management
-- **Chess Integration**: Uses chess.js for game logic and chessboard-element for the interactive board
+- **Chess Integration**: Uses chess.js for game logic and react-chessboard for the interactive board
 - **Video Calling**: Integrated Jitsi Meet for real-time communication
 
 ## Development Commands
@@ -19,6 +19,11 @@ This is a chess coaching platform with video calling capabilities, built as a fu
 - **Type checking**: `npm run typecheck` (TypeScript validation without emitting files)
 - **Custom elements analysis**: `npm run analyze` (generates custom-elements.json)
 
+### Environment Setup
+- Copy `.env.example` to `.env` and configure:
+  - `VITE_API_BASE_URL`: Backend API URL (defaults to http://localhost:8080)
+  - `VITE_DEBUG`: Enable/disable debug logging (true for development)
+
 ### Backend (located in `backend/`)
 - **Run application**: `./mvnw spring-boot:run` (starts Spring Boot on port 8080)
 - **Build**: `./mvnw clean compile` or `./mvnw package`
@@ -27,12 +32,20 @@ This is a chess coaching platform with video calling capabilities, built as a fu
 ## Architecture
 
 ### Frontend Architecture
-- **Main App**: `ChessCoachApp.ts` - Root component containing chess board and video call
+- **Main App**: `ChessCoachApp.tsx` - Root React component managing game state and authentication
 - **Components**: 
-  - `video-call.ts` - Jitsi Meet integration for video calling
-  - Uses `chessboard-element` for interactive chess board with drag-and-drop
+  - `VideoCall.tsx` - Jitsi Meet integration for video calling
+  - `ChessBoard.tsx` - Interactive chess board using react-chessboard with drag-and-drop
+  - `GameLobby.tsx` - Game creation and joining interface
+  - `OnlinePlayersList.tsx` - Player discovery and invitation system
+  - `GameInvitationModal.tsx` - Modal for sending game invitations
+  - `NotificationBanner.tsx` - Real-time invitation notifications
+  - `PageHeader.tsx` - Consistent navigation header
+  - `Toast.tsx` - Centralized error and success notifications
 - **Chess Logic**: Uses chess.js library for move validation and game state management
-- **Styling**: CSS-in-JS with Lit, no shadow DOM (uses `createRenderRoot()` override)
+- **Styling**: CSS Modules with comprehensive design system and CSS variables
+- **State Management**: React hooks (useState, useEffect, useCallback) with custom hooks
+- **API Integration**: Centralized API client with environment-based URLs and error handling
 
 ### Backend Architecture
 - **Main Class**: `BackendApplication.java` - Spring Boot entry point with basic REST controller
@@ -61,8 +74,9 @@ This is a chess coaching platform with video calling capabilities, built as a fu
 ## Technology Decisions & Cost Optimization
 
 ### Current Stack Rationale
-- **Lit Elements**: Lightweight, no licensing costs
+- **React + TypeScript**: Modern, well-supported frontend framework with excellent tooling
 - **chess.js**: Free, proven chess logic library
+- **react-chessboard**: React wrapper for interactive chess board with drag-and-drop
 - **Jitsi Meet**: Free video calling up to needed scale
 - **Spring Boot**: Free, robust backend framework
 
@@ -84,8 +98,32 @@ This is a chess coaching platform with video calling capabilities, built as a fu
 
 ## Important Notes
 
-- Frontend uses ES modules and follows open-wc recommendations
+- Frontend follows modern React patterns with hooks and TypeScript
+- Components implement accessibility features (ARIA labels, keyboard navigation, focus management)
+- API calls are centralized with proper error handling and user-friendly messages
+- Debug logging is environment-gated for production performance
+- Modal components include proper focus trapping and escape key handling
+- Responsive design supports mobile and desktop experiences
+- CSS variables enable easy theming (light mode ready)
 - Backend is set up for WebSocket integration but controllers are not yet implemented
 - Chess moves are validated client-side before allowing piece placement
 - The application supports promotion (defaults to queen) and standard chess rules
 - Total estimated monthly cost: $0-6 for first 100 users
+
+## Recent Improvements
+
+### UX & Design System
+- **Design System**: Comprehensive CSS variables for consistent theming
+- **Typography**: Defined typography scale with consistent font weights and sizes
+- **Button System**: Enhanced buttons with disabled, loading, and hover states
+- **Responsive Layout**: Mobile-first design with flexible game area layout
+- **Toast System**: Centralized error/success notifications with auto-dismiss
+- **Accessibility**: Focus management, ARIA labels, keyboard navigation throughout
+
+### Performance & Developer Experience
+- **Smart Polling**: Visibility-aware invitation polling reduces battery usage
+- **Error Handling**: User-friendly error messages based on HTTP status codes
+- **Debug System**: Environment-based logging (production vs development)
+- **API Client**: Centralized fetch wrapper with consistent error handling
+- **Component Library**: Reusable components (PageHeader, Toast, etc.)
+- **Input Validation**: Enhanced form inputs with error states and focus indicators

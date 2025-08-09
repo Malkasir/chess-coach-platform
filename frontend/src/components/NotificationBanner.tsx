@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from '../styles/shared.module.css';
 
 interface GameInvitation {
@@ -26,6 +26,24 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
   onDecline,
   onDismiss,
 }) => {
+  const [, forceUpdate] = useState({});
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('🔔 NotificationBanner received invitation:', invitation);
+  }, [invitation]);
+  
+  // Force re-render every 30 seconds to update time remaining
+  useEffect(() => {
+    if (!invitation) return;
+    
+    const interval = setInterval(() => {
+      forceUpdate({});
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [invitation]);
+
   if (!invitation) return null;
 
   const getTypeIcon = (type: string) => {
@@ -52,8 +70,8 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
     const diffMs = expires.getTime() - now.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     
-    if (diffMins <= 0) return 'Expired';
-    if (diffMins < 60) return `${diffMins}m left`;
+    if (diffMs <= 0) return 'Expired';
+    if (diffMins < 60) return `${Math.max(0, diffMins)}m left`;
     
     const diffHours = Math.floor(diffMins / 60);
     return `${diffHours}h ${diffMins % 60}m left`;

@@ -24,6 +24,9 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     @Query("SELECT g FROM Game g WHERE g.host = :user OR g.guest = :user")
     List<Game> findByHostOrGuest(User user);
     
+    @Query("SELECT g FROM Game g WHERE (g.host.id = :userId OR g.guest.id = :userId) AND g.status IN ('ACTIVE', 'WAITING_FOR_GUEST') ORDER BY g.updatedAt DESC LIMIT 1")
+    Optional<Game> findActiveGameByUser(Long userId);
+    
     List<Game> findByStatus(Game.GameStatus status);
     
     @Query("SELECT g FROM Game g WHERE g.host = :host AND g.status = :status")

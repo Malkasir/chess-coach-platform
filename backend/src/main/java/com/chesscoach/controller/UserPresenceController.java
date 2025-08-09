@@ -60,6 +60,26 @@ public class UserPresenceController {
         }
     }
 
+    @PostMapping("/online")
+    public ResponseEntity<Map<String, Object>> setOnline(@RequestBody SetOnlineRequest request) {
+        try {
+            presenceService.setUserOnline(request.getUserId(), request.getSessionId());
+            return ResponseEntity.ok(Map.of("message", "User set online successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/offline")
+    public ResponseEntity<Map<String, Object>> setOffline(@RequestBody SetOfflineRequest request) {
+        try {
+            presenceService.setUserOffline(request.getUserId());
+            return ResponseEntity.ok(Map.of("message", "User set offline successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/status")
     public ResponseEntity<Map<String, Object>> updateStatus(@RequestBody UpdateStatusRequest request) {
         try {
@@ -67,6 +87,39 @@ public class UserPresenceController {
             return ResponseEntity.ok(Map.of("message", "Status updated successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    public static class SetOnlineRequest {
+        private Long userId;
+        private String sessionId;
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
+        public String getSessionId() {
+            return sessionId;
+        }
+
+        public void setSessionId(String sessionId) {
+            this.sessionId = sessionId;
+        }
+    }
+
+    public static class SetOfflineRequest {
+        private Long userId;
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
         }
     }
 

@@ -47,6 +47,52 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     };
   }, [authService]);
 
+  // Restore game state on page reload if user is in an active game
+  useEffect(() => {
+    const restoreGameState = async () => {
+      if (!currentUser) return;
+
+      try {
+        // Check if user is in an active game
+        const response = await authService.authenticatedFetch(
+          `${gameServiceRef.current.getBaseUrl()}/api/games/user/${currentUser.id}/current`
+        );
+
+        if (response.ok) {
+          const activeGame = await response.json();
+          if (activeGame && activeGame.gameId) {
+            console.log('🔄 Restoring game state:', activeGame);
+            
+            // Determine if user is host or guest
+            const isHost = activeGame.hostId === currentUser.id;
+            const playerColor = isHost ? activeGame.hostColor : activeGame.guestColor;
+            
+            // Restore game state
+            setGameState(prev => ({
+              ...prev,
+              playerId: currentUser.id.toString(),
+              isHost,
+              gameId: activeGame.gameId,
+              roomCode: activeGame.roomCode,
+              playerColor: playerColor?.toLowerCase() as 'white' | 'black',
+              gameStatus: 'active'
+            }));
+
+            // Reconnect to WebSocket
+            await gameServiceRef.current.joinGame(activeGame.gameId, currentUser.id.toString(), isHost);
+            console.log('🔌 Reconnected to existing game');
+          }
+        }
+      } catch (error) {
+        console.log('No active game to restore:', error);
+      }
+    };
+
+    if (currentUser && authService && gameState.gameStatus === 'disconnected') {
+      restoreGameState();
+    }
+  }, [currentUser, authService]);
+
   const handleGameMessage = (message: GameMessage) => {
     console.log('📥 Received game message:', message);
     
@@ -227,12 +273,65 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     }));
   };
 
+  const joinGameFromInvitation = async (gameId: string, roomCode: string, playerColor: 'white' | 'black', isHost: boolean = false) => {
+    try {
+      const playerId = currentUser?.id.toString();
+      if (!playerId) return;
+
+      setGameState(prev => ({
+        ...prev,
+        playerId,
+        isHost,
+        gameId,
+        roomCode,
+        playerColor,
+        gameStatus: 'active'
+      }));
+
+      // Connect to WebSocket for real-time updates
+      await gameServiceRef.current.joinGame(gameId, playerId, isHost);
+      console.log(`🔌 ${isHost ? 'Host' : 'Guest'} connected to WebSocket for game ${gameId}`);
+      
+    } catch (error) {
+      console.error('Failed to join game from invitation:', error);
+    }
+  };
+
+  const exitGame = async () => {
+    try {
+      // Disconnect from WebSocket
+      gameServiceRef.current.disconnect();
+      
+      // Reset game state
+      setGameState(prev => ({
+        ...prev,
+        gameId: '',
+        roomCode: '',
+        playerId: '',
+        isHost: false,
+        gameStatus: 'disconnected',
+        position: 'start',
+        playerColor: null,
+        moveHistory: []
+      }));
+      
+      // Reset chess engine
+      gameRef.current = new Chess();
+      
+      console.log('🚪 Exited game successfully');
+    } catch (error) {
+      console.error('Error exiting game:', error);
+    }
+  };
+
   return {
     gameState,
     gameRef: gameRef.current,
     createGame,
     joinByRoomCode,
+    joinGameFromInvitation,
     resetGame,
+    exitGame,
     makeMove,
     isMyTurn,
     getCurrentTurnDisplay,

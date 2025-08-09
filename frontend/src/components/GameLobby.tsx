@@ -3,6 +3,8 @@ import { User } from '../services/auth-service';
 import styles from '../styles/shared.module.css';
 import { OnlinePlayersList } from './OnlinePlayersList';
 import { GameInvitationModal, InvitationData } from './GameInvitationModal';
+import { apiClient } from '../services/api-client';
+import { debugLog, debugError } from '../utils/debug';
 
 interface GameLobbyProps {
   currentUser: User;
@@ -45,34 +47,17 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
   const handleSendInvitation = async (invitationData: InvitationData) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch('http://localhost:8080/api/invitations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          recipientId: invitationData.recipientId,
-          type: invitationData.type.toUpperCase(),
-          message: invitationData.message,
-          senderColor: invitationData.colorPreference.toUpperCase()
-        })
+      const result = await apiClient.sendInvitation({
+        senderId: currentUser.id,
+        recipientId: invitationData.recipientId,
+        type: invitationData.type.toUpperCase(),
+        message: invitationData.message,
+        colorPreference: invitationData.colorPreference.toUpperCase()
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to send invitation: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('Invitation sent successfully:', result);
       
+      debugLog('Invitation sent successfully:', result);
     } catch (error) {
-      console.error('Error sending invitation:', error);
+      debugError('Error sending invitation:', error);
       throw error;
     }
   };

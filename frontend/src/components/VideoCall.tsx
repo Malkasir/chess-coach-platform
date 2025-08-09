@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { debugError } from '../utils/debug';
 
 interface VideoCallProps {
   gameId: string;
@@ -6,42 +7,72 @@ interface VideoCallProps {
 
 export const VideoCall: React.FC<VideoCallProps> = ({ gameId }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const apiRef = useRef<any>(null);
+  const scriptLoadedRef = useRef<boolean>(false);
+
+  // Load Jitsi script once globally
+  const loadJitsiScript = () => {
+    if (scriptLoadedRef.current || document.querySelector('script[src*="external_api.js"]')) {
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://meet.jit.si/external_api.js';
+      script.onload = () => {
+        scriptLoadedRef.current = true;
+        resolve();
+      };
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  };
 
   useEffect(() => {
     if (!gameId || !containerRef.current) return;
 
-    // Initialize Jitsi Meet
-    const script = document.createElement('script');
-    script.src = 'https://meet.jit.si/external_api.js';
-    script.onload = () => {
-      if (containerRef.current && (window as any).JitsiMeetExternalAPI) {
-        const domain = 'meet.jit.si';
-        const options = {
-          roomName: `chess-coach-${gameId}`,
-          width: 400,
-          height: 300,
-          parentNode: containerRef.current,
-          configOverwrite: {
-            startWithAudioMuted: true,
-            startWithVideoMuted: false,
-            prejoinPageEnabled: false
-          },
-          interfaceConfigOverwrite: {
-            TOOLBAR_BUTTONS: [
-              'microphone', 'camera', 'hangup', 'settings'
-            ],
-            SETTINGS_SECTIONS: ['devices', 'language']
+    const initJitsi = async () => {
+      try {
+        await loadJitsiScript();
+        
+        if (containerRef.current && (window as any).JitsiMeetExternalAPI) {
+          // Dispose previous instance if exists
+          if (apiRef.current) {
+            apiRef.current.dispose();
           }
-        };
 
-        new (window as any).JitsiMeetExternalAPI(domain, options);
+          const domain = 'meet.jit.si';
+          const options = {
+            roomName: `chess-coach-${gameId}`,
+            width: '100%',
+            height: 300,
+            parentNode: containerRef.current,
+            configOverwrite: {
+              startWithAudioMuted: true,
+              startWithVideoMuted: false,
+              prejoinPageEnabled: false
+            },
+            interfaceConfigOverwrite: {
+              TOOLBAR_BUTTONS: [
+                'microphone', 'camera', 'hangup', 'settings'
+              ],
+              SETTINGS_SECTIONS: ['devices', 'language']
+            }
+          };
+
+          apiRef.current = new (window as any).JitsiMeetExternalAPI(domain, options);
+        }
+      } catch (error) {
+        debugError('Failed to load Jitsi API:', error);
       }
     };
-    document.head.appendChild(script);
+
+    initJitsi();
 
     return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
+      if (apiRef.current) {
+        apiRef.current.dispose();
+        apiRef.current = null;
       }
     };
   }, [gameId]);
@@ -59,7 +90,8 @@ export const VideoCall: React.FC<VideoCallProps> = ({ gameId }) => {
 
 const styles = {
   container: {
-    width: '400px',
+    width: '100%',
+    maxWidth: '400px',
     height: '300px',
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: '12px',

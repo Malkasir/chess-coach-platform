@@ -59,6 +59,20 @@ public class GameController {
         }
     }
 
+    @GetMapping("/user/{userId}/current")
+    public ResponseEntity<?> getCurrentGameForUser(@PathVariable Long userId) {
+        try {
+            Map<String, Object> currentGame = gameService.getCurrentGameForUser(userId);
+            if (currentGame != null) {
+                return ResponseEntity.ok(currentGame);
+            } else {
+                return ResponseEntity.ok(Map.of("message", "No active game found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     public static class CreateGameRequest {
         private String hostId;
         private String colorPreference = "random"; // default to random
