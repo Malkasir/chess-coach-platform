@@ -4,6 +4,8 @@ import styles from '../styles/shared.module.css';
 import { AppHeader } from './AppHeader';
 import { OnlinePlayersList } from './OnlinePlayersList';
 import { GameInvitationModal, InvitationData } from './GameInvitationModal';
+import { AIPersonalitySelector } from './AIPersonalitySelector';
+import { ChessPersonality } from '../types/personality.types';
 import { apiClient } from '../services/api-client';
 import { debugLog, debugError } from '../utils/debug';
 
@@ -38,6 +40,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 }) => {
   const [showOnlinePlayers, setShowOnlinePlayers] = useState(false);
   const [showInvitationModal, setShowInvitationModal] = useState(false);
+  const [showAISelector, setShowAISelector] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<{ id: number; name: string } | null>(null);
 
   const handleInvitePlayer = (playerId: number, playerName: string) => {
@@ -61,6 +64,14 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
       debugError('Error sending invitation:', error);
       throw error;
     }
+  };
+
+  const handleAIGameStart = (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => {
+    debugLog('Starting AI game:', { personality: personality.name, userColor });
+    
+    // TODO: Implement AI game creation logic
+    // For now, just show an alert
+    alert(`Starting game vs ${personality.name}! You are playing as ${userColor}. AI integration coming soon...`);
   };
   return (
     <div className={styles.app}>
@@ -97,6 +108,13 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   style={{ marginLeft: '1rem' }}
                 >
                   🟢 Find Players
+                </button>
+                <button 
+                  onClick={() => setShowAISelector(true)} 
+                  className={styles.primaryButton}
+                  style={{ marginLeft: '1rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                >
+                  🤖 Play vs AI
                 </button>
               </div>
               <div className={styles.controlsRow}>
@@ -169,6 +187,12 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
           }}
         />
       )}
+
+      <AIPersonalitySelector
+        isVisible={showAISelector}
+        onClose={() => setShowAISelector(false)}
+        onSelectPersonality={handleAIGameStart}
+      />
     </div>
   );
 };
