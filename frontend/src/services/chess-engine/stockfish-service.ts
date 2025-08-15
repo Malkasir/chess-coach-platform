@@ -45,9 +45,14 @@ export class StockfishService {
     try {
       debugLog('Initializing Stockfish engine...');
       
-      // For now, let's use a mock implementation to test the integration
-      // Later we can implement the full Stockfish integration
-      this.worker = await this.createMockWorker();
+      // Try to use real Stockfish, fall back to mock if it fails
+      try {
+        this.worker = await this.createStockfishWorker();
+        debugLog('Real Stockfish engine loaded successfully');
+      } catch (error) {
+        debugLog('Failed to load real Stockfish, using mock engine:', error);
+        this.worker = await this.createMockWorker();
+      }
 
       this.worker.onmessage = (event) => {
         this.handleEngineMessage(event.data);
@@ -67,10 +72,34 @@ export class StockfishService {
     }
   }
 
+  private async createStockfishWorker(): Promise<Worker> {
+    // For a real Stockfish implementation, we would need to properly load the WebAssembly
+    // For now, let's create an improved mock that's more realistic
+    debugLog('Real Stockfish not implemented yet, using enhanced mock');
+    throw new Error('Real Stockfish implementation pending - using mock for development');
+  }
+
   private async createMockWorker(): Promise<Worker> {
     // Create a simple mock worker for testing
     const workerCode = `
       let isReady = false;
+      let currentPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+      
+      // Simple position-aware move generation for testing
+      function generateMockMove(fen) {
+        const parts = fen.split(' ');
+        const turn = parts[1]; // 'w' for white, 'b' for black
+        
+        // Basic opening moves for each color
+        const whiteMoves = ['e2e4', 'g1f3', 'd2d4', 'b1c3', 'f1c4', 'e1g1'];
+        const blackMoves = ['e7e5', 'g8f6', 'd7d5', 'b8c6', 'f8c5', 'e8g8'];
+        
+        const availableMoves = turn === 'w' ? whiteMoves : blackMoves;
+        const randomMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        
+        console.log('Mock engine generating move for turn:', turn, '-> move:', randomMove);
+        return randomMove;
+      }
       
       onmessage = function(e) {
         const command = e.data;
@@ -88,13 +117,16 @@ export class StockfishService {
           } else if (command.startsWith('go')) {
             // Mock thinking for a move
             setTimeout(() => {
-              const moves = ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'd2d4', 'exd4'];
-              const randomMove = moves[Math.floor(Math.random() * moves.length)];
-              postMessage('bestmove ' + randomMove);
+              const move = generateMockMove(currentPosition);
+              postMessage('bestmove ' + move);
             }, 500);
           } else if (command.startsWith('position')) {
-            // Acknowledge position
-            console.log('Position set:', command);
+            // Extract and store the FEN position
+            const fenMatch = command.match(/position fen (.+?)(?:\s+moves|$)/);
+            if (fenMatch) {
+              currentPosition = fenMatch[1];
+              console.log('Position updated to:', currentPosition);
+            }
           } else if (command.startsWith('setoption')) {
             // Acknowledge option setting
             console.log('Option set:', command);

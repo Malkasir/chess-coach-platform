@@ -116,12 +116,53 @@ export class ChessAIService {
       // Get the best move from the engine
       const engineMove = await this.stockfish.getBestMove();
 
-      // Validate and make the move
-      const move = this.currentGame.chess.move({
+      // Validate the move before attempting to make it
+      const legalMoves = this.currentGame.chess.moves({ verbose: true });
+      const isValidMove = legalMoves.some(move => 
+        move.from === engineMove.from && move.to === engineMove.to
+      );
+
+      if (!isValidMove) {
+        debugError('Engine returned invalid move:', engineMove);
+        debugLog('Legal moves available:', legalMoves.map(m => `${m.from}-${m.to}`));
+        
+        // Fallback: select a random legal move
+        const randomMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+        debugLog('Using fallback random move:', randomMove);
+        
+        const fallbackMove = this.currentGame.chess.move(randomMove);
+        if (fallbackMove) {
+          this.currentGame.isAITurn = false;
+          this.currentGame.session.stats.movesPlayed++;
+
+          if (this.currentGame.chess.isGameOver()) {
+            this.currentGame.gameActive = false;
+            debugLog('Game over');
+          }
+
+          return {
+            from: fallbackMove.from,
+            to: fallbackMove.to,
+            promotion: fallbackMove.promotion,
+            san: fallbackMove.san,
+            uci: fallbackMove.from + fallbackMove.to + (fallbackMove.promotion || '')
+          };
+        }
+        return null;
+      }
+
+      // Make the valid move
+      const moveOptions: any = {
         from: engineMove.from,
-        to: engineMove.to,
-        promotion: engineMove.promotion || 'q'
-      });
+        to: engineMove.to
+      };
+      
+      // Only add promotion if it's actually provided by the engine
+      if (engineMove.promotion) {
+        moveOptions.promotion = engineMove.promotion;
+      }
+      
+      const move = this.currentGame.chess.move(moveOptions);
 
       if (move) {
         debugLog('AI played:', move.san);
@@ -142,7 +183,7 @@ export class ChessAIService {
         };
       }
 
-      debugError('Invalid move from AI:', engineMove);
+      debugError('Failed to make validated move:', engineMove);
       return null;
 
     } catch (error) {
@@ -202,11 +243,17 @@ export class ChessAIService {
 
     try {
       // Validate and make the player move
-      const chessMove = this.currentGame.chess.move({
+      const moveOptions: any = {
         from: move.from,
-        to: move.to,
-        promotion: move.promotion || 'q'
-      });
+        to: move.to
+      };
+      
+      // Only add promotion if it's actually provided
+      if (move.promotion) {
+        moveOptions.promotion = move.promotion;
+      }
+      
+      const chessMove = this.currentGame.chess.move(moveOptions);
 
       if (chessMove) {
         debugLog('Player played:', chessMove.san);

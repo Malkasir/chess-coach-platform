@@ -285,8 +285,15 @@ export const ChessCoachAppReact: React.FC = () => {
               debugLog('🤖 AI opening move:', aiMove);
               const updatedGameState = aiServiceInstance.getCurrentGame();
               if (updatedGameState) {
-                updateGameField('position', updatedGameState.chess.fen());
-                debugLog('✅ Game state updated after AI opening move');
+                const newFEN = updatedGameState.chess.fen();
+                updateGameField('position', newFEN);
+                // CRITICAL: Also update the gameRef used by isMyTurn()
+                gameRef.load(newFEN);
+                debugLog('✅ Game state and gameRef updated after AI opening move', { 
+                  newFEN, 
+                  turn: gameRef.turn(),
+                  isMyTurn: isMyTurn() 
+                });
               }
             }
           } catch (error) {
@@ -330,8 +337,15 @@ export const ChessCoachAppReact: React.FC = () => {
                 // Update game state with AI move
                 const aiGameState = aiService.getCurrentGame();
                 if (aiGameState) {
-                  updateGameField('position', aiGameState.chess.fen());
-                  debugLog('✅ Game state updated after AI move');
+                  const newFEN = aiGameState.chess.fen();
+                  updateGameField('position', newFEN);
+                  // CRITICAL: Also update the gameRef used by isMyTurn()
+                  gameRef.load(newFEN);
+                  debugLog('✅ Game state and gameRef updated after AI move', { 
+                    newFEN, 
+                    turn: gameRef.turn(),
+                    isMyTurn: isMyTurn() 
+                  });
                 }
               }
             } catch (error) {
