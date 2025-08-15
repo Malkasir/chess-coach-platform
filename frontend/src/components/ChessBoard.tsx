@@ -9,7 +9,7 @@ interface ChessBoardProps {
   game: Chess;
   playerColor: 'white' | 'black' | null;
   isMyTurn: () => boolean;
-  onMove: (move: string, fen: string) => void;
+  onMove: (move: string, fen: string, moveObj?: { from: string; to: string; promotion?: string }) => void;
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({
@@ -79,7 +79,11 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     
     // Don't modify the original game object here - let the parent handle state updates
     // The onMove callback will update the game state and re-render with new position
-    onMove(move.san, newFen);
+    onMove(move.san, newFen, {
+      from: move.from,
+      to: move.to,
+      promotion: move.promotion
+    });
     
     return true;
   }, [localPosition, playerColor, isMyTurn, onMove]);

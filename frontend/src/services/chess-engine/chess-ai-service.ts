@@ -22,6 +22,8 @@ export interface AIGameState {
   session: GameSession;
   isAITurn: boolean;
   gameActive: boolean;
+  aiColor: 'white' | 'black';
+  userColor: 'white' | 'black';
 }
 
 export class ChessAIService {
@@ -44,7 +46,10 @@ export class ChessAIService {
         ? (Math.random() < 0.5 ? 'white' : 'black')
         : config.userColor;
 
+      const aiColor: 'white' | 'black' = userColor === 'white' ? 'black' : 'white';
+
       debugLog('User will play as:', userColor);
+      debugLog('AI will play as:', aiColor);
 
       // Initialize chess game
       const chess = new Chess(config.fen);
@@ -74,7 +79,9 @@ export class ChessAIService {
         chess,
         session,
         isAITurn: userColor === 'black', // AI goes first if user is black
-        gameActive: true
+        gameActive: true,
+        aiColor,
+        userColor
       };
 
       debugLog('AI game created successfully:', {
@@ -145,10 +152,51 @@ export class ChessAIService {
   }
 
   /**
-   * Process a player move and prepare for AI response
+   * Update AI game state with new position after player move
+   */
+  public updatePosition(fen: string): boolean {
+    debugLog('🎯 Updating AI game position:', fen);
+    
+    if (!this.currentGame || !this.currentGame.gameActive) {
+      debugLog('❌ Cannot update position - no active game');
+      return false;
+    }
+
+    try {
+      // Update the AI's chess game to match the new position
+      this.currentGame.chess.load(fen);
+      
+      // Update turn state based on whose turn it is and what color the AI is playing
+      const turn = this.currentGame.chess.turn(); // 'w' for white, 'b' for black
+      const aiTurnIndicator = this.currentGame.aiColor === 'white' ? 'w' : 'b';
+      this.currentGame.isAITurn = (turn === aiTurnIndicator);
+      
+      debugLog('✅ Position updated:', {
+        fen,
+        turn,
+        isAITurn: this.currentGame.isAITurn
+      });
+      
+      return true;
+    } catch (error) {
+      debugError('❌ Failed to update position:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Process a player move and prepare for AI response (DEPRECATED - use updatePosition instead)
    */
   public processPlayerMove(move: { from: string; to: string; promotion?: string }): boolean {
+    debugLog('🎯 Processing player move:', move);
+    debugLog('🎮 Current game state:', {
+      hasGame: !!this.currentGame,
+      isAITurn: this.currentGame?.isAITurn,
+      gameActive: this.currentGame?.gameActive
+    });
+
     if (!this.currentGame || this.currentGame.isAITurn || !this.currentGame.gameActive) {
+      debugLog('❌ Cannot process player move - invalid state');
       return false;
     }
 

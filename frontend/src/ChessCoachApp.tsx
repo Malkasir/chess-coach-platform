@@ -302,23 +302,22 @@ export const ChessCoachAppReact: React.FC = () => {
   };
 
   // AI Move Handler - wraps the regular move handler to also trigger AI responses
-  const handleAIMove = async (move: string, fen: string) => {
-    debugLog('🎯 Player move in AI game:', { move, fen });
+  const handleAIMove = async (move: string, fen: string, moveObj?: { from: string; to: string; promotion?: string }) => {
+    debugLog('🎯 Player move in AI game:', { move, fen, moveObj });
     
     // First, handle the player move normally
     makeMove(move, fen);
     
-    // If there's an AI service and it's the AI's turn, make AI move
+    // If there's an AI service, update its position and check if AI should move
     if (aiService && aiGameState) {
       try {
-        // Process player move in AI service
-        const moveProcessed = aiService.processPlayerMove({
-          from: move.slice(0, 2),
-          to: move.slice(2, 4),
-          promotion: move.length > 4 ? move.slice(4) : undefined
-        });
+        // Update AI service with the new board position
+        const positionUpdated = aiService.updatePosition(fen);
         
-        if (moveProcessed && aiService.isAITurn()) {
+        debugLog('🔍 Position updated result:', positionUpdated);
+        debugLog('🔍 Is AI turn after move?', aiService.isAITurn());
+        
+        if (positionUpdated && aiService.isAITurn()) {
           debugLog('🤖 AI turn - thinking...');
           
           // Wait a bit for dramatic effect
