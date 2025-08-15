@@ -42,8 +42,11 @@ export class AuthService {
       return 'http://localhost:8080/api/auth';
     }
 
-    console.error('VITE_API_BASE_URL is not set for production build!');
-    return 'about:blank';
+    // Smart production fallback - try to guess backend URL
+    const currentHost = window.location.origin;
+    const backendUrl = currentHost.replace('frontend', 'backend');
+    console.warn('VITE_API_BASE_URL not set, trying fallback:', backendUrl);
+    return `${backendUrl}/api/auth`;
   }
   
   private listeners: ((user: User | null) => void)[] = [];
@@ -244,8 +247,11 @@ export class AuthService {
       return 'http://localhost:8080';
     }
 
-    console.error('VITE_API_BASE_URL is not set for production build!');
-    return 'about:blank';
+    // Smart production fallback - try to guess backend URL
+    const currentHost = window.location.origin;
+    const backendUrl = currentHost.replace('frontend', 'backend');
+    console.warn('VITE_API_BASE_URL not set, trying fallback:', backendUrl);
+    return backendUrl;
   }
 
   // Private methods
