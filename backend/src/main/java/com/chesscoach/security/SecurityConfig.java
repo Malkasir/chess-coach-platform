@@ -81,10 +81,14 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Set allowed origins based on environment
+        // Always use origin patterns for maximum compatibility
         String allowedOrigins = System.getenv("ALLOWED_ORIGINS");
         if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
-            configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+            // Environment variable provided - use those origins plus Netlify fallback
+            String[] envOrigins = allowedOrigins.split(",");
+            String[] allOrigins = Arrays.copyOf(envOrigins, envOrigins.length + 1);
+            allOrigins[envOrigins.length] = "https://*.netlify.app";
+            configuration.setAllowedOriginPatterns(Arrays.asList(allOrigins));
         } else {
             // Allow both development and production domains by default
             configuration.setAllowedOriginPatterns(Arrays.asList(
