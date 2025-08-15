@@ -87,12 +87,11 @@ public class SecurityConfig {
             configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         } else {
             // Allow both development and production domains by default
-            configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000", 
-                "http://localhost:5173", 
-                "http://127.0.0.1:3000", 
-                "http://127.0.0.1:5173",
-                "https://clever-centaur-198ab4.netlify.app"
+            configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*", 
+                "http://127.0.0.1:*",
+                "https://clever-centaur-198ab4.netlify.app",
+                "https://*.netlify.app" // Allow all Netlify domains
             ));
         }
         
