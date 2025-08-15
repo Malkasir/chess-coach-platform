@@ -50,7 +50,7 @@ export const ChessCoachAppReact: React.FC = () => {
       try {
         // Use the authService to make authenticated requests
         const response = await authService.authenticatedFetch(
-          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/invitations/pending/${authState.currentUser.id}`
+          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/invitations/pending/${authState.currentUser?.id}`
         );
 
         if (response.ok) {
@@ -94,7 +94,7 @@ export const ChessCoachAppReact: React.FC = () => {
     const pollSentInvitations = async () => {
       try {
         const response = await authService.authenticatedFetch(
-          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/invitations/sent/${authState.currentUser.id}`
+          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/invitations/sent/${authState.currentUser?.id}`
         );
 
         if (response.ok) {
