@@ -42,10 +42,9 @@ export class AuthService {
       return 'http://localhost:8080/api/auth';
     }
 
-    // Smart production fallback - try to guess backend URL
-    const currentHost = window.location.origin;
-    const backendUrl = currentHost.replace('frontend', 'backend');
-    console.warn('VITE_API_BASE_URL not set, trying fallback:', backendUrl);
+    // Smart production fallback - hardcode known Railway URL
+    const backendUrl = 'https://chess-coach-platform-production.up.railway.app';
+    console.warn('VITE_API_BASE_URL not set, using known Railway URL:', backendUrl);
     return `${backendUrl}/api/auth`;
   }
   
@@ -247,10 +246,9 @@ export class AuthService {
       return 'http://localhost:8080';
     }
 
-    // Smart production fallback - try to guess backend URL
-    const currentHost = window.location.origin;
-    const backendUrl = currentHost.replace('frontend', 'backend');
-    console.warn('VITE_API_BASE_URL not set, trying fallback:', backendUrl);
+    // Smart production fallback - hardcode known Railway URL
+    const backendUrl = 'https://chess-coach-platform-production.up.railway.app';
+    console.warn('VITE_API_BASE_URL not set, using known Railway URL:', backendUrl);
     return backendUrl;
   }
 

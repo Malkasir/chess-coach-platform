@@ -81,29 +81,16 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // TEMPORARY: Allow all origins for debugging CORS issues
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        // Restore proper CORS configuration with correct Netlify domain
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:*", 
+            "http://127.0.0.1:*",
+            "https://clever-centaur-198ab4.netlify.app",
+            "https://*.netlify.app"
+        ));
         
         // Add debug logging
-        System.out.println("🚀 CORS Configuration Applied - Allowing all origins for debugging");
-        
-        // TODO: Restore restrictive CORS after testing
-        /*
-        String allowedOrigins = System.getenv("ALLOWED_ORIGINS");
-        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
-            String[] envOrigins = allowedOrigins.split(",");
-            String[] allOrigins = Arrays.copyOf(envOrigins, envOrigins.length + 1);
-            allOrigins[envOrigins.length] = "https://*.netlify.app";
-            configuration.setAllowedOriginPatterns(Arrays.asList(allOrigins));
-        } else {
-            configuration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:*", 
-                "http://127.0.0.1:*",
-                "https://clever-centaur-198ab4.netlify.app",
-                "https://*.netlify.app"
-            ));
-        }
-        */
+        System.out.println("🚀 CORS Configuration Applied - Allowing Netlify and localhost origins");
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
