@@ -44,10 +44,14 @@ export class ChessAIService {
         ? (Math.random() < 0.5 ? 'white' : 'black')
         : config.userColor;
 
+      debugLog('User will play as:', userColor);
+
       // Initialize chess game
       const chess = new Chess(config.fen);
+      debugLog('Chess game initialized, starting position:', chess.fen());
       
       // Configure engine for this personality
+      debugLog('Configuring engine for personality:', config.personality.name);
       this.stockfish.configureForPersonality(config.personality);
 
       // Create game session
@@ -73,12 +77,18 @@ export class ChessAIService {
         gameActive: true
       };
 
-      debugLog('AI game started successfully');
+      debugLog('AI game created successfully:', {
+        personality: config.personality.name,
+        userColor,
+        isAITurn: this.currentGame.isAITurn,
+        gameActive: this.currentGame.gameActive
+      });
+
       return this.currentGame;
 
     } catch (error) {
-      debugError('Failed to start AI game:', error);
-      throw new Error('Could not start AI game');
+      debugError('Failed to start AI game - detailed error:', error);
+      throw error; // Re-throw the original error instead of wrapping it
     }
   }
 

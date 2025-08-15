@@ -5,7 +5,8 @@ import { AuthenticationForm } from './components/AuthenticationForm';
 import { GameLobby } from './components/GameLobby';
 import { ActiveGame } from './components/ActiveGame';
 import { NotificationBanner } from './components/NotificationBanner';
-import { debugError } from './utils/debug';
+import { debugError, debugLog } from './utils/debug';
+import { ChessPersonality } from './types/personality.types';
 
 export const ChessCoachAppReact: React.FC = () => {
   const {
@@ -36,6 +37,10 @@ export const ChessCoachAppReact: React.FC = () => {
   // Notification state for game invitations
   const [currentInvitation, setCurrentInvitation] = useState<any>(null);
   const [sentInvitations, setSentInvitations] = useState<any[]>([]);
+
+  // AI game state
+  const [aiGameState, setAiGameState] = useState<any>(null);
+  const [aiService, setAiService] = useState<any>(null);
 
   // Poll for received invitations when authenticated
   useEffect(() => {
@@ -230,6 +235,117 @@ export const ChessCoachAppReact: React.FC = () => {
     setCurrentInvitation(null);
   };
 
+  // AI Game Handler
+  const handleAIGameStart = async (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => {
+    debugLog('🤖 Starting AI game from ChessCoachApp:', { personality: personality.name, userColor });
+    
+    try {
+      // Import the AI service
+      const { getChessAIService } = await import('./services/chess-engine/chess-ai-service');
+      const aiServiceInstance = getChessAIService();
+      
+      // Start the AI game
+      const gameState = await aiServiceInstance.startGame({
+        personality,
+        userColor
+      });
+      
+      debugLog('✅ AI game started successfully:', gameState);
+      
+      // Set AI game state
+      setAiGameState(gameState);
+      setAiService(aiServiceInstance);
+      
+      // Determine actual colors
+      const actualUserColor = userColor === 'random' 
+        ? (gameState.isAITurn ? 'white' : 'black')
+        : userColor;
+      
+      // Transition to active game state
+      updateGameField('gameStatus', 'active');
+      updateGameField('position', gameState.chess.fen());
+      updateGameField('playerColor', actualUserColor);
+      updateGameField('roomCode', `AI-${personality.name.replace(/\s+/g, '')}`);
+      
+      debugLog('🎮 Transitioned to AI game state:', {
+        personality: personality.name,
+        userColor: actualUserColor,
+        gameActive: gameState.gameActive,
+        currentFEN: gameState.chess.fen(),
+        isAITurn: gameState.isAITurn
+      });
+
+      // If it's AI's turn to start (user chose black), make the first AI move
+      if (gameState.isAITurn) {
+        debugLog('🤖 AI will make the first move...');
+        setTimeout(async () => {
+          try {
+            const aiMove = await aiServiceInstance.makeAIMove();
+            if (aiMove) {
+              debugLog('🤖 AI opening move:', aiMove);
+              const updatedGameState = aiServiceInstance.getCurrentGame();
+              if (updatedGameState) {
+                updateGameField('position', updatedGameState.chess.fen());
+                debugLog('✅ Game state updated after AI opening move');
+              }
+            }
+          } catch (error) {
+            debugError('❌ AI opening move failed:', error);
+          }
+        }, 1500); // 1.5 second delay for opening move
+      }
+      
+    } catch (error) {
+      debugError('❌ Failed to start AI game:', error);
+      alert(`Failed to start AI game: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  // AI Move Handler - wraps the regular move handler to also trigger AI responses
+  const handleAIMove = async (move: string, fen: string) => {
+    debugLog('🎯 Player move in AI game:', { move, fen });
+    
+    // First, handle the player move normally
+    makeMove(move, fen);
+    
+    // If there's an AI service and it's the AI's turn, make AI move
+    if (aiService && aiGameState) {
+      try {
+        // Process player move in AI service
+        const moveProcessed = aiService.processPlayerMove({
+          from: move.slice(0, 2),
+          to: move.slice(2, 4),
+          promotion: move.length > 4 ? move.slice(4) : undefined
+        });
+        
+        if (moveProcessed && aiService.isAITurn()) {
+          debugLog('🤖 AI turn - thinking...');
+          
+          // Wait a bit for dramatic effect
+          setTimeout(async () => {
+            try {
+              const aiMove = await aiService.makeAIMove();
+              if (aiMove) {
+                debugLog('🤖 AI played:', aiMove);
+                
+                // Update game state with AI move
+                const aiGameState = aiService.getCurrentGame();
+                if (aiGameState) {
+                  updateGameField('position', aiGameState.chess.fen());
+                  debugLog('✅ Game state updated after AI move');
+                }
+              }
+            } catch (error) {
+              debugError('❌ AI move failed:', error);
+            }
+          }, 1000); // 1 second delay for AI "thinking"
+        }
+      } catch (error) {
+        debugError('❌ Error processing player move:', error);
+      }
+    }
+  };
+
   // Show authentication form if not authenticated
   if (!authState.isAuthenticated) {
     return (
@@ -273,6 +389,7 @@ export const ChessCoachAppReact: React.FC = () => {
           onLogout={logout}
           onRoomCodeInputChange={(code) => updateGameField('roomCodeInput', code)}
           onColorPreferenceChange={(color) => updateGameField('colorPreference', color)}
+          onAIGameStart={handleAIGameStart}
         />
         <NotificationBanner
           invitation={currentInvitation}
@@ -285,6 +402,8 @@ export const ChessCoachAppReact: React.FC = () => {
   }
 
   // Show active game when in a game
+  const isAIGame = gameState.roomCode?.startsWith('AI-');
+  
   return (
     <>
       <ActiveGame
@@ -297,7 +416,7 @@ export const ChessCoachAppReact: React.FC = () => {
         game={gameRef}
         isMyTurn={isMyTurn}
         getCurrentTurnDisplay={getCurrentTurnDisplay}
-        onMove={makeMove}
+        onMove={isAIGame ? handleAIMove : makeMove}
         onResetGame={resetGame}
         onExitGame={exitGame}
         onCopyRoomCode={copyRoomCode}

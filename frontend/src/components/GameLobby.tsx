@@ -22,6 +22,7 @@ interface GameLobbyProps {
   onLogout: () => void;
   onRoomCodeInputChange: (code: string) => void;
   onColorPreferenceChange: (color: 'white' | 'black' | 'random') => void;
+  onAIGameStart: (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => void;
 }
 
 export const GameLobby: React.FC<GameLobbyProps> = ({
@@ -37,6 +38,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   onLogout,
   onRoomCodeInputChange,
   onColorPreferenceChange,
+  onAIGameStart,
 }) => {
   const [showOnlinePlayers, setShowOnlinePlayers] = useState(false);
   const [showInvitationModal, setShowInvitationModal] = useState(false);
@@ -66,30 +68,9 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
     }
   };
 
-  const handleAIGameStart = async (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => {
-    debugLog('Starting AI game:', { personality: personality.name, userColor });
-    
-    try {
-      // Import the AI service
-      const { getChessAIService } = await import('../services/chess-engine/chess-ai-service');
-      const aiService = getChessAIService();
-      
-      // Start the AI game
-      const gameState = await aiService.startGame({
-        personality,
-        userColor
-      });
-      
-      debugLog('AI game started successfully:', gameState);
-      
-      // For now, show success message
-      // TODO: Integrate with actual chess board component
-      alert(`Game started vs ${personality.name}! ${personality.avatar} "${aiService.getPersonalityQuote()}" - AI chess integration is working!`);
-      
-    } catch (error) {
-      debugError('Failed to start AI game:', error);
-      alert(`Failed to start AI game: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+  const handleAIGameStart = (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => {
+    debugLog('🤖 GameLobby: Delegating AI game start to parent:', { personality: personality.name, userColor });
+    onAIGameStart(personality, userColor);
   };
   return (
     <div className={styles.app}>

@@ -45,30 +45,9 @@ export class StockfishService {
     try {
       debugLog('Initializing Stockfish engine...');
       
-      // Create a Web Worker using the Stockfish.js from node_modules
-      // The stockfish package provides a pre-built JavaScript file
-      const workerCode = `
-        importScripts('${new URL('stockfish/src/stockfish-17.1-single-a496a04.js', import.meta.url).href}');
-        
-        let engine = null;
-        
-        // Initialize the engine when the module is loaded
-        if (typeof Stockfish !== 'undefined') {
-          engine = Stockfish();
-          engine.addMessageListener((line) => {
-            postMessage(line);
-          });
-        }
-        
-        onmessage = function(e) {
-          if (engine) {
-            engine.postMessage(e.data);
-          }
-        };
-      `;
-
-      const blob = new Blob([workerCode], { type: 'application/javascript' });
-      this.worker = new Worker(URL.createObjectURL(blob));
+      // For now, let's use a mock implementation to test the integration
+      // Later we can implement the full Stockfish integration
+      this.worker = await this.createMockWorker();
 
       this.worker.onmessage = (event) => {
         this.handleEngineMessage(event.data);
@@ -86,6 +65,46 @@ export class StockfishService {
       debugError('Failed to initialize Stockfish engine:', error);
       throw new Error('Could not initialize chess engine');
     }
+  }
+
+  private async createMockWorker(): Promise<Worker> {
+    // Create a simple mock worker for testing
+    const workerCode = `
+      let isReady = false;
+      
+      onmessage = function(e) {
+        const command = e.data;
+        console.log('Mock engine received:', command);
+        
+        setTimeout(() => {
+          if (command === 'uci') {
+            postMessage('id name Stockfish Mock');
+            postMessage('id author Mock Engine');
+            postMessage('option name Skill Level type spin default 20 min 0 max 20');
+            postMessage('uciok');
+          } else if (command === 'isready') {
+            postMessage('readyok');
+            isReady = true;
+          } else if (command.startsWith('go')) {
+            // Mock thinking for a move
+            setTimeout(() => {
+              const moves = ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'd2d4', 'exd4'];
+              const randomMove = moves[Math.floor(Math.random() * moves.length)];
+              postMessage('bestmove ' + randomMove);
+            }, 500);
+          } else if (command.startsWith('position')) {
+            // Acknowledge position
+            console.log('Position set:', command);
+          } else if (command.startsWith('setoption')) {
+            // Acknowledge option setting
+            console.log('Option set:', command);
+          }
+        }, 50);
+      };
+    `;
+
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    return new Worker(URL.createObjectURL(blob));
   }
 
   private handleEngineMessage(message: string): void {
