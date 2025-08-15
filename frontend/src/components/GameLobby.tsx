@@ -66,12 +66,30 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
     }
   };
 
-  const handleAIGameStart = (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => {
+  const handleAIGameStart = async (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => {
     debugLog('Starting AI game:', { personality: personality.name, userColor });
     
-    // TODO: Implement AI game creation logic
-    // For now, just show an alert
-    alert(`Starting game vs ${personality.name}! You are playing as ${userColor}. AI integration coming soon...`);
+    try {
+      // Import the AI service
+      const { getChessAIService } = await import('../services/chess-engine/chess-ai-service');
+      const aiService = getChessAIService();
+      
+      // Start the AI game
+      const gameState = await aiService.startGame({
+        personality,
+        userColor
+      });
+      
+      debugLog('AI game started successfully:', gameState);
+      
+      // For now, show success message
+      // TODO: Integrate with actual chess board component
+      alert(`Game started vs ${personality.name}! ${personality.avatar} "${aiService.getPersonalityQuote()}" - AI chess integration is working!`);
+      
+    } catch (error) {
+      debugError('Failed to start AI game:', error);
+      alert(`Failed to start AI game: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
   return (
     <div className={styles.app}>
