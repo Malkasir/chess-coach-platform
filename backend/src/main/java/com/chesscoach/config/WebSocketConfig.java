@@ -48,17 +48,20 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
         String sessionId = event.getMessage().getHeaders().get("simpSessionId").toString();
         logger.info("WebSocket session connected: {}", sessionId);
+        System.out.println("🔌 WebSocket connected - Session: " + sessionId);
     }
 
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         String sessionId = event.getSessionId();
         logger.info("WebSocket session disconnected: {}", sessionId);
+        System.out.println("❌ WebSocket disconnected - Session: " + sessionId);
         
         // Clean up game association for this session
         String gameId = sessionToGameMap.remove(sessionId);
         if (gameId != null) {
             logger.info("Cleaning up session {} from game {}", sessionId, gameId);
+            System.out.println("🧹 Cleaning up session " + sessionId + " from game " + gameId);
             // Notify other players in the game about disconnection
             messagingTemplate.convertAndSend("/topic/game/" + gameId, 
                 new GameDisconnectMessage("Player disconnected"));

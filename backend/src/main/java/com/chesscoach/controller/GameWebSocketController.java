@@ -34,16 +34,22 @@ public class GameWebSocketController {
     @MessageMapping("/game/join")
     public void handleJoinGame(@Payload GameMessage message) {
         try {
+            System.out.println("🔌 Player " + message.getPlayerId() + " joining game " + message.getGameId());
+            
             Optional<Game> gameOpt = gameRepository.findByGameId(message.getGameId());
             if (gameOpt.isEmpty()) {
+                System.out.println("❌ Game not found: " + message.getGameId());
                 sendError(message.getGameId(), message.getPlayerId(), "Game not found");
                 return;
             }
 
             Game game = gameOpt.get();
+            System.out.println("✅ Game found - Host: " + game.getHost().getId() + ", Guest: " + 
+                (game.getGuest() != null ? game.getGuest().getId() : "null"));
             
             // Send player joined message to all players in the game
             GameMessage joinMessage = GameMessage.joinMessage(message.getGameId(), message.getPlayerId());
+            System.out.println("📢 Broadcasting join message to /topic/game/" + message.getGameId());
             messagingTemplate.convertAndSend("/topic/game/" + message.getGameId(), joinMessage);
 
             // Send current game state to the joining player
@@ -112,7 +118,13 @@ public class GameWebSocketController {
             );
             moveMessage.setMoveHistory(currentMoves);
             
+            System.out.println("🚀 Broadcasting move to /topic/game/" + message.getGameId());
+            System.out.println("📤 Move message: " + moveMessage.toString());
+            System.out.println("🎯 Player " + message.getPlayerId() + " made move: " + message.getMove());
+            
             messagingTemplate.convertAndSend("/topic/game/" + message.getGameId(), moveMessage);
+            
+            System.out.println("✅ Move broadcast completed for game " + message.getGameId());
 
         } catch (Exception e) {
             sendError(message.getGameId(), message.getPlayerId(), "Failed to make move: " + e.getMessage());
