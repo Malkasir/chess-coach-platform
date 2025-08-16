@@ -45,9 +45,13 @@ public class GameInvitationController {
             @PathVariable Long invitationId,
             @RequestBody AcceptInvitationRequest request) {
         try {
+            System.out.println("🎮 Accepting invitation " + invitationId + " for user " + request.getUserId());
             Map<String, Object> result = invitationService.acceptInvitation(invitationId, request.getUserId());
+            System.out.println("✅ Invitation accepted successfully");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
+            System.err.println("❌ Error accepting invitation: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
