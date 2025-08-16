@@ -29,23 +29,18 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   useEffect(() => {
     if (playerColor) {
       setBoardOrientation(playerColor);
-      debugLog('🔄 Set board orientation to:', playerColor);
     }
   }, [playerColor]);
 
   // Track position changes and sync local position
   useEffect(() => {
-    debugLog('🔄 Position prop changed to:', position);
     setLocalPosition(position);
   }, [position]);
 
   // Handle piece drop with useCallback
   const onDrop = useCallback((sourceSquare: Square, targetSquare: Square): boolean => {
-    debugLog('🎯 Piece drop:', { from: sourceSquare, to: targetSquare, playerColor, turn: rulesGame.turn() });
-
     // Check if it's the player's turn
     if (!isMyTurn()) {
-      debugLog('❌ Not your turn');
       return false;
     }
 
@@ -61,18 +56,15 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
         promotion: 'q' // Always promote to queen for simplicity
       });
     } catch (error) {
-      debugLog('❌ Chess.js threw error for move:', { from: sourceSquare, to: targetSquare }, (error as Error).message);
       return false;
     }
 
     if (move === null) {
-      debugLog('❌ Illegal move attempted');
       return false;
     }
 
     // Move is legal! Send to server - this will update the position via props
     const newFen = gameCopy.fen();
-    debugLog('✅ Legal move validated:', move.san, 'New FEN:', newFen);
     
     // Update local position immediately for responsive UI
     setLocalPosition(newFen);
@@ -90,50 +82,32 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
 
   // Determine if a piece can be dragged
   const isDraggablePiece = useCallback(({ piece, sourceSquare }: any): boolean => {
-    debugLog('🤏 isDraggablePiece called:', { 
-      piece, 
-      sourceSquare, 
-      playerColor, 
-      gameTurn: rulesGame.turn(), 
-      isMyTurn: isMyTurn(),
-      gameStatus: rulesGame.isGameOver() ? 'over' : 'active'
-    });
-    
     // Don't allow dragging if no playerColor set
     if (!playerColor) {
-      debugLog('❌ No playerColor available');
       return false;
     }
 
     // Don't allow dragging pieces of the wrong color
     const pieceColor = piece.startsWith('w') ? 'white' : 'black';
     const isMyPiece = playerColor === pieceColor;
-    debugLog('🔍 Piece color check:', { pieceColor, playerColor, isMyPiece });
     
     if (!isMyPiece) {
-      debugLog('❌ Wrong piece color - player is', playerColor, 'piece is', pieceColor);
       return false;
     }
 
     // Check if it's the player's turn
     const myTurn = isMyTurn();
-    debugLog('🔍 Turn check:', { myTurn, gameTurn: rulesGame.turn() });
     
     if (!myTurn) {
-      debugLog('❌ Not your turn');
       return false;
     }
 
     // Check if piece has legal moves
     const moves = rulesGame.moves({ square: sourceSquare, verbose: true });
-    debugLog('🔍 Legal moves for', piece, 'on', sourceSquare, ':', moves.length, 'moves');
     
     if (moves.length === 0) {
-      debugLog('❌ Piece has no legal moves');
       return false;
     }
-
-    debugLog('✅ Piece can be dragged -', moves.length, 'legal moves');
     return true;
   }, [rulesGame, playerColor, isMyTurn]);
 
@@ -141,12 +115,6 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     setBoardOrientation(boardOrientation === 'white' ? 'black' : 'white');
   };
 
-  debugLog('🎨 ChessBoard render - position prop:', position, 'localPosition:', localPosition, 'playerColor:', playerColor, 'rulesGame FEN:', rulesGame.fen());
-  debugLog('🎨 Props check:', { 
-    hasOnDrop: typeof onDrop === 'function',
-    hasIsDraggablePiece: typeof isDraggablePiece === 'function',
-    hasIsMyTurn: typeof isMyTurn === 'function'
-  });
 
   return (
     <div style={{ textAlign: 'center' }}>

@@ -175,28 +175,12 @@ export class AuthService {
     const token = this.getToken();
     const headers = this.getAuthHeaders();
     
-    console.log('🔐 AuthenticatedFetch Debug:', {
-      url,
-      hasToken: !!token,
-      tokenLength: token?.length || 0,
-      tokenPreview: token ? `${token.substring(0, 20)}...` : 'null',
-      headers: Object.keys(headers),
-      hasAuthHeader: !!headers.Authorization
-    });
-
     const response = await fetch(url, {
       ...options,
       headers: {
         ...headers,
         ...options.headers,
       },
-    });
-
-    console.log('📡 Response:', {
-      url,
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok
     });
 
     // If unauthorized, logout and redirect

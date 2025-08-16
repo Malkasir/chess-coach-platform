@@ -61,8 +61,6 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         if (response.ok) {
           const activeGame = await response.json();
           if (activeGame && activeGame.gameId) {
-            console.log('🔄 Restoring game state:', activeGame);
-            
             // Determine if user is host or guest
             const isHost = activeGame.hostId === currentUser.id;
             const playerColor = isHost ? activeGame.hostColor : activeGame.guestColor;
@@ -80,11 +78,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
 
             // Reconnect to WebSocket
             await gameServiceRef.current.joinGame(activeGame.gameId, currentUser.id.toString(), isHost);
-            console.log('🔌 Reconnected to existing game');
           }
         }
       } catch (error) {
-        console.log('No active game to restore:', error);
+        // Silently ignore - no active game to restore
       }
     };
 
@@ -94,12 +91,9 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
   }, [currentUser, authService]);
 
   const handleGameMessage = (message: GameMessage) => {
-    console.log('📥 Received game message:', message);
-    
     switch (message.type) {
       case 'MOVE':
         if (message.fen && message.move) {
-          console.log('♟️ Processing move:', message.move, 'New FEN:', message.fen);
           gameRef.current.load(message.fen);
           setGameState(prev => ({
             ...prev,
@@ -110,7 +104,6 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         break;
       case 'GAME_STATE':
         if (message.fen) {
-          console.log('🎲 Loading game state, FEN:', message.fen);
           gameRef.current.load(message.fen);
           setGameState(prev => ({
             ...prev,
@@ -121,7 +114,6 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         }
         break;
       case 'PLAYER_JOINED':
-        console.log('👤 Player joined, setting game to active');
         setGameState(prev => ({ ...prev, gameStatus: 'active' }));
         break;
       case 'ERROR':
@@ -175,8 +167,6 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       await gameServiceRef.current.joinGame(gameStateResponse.gameId, guestId, false);
     } catch (error) {
       console.error('Failed to join game:', error);
-      console.error('Room code attempted:', gameState.roomCodeInput);
-      console.error('Guest ID:', guestId);
     }
   };
 
@@ -199,8 +189,6 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
   };
 
   const makeMove = (move: string, fen: string) => {
-    console.log('📤 Making move:', move, 'New position:', fen);
-    
     // Update the game object with the new FEN
     gameRef.current.load(fen);
     
@@ -290,7 +278,6 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
 
       // Connect to WebSocket for real-time updates
       await gameServiceRef.current.joinGame(gameId, playerId, isHost);
-      console.log(`🔌 ${isHost ? 'Host' : 'Guest'} connected to WebSocket for game ${gameId}`);
       
     } catch (error) {
       console.error('Failed to join game from invitation:', error);
@@ -318,7 +305,6 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       // Reset chess engine
       gameRef.current = new Chess();
       
-      console.log('🚪 Exited game successfully');
     } catch (error) {
       console.error('Error exiting game:', error);
     }

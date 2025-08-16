@@ -28,10 +28,6 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
 }) => {
   const [, forceUpdate] = useState({});
   
-  // Debug logging
-  useEffect(() => {
-    console.log('🔔 NotificationBanner received invitation:', invitation);
-  }, [invitation]);
   
   // Force re-render every 30 seconds to update time remaining
   useEffect(() => {
