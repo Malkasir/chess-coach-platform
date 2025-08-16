@@ -134,9 +134,13 @@ export class GameService {
 
     // Subscribe to game messages
     this.client?.subscribe(`/topic/game/${gameId}`, (message) => {
+      console.log('📨 Received game message:', message.body);
       const gameMessage: GameMessage = JSON.parse(message.body);
+      console.log('🎮 Parsed game message:', gameMessage);
       if (this.onGameUpdate) {
         this.onGameUpdate(gameMessage);
+      } else {
+        console.warn('⚠️ No onGameUpdate callback set!');
       }
     });
 
