@@ -24,6 +24,7 @@ public class ProductionDataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         createInitialUsers();
+        System.out.println("🎯 Total users in database: " + userRepository.count());
     }
 
     private void createInitialUsers() {
@@ -40,6 +41,8 @@ public class ProductionDataInitializer implements CommandLineRunner {
             coach.setUpdatedAt(LocalDateTime.now());
             userRepository.save(coach);
             System.out.println("✅ Created coach@chesscoach.com");
+        } else {
+            System.out.println("💻 coach@chesscoach.com already exists");
         }
 
         // Student user
@@ -55,6 +58,8 @@ public class ProductionDataInitializer implements CommandLineRunner {
             student.setUpdatedAt(LocalDateTime.now());
             userRepository.save(student);
             System.out.println("✅ Created student@chesscoach.com");
+        } else {
+            System.out.println("💻 student@chesscoach.com already exists");
         }
 
         // Demo user
@@ -70,6 +75,8 @@ public class ProductionDataInitializer implements CommandLineRunner {
             demo.setUpdatedAt(LocalDateTime.now());
             userRepository.save(demo);
             System.out.println("✅ Created demo@chesscoach.com");
+        } else {
+            System.out.println("💻 demo@chesscoach.com already exists");
         }
 
         // Aram user
@@ -85,6 +92,8 @@ public class ProductionDataInitializer implements CommandLineRunner {
             aram.setUpdatedAt(LocalDateTime.now());
             userRepository.save(aram);
             System.out.println("✅ Created Aram@chesscoach.com");
+        } else {
+            System.out.println("💻 Aram@chesscoach.com already exists");
         }
 
         // Spinoza user
@@ -100,6 +109,8 @@ public class ProductionDataInitializer implements CommandLineRunner {
             spinoza.setUpdatedAt(LocalDateTime.now());
             userRepository.save(spinoza);
             System.out.println("✅ Created Spinoza@chesscoach.com");
+        } else {
+            System.out.println("💻 Spinoza@chesscoach.com already exists");
         }
 
         System.out.println("🎯 Production user initialization complete");
