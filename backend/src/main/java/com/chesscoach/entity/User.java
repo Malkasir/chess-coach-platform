@@ -57,9 +57,9 @@ public class User implements UserDetails {
     // Chess rating (optional)
     private Integer rating;
     
-    // User role (default: USER)
+    // User role (default: user)
     @Column(nullable = false)
-    private String role = "USER";
+    private String role = "user";
     
     
     @PrePersist
