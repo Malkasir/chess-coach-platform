@@ -23,10 +23,7 @@ public class ProductionDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Only create users if database is empty
-        if (userRepository.count() == 0) {
             createInitialUsers();
-        }
     }
 
     private void createInitialUsers() {
@@ -91,10 +88,5 @@ public class ProductionDataInitializer implements CommandLineRunner {
         userRepository.save(advanced);
 
         System.out.println("✅ Production users created:");
-        System.out.println("   📧 coach@chesscoach.com / coach2025");
-        System.out.println("   📧 student@chesscoach.com / student2025");
-        System.out.println("   📧 demo@chesscoach.com / demo2025");
-        System.out.println("   📧 beginner@chesscoach.com / beginner2025");
-        System.out.println("   📧 advanced@chesscoach.com / advanced2025");
     }
 }
