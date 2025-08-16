@@ -61,23 +61,38 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         if (response.ok) {
           const activeGame = await response.json();
           if (activeGame && activeGame.gameId) {
-            // Determine if user is host or guest
-            const isHost = activeGame.hostId === currentUser.id;
-            const playerColor = isHost ? activeGame.hostColor : activeGame.guestColor;
+            // Check if the game is recent (within last 30 minutes) to avoid resuming very old games
+            const gameCreatedAt = new Date(activeGame.createdAt);
+            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
             
-            // Restore game state
-            setGameState(prev => ({
-              ...prev,
-              playerId: currentUser.id.toString(),
-              isHost,
-              gameId: activeGame.gameId,
-              roomCode: activeGame.roomCode,
-              playerColor: playerColor?.toLowerCase() as 'white' | 'black',
-              gameStatus: 'active'
-            }));
+            // Only restore if game is recent and user confirms
+            if (gameCreatedAt > thirtyMinutesAgo) {
+              const shouldResume = window.confirm(
+                'You have an active game. Would you like to resume it?\n\n' +
+                `Room Code: ${activeGame.roomCode}\n` +
+                'Click "Cancel" to start fresh.'
+              );
+              
+              if (shouldResume) {
+                // Determine if user is host or guest
+                const isHost = activeGame.hostId === currentUser.id;
+                const playerColor = isHost ? activeGame.hostColor : activeGame.guestColor;
+                
+                // Restore game state
+                setGameState(prev => ({
+                  ...prev,
+                  playerId: currentUser.id.toString(),
+                  isHost,
+                  gameId: activeGame.gameId,
+                  roomCode: activeGame.roomCode,
+                  playerColor: playerColor?.toLowerCase() as 'white' | 'black',
+                  gameStatus: 'active'
+                }));
 
-            // Reconnect to WebSocket
-            await gameServiceRef.current.joinGame(activeGame.gameId, currentUser.id.toString(), isHost);
+                // Reconnect to WebSocket
+                await gameServiceRef.current.joinGame(activeGame.gameId, currentUser.id.toString(), isHost);
+              }
+            }
           }
         }
       } catch (error) {
