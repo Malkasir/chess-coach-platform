@@ -26,7 +26,7 @@ public class User implements UserDetails {
     private String email;
     
     @NotBlank
-    @Size(min = 6)
+    @Size(min = 8)
     @Column(nullable = false)
     private String password;
     
