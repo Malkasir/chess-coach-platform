@@ -65,20 +65,20 @@ public class ProductionDataInitializer implements CommandLineRunner {
 
         // Beginner user
         User beginner = new User();
-        beginner.setEmail("beginner@chesscoach.com");
-        beginner.setPassword(passwordEncoder.encode("beginner2025"));
-        beginner.setFirstName("New");
-        beginner.setLastName("Player");
+        beginner.setEmail("Aram@chesscoach.com");
+        beginner.setPassword(passwordEncoder.encode("aram2025"));
+        beginner.setFirstName("Aram");
+        beginner.setLastName("Adam");
         beginner.setEnabled(true);
-        beginner.setRating(800);
+        beginner.setRating(2400);
         beginner.setCreatedAt(LocalDateTime.now());
         beginner.setUpdatedAt(LocalDateTime.now());
         userRepository.save(beginner);
 
         // Advanced user
         User advanced = new User();
-        advanced.setEmail("advanced@chesscoach.com");
-        advanced.setPassword(passwordEncoder.encode("advanced2025"));
+        advanced.setEmail("spinoza@chesscoach.com");
+        advanced.setPassword(passwordEncoder.encode("spinoza2025"));
         advanced.setFirstName("Expert");
         advanced.setLastName("Player");
         advanced.setEnabled(true);
