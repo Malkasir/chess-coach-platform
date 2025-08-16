@@ -213,10 +213,24 @@ export class GameService {
   }
 
   disconnect(): void {
-    this.client?.deactivate();
+    console.log('🔌 Disconnecting from game service...');
+    
+    // Force close WebSocket connection
+    if (this.client) {
+      this.client.deactivate();
+      // Additional cleanup
+      if (this.client.webSocket) {
+        this.client.webSocket.close();
+      }
+    }
+    
+    // Clear all references
+    this.client = null;
     this.gameId = null;
     this.playerId = null;
     this.onGameUpdate = null;
+    
+    console.log('✅ Game service disconnected and cleaned up');
   }
 
   getBaseUrl(): string {

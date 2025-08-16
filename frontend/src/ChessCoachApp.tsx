@@ -328,7 +328,7 @@ export const ChessCoachAppReact: React.FC = () => {
           debugLog('🤖 AI turn - thinking...');
           
           // Wait a bit for dramatic effect
-          setTimeout(async () => {
+          const aiTimeout = setTimeout(async () => {
             try {
               const aiMove = await aiService.makeAIMove();
               if (aiMove) {
