@@ -43,14 +43,17 @@ export const VideoCall: React.FC<VideoCallProps> = ({ gameId }) => {
 
           const domain = 'meet.jit.si';
           const options = {
-            roomName: `chess-coach-${gameId}`,
+            roomName: `room${gameId}`,
             width: '100%',
             height: 300,
             parentNode: containerRef.current,
             configOverwrite: {
               startWithAudioMuted: true,
               startWithVideoMuted: false,
-              prejoinPageEnabled: false
+              prejoinPageEnabled: false,
+              requireDisplayName: false,
+              enableWelcomePage: false,
+              enableUserRolesBasedOnToken: false
             },
             interfaceConfigOverwrite: {
               TOOLBAR_BUTTONS: [
