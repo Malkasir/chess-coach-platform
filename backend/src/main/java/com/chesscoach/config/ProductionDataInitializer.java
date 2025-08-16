@@ -36,7 +36,6 @@ public class ProductionDataInitializer implements CommandLineRunner {
             coach.setLastName("Coach");
             coach.setEnabled(true);
             coach.setRating(2200);
-            coach.setRole("coach");
             coach.setCreatedAt(LocalDateTime.now());
             coach.setUpdatedAt(LocalDateTime.now());
             userRepository.save(coach);
@@ -52,7 +51,6 @@ public class ProductionDataInitializer implements CommandLineRunner {
             student.setLastName("Student");
             student.setEnabled(true);
             student.setRating(1400);
-            student.setRole("user");
             student.setCreatedAt(LocalDateTime.now());
             student.setUpdatedAt(LocalDateTime.now());
             userRepository.save(student);
@@ -68,7 +66,6 @@ public class ProductionDataInitializer implements CommandLineRunner {
             demo.setLastName("User");
             demo.setEnabled(true);
             demo.setRating(1600);
-            demo.setRole("user");
             demo.setCreatedAt(LocalDateTime.now());
             demo.setUpdatedAt(LocalDateTime.now());
             userRepository.save(demo);
@@ -84,7 +81,6 @@ public class ProductionDataInitializer implements CommandLineRunner {
             aram.setLastName("Adam");
             aram.setEnabled(true);
             aram.setRating(2400);
-            aram.setRole("user");
             aram.setCreatedAt(LocalDateTime.now());
             aram.setUpdatedAt(LocalDateTime.now());
             userRepository.save(aram);
@@ -100,7 +96,6 @@ public class ProductionDataInitializer implements CommandLineRunner {
             spinoza.setLastName("Gambit");
             spinoza.setEnabled(true);
             spinoza.setRating(1900);
-            spinoza.setRole("user");
             spinoza.setCreatedAt(LocalDateTime.now());
             spinoza.setUpdatedAt(LocalDateTime.now());
             userRepository.save(spinoza);

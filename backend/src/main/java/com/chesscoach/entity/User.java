@@ -57,10 +57,6 @@ public class User implements UserDetails {
     // Chess rating (optional)
     private Integer rating;
     
-    // User role (default: user)
-    @Column(nullable = false)
-    private String role = "user";
-    
     
     @PrePersist
     protected void onCreate() {
@@ -198,13 +194,5 @@ public class User implements UserDetails {
     
     public void setRating(Integer rating) {
         this.rating = rating;
-    }
-    
-    public String getRole() {
-        return role;
-    }
-    
-    public void setRole(String role) {
-        this.role = role;
     }
 }
