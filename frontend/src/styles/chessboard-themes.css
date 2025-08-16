@@ -10,7 +10,7 @@
   padding: 8px;
   background: var(--board-border, #8b4513);
   box-shadow: var(--drop-shadow);
-  transition: all 0.3s ease;
+  /* Removed transition to prevent shifting */
 }
 
 .chess-board-container::before {

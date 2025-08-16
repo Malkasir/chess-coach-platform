@@ -150,7 +150,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <div className="chess-board-container">        
+      <div className="chess-board-container" style={{ width: '466px', height: '466px' }}>        
         <Chessboard
           position={localPosition}
           onPieceDrop={onDrop}
