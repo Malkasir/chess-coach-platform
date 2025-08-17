@@ -10,6 +10,7 @@ This is a chess coaching platform with video calling capabilities, built as a fu
 - **Backend**: Spring Boot application with Java 17, Maven for dependency management
 - **Chess Integration**: Uses chess.js for game logic and react-chessboard for the interactive board
 - **Video Calling**: Integrated Jitsi Meet for real-time communication
+- **Feature Analysis**: Comprehensive analysis documents in `/analysis/` directory for planning and implementation guidance
 
 ## Development Commands
 
@@ -127,3 +128,24 @@ This is a chess coaching platform with video calling capabilities, built as a fu
 - **API Client**: Centralized fetch wrapper with consistent error handling
 - **Component Library**: Reusable components (PageHeader, Toast, etc.)
 - **Input Validation**: Enhanced form inputs with error states and focus indicators
+
+## Feature Analysis System
+
+The project includes a comprehensive feature analysis system located in the `/analysis/` directory:
+
+### Structure
+- **`/analysis/README.md`**: Overview and guidelines for the analysis system
+- **`/analysis/templates/`**: Standardized templates for feature analysis
+- **`/analysis/features/`**: Individual feature analysis documents
+
+### Current Analyses
+- **Chess Clock System** (`chess-clock.md`): Complete analysis for implementing time controls, blitz games, and competitive chess features
+
+### Usage
+When planning new features:
+1. Copy the template from `/analysis/templates/feature-template.md`
+2. Create a new analysis in `/analysis/features/[feature-name].md`
+3. Complete all sections before beginning implementation
+4. Update analysis as requirements evolve
+
+This ensures thorough planning, risk assessment, and implementation roadmaps for all major features.
