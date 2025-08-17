@@ -12,6 +12,7 @@ analysis/
 └── features/                 # Individual feature analysis documents
     ├── chess-clock.md        # Chess clock/timer system analysis
     └── [future-features].md  # Additional feature analyses
+├── code-analysis-report.md  # Comprehensive codebase analysis and improvement roadmap
 ```
 
 ## Purpose
@@ -45,6 +46,15 @@ Each feature analysis should include:
 - **Implementation plan** (what steps to take?)
 - **Risk assessment** (what could go wrong?)
 - **Success metrics** (how to measure success?)
+
+## Code Analysis
+
+The `code-analysis-report.md` provides a comprehensive assessment of the current codebase including:
+- **Security vulnerabilities** and fixes
+- **Performance bottlenecks** and optimizations
+- **Architecture issues** and refactoring recommendations
+- **Testing gaps** and infrastructure needs
+- **Prioritized improvement roadmap** with timelines
 
 ## Guidelines
 
