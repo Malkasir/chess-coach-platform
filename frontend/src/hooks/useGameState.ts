@@ -229,6 +229,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       return 'Waiting for opponent to join...';
     }
     
+    if (gameState.gameStatus === 'connecting') {
+      return 'Connecting to game...';
+    }
+    
     if (gameState.gameStatus !== 'active' || !gameState.playerColor) {
       return 'Game not active';
     }
@@ -288,14 +292,26 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         gameId,
         roomCode,
         playerColor,
-        gameStatus: 'active'
+        gameStatus: 'connecting'
       }));
 
       // Connect to WebSocket for real-time updates
       await gameServiceRef.current.joinGame(gameId, playerId, isHost);
       
+      // Wait a moment to ensure WebSocket subscription is established
+      setTimeout(() => {
+        setGameState(prev => ({
+          ...prev,
+          gameStatus: 'active'
+        }));
+      }, 1000);
+      
     } catch (error) {
       console.error('Failed to join game from invitation:', error);
+      setGameState(prev => ({
+        ...prev,
+        gameStatus: 'disconnected'
+      }));
     }
   };
 

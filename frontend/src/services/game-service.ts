@@ -44,7 +44,7 @@ export class GameService {
 
   private determineBaseUrl(): string {
     // Always prioritize the environment variable if it's set.
-    const envUrl = import.meta.env.VITE_BACKEND_URL;
+    const envUrl = import.meta.env.VITE_API_BASE_URL;
     if (envUrl) {
       return envUrl;
     }
@@ -55,22 +55,33 @@ export class GameService {
     }
 
     // If we are in production and the env var is missing, log an error.
-    console.error('VITE_BACKEND_URL is not set for production build!');
+    console.error('VITE_API_BASE_URL is not set for production build!');
     return 'about:blank'; // Fail loudly
   }
 
   private setupWebSocket() {
+    console.log('🏗️ Setting up WebSocket client with baseUrl:', this.baseUrl);
     this.client = new Client({
-      webSocketFactory: () => new SockJS(`${this.baseUrl}/chess-websocket`),
-      debug: (str) => console.log('🔌 STOMP: ' + str),
-      onConnect: () => {
-        console.log('✅ Connected to WebSocket');
+      webSocketFactory: () => {
+        const sockJsUrl = `${this.baseUrl}/chess-websocket`;
+        console.log('🔗 Creating SockJS connection to:', sockJsUrl);
+        return new SockJS(sockJsUrl);
       },
-      onDisconnect: () => {
-        console.log('❌ Disconnected from WebSocket');
+      debug: (str) => console.log('🔌 STOMP: ' + str),
+      onConnect: (frame) => {
+        console.log('✅ Connected to WebSocket', frame);
+      },
+      onDisconnect: (frame) => {
+        console.log('❌ Disconnected from WebSocket', frame);
       },
       onStompError: (frame) => {
         console.error('💥 STOMP error:', frame);
+      },
+      onWebSocketError: (event) => {
+        console.error('🔌 WebSocket error:', event);
+      },
+      onWebSocketClose: (event) => {
+        console.log('🔌 WebSocket closed:', event);
       },
       // Add heartbeat and reconnect settings for better browser compatibility
       heartbeatIncoming: 10000,
@@ -114,22 +125,41 @@ export class GameService {
   }
 
   async joinGame(gameId: string, playerId: string, isHost: boolean = false): Promise<void> {
+    console.log('🔗 joinGame called:', { gameId, playerId, isHost });
     this.gameId = gameId;
     this.playerId = playerId;
 
     // Connect to WebSocket if not already connected
-    if (!this.client?.connected) {
+    const isConnected = this.client?.connected === true;
+    if (!isConnected) {
+      console.log('🔌 Activating WebSocket client...');
+      if (!this.client) {
+        console.error('❌ WebSocket client is null, recreating...');
+        this.setupWebSocket();
+      }
+      
       this.client?.activate();
-      await new Promise(resolve => {
+      await new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max
         const checkConnection = () => {
-          if (this.client?.connected) {
+          attempts++;
+          const currentlyConnected = this.client?.connected === true;
+          console.log(`🔍 Connection attempt ${attempts}/${maxAttempts}, connected: ${currentlyConnected}, client state: ${this.client?.connected}`);
+          if (currentlyConnected) {
+            console.log('✅ WebSocket connected successfully!');
             resolve(void 0);
+          } else if (attempts >= maxAttempts) {
+            console.error('❌ WebSocket connection timeout after 5 seconds');
+            reject(new Error('WebSocket connection timeout'));
           } else {
             setTimeout(checkConnection, 100);
           }
         };
         checkConnection();
       });
+    } else {
+      console.log('✅ WebSocket already connected');
     }
 
     // Subscribe to game messages
@@ -180,8 +210,50 @@ export class GameService {
   }
 
   makeMove(move: string, fen: string): void {
+    const isConnected = this.client?.connected === true;
+    console.log('🎯 makeMove called:', { 
+      move, 
+      fen, 
+      clientConnected: isConnected, 
+      gameId: this.gameId, 
+      playerId: this.playerId 
+    });
+    
+    if (!this.gameId || !this.playerId) {
+      console.error('❌ Missing game/player ID', {
+        gameId: this.gameId,
+        playerId: this.playerId
+      });
+      return;
+    }
+
+    if (!this.client) {
+      console.error('❌ No WebSocket client available');
+      return;
+    }
+
+    // If not connected, try to reconnect first
+    if (!isConnected) {
+      console.warn('⚠️ WebSocket not connected, attempting to reconnect...');
+      this.client.activate();
+      
+      // Wait a brief moment for connection before trying to send
+      setTimeout(() => {
+        if (this.client?.connected) {
+          console.log('✅ Reconnected, sending move...');
+          this.sendMove(move, fen);
+        } else {
+          console.error('❌ Failed to reconnect WebSocket');
+        }
+      }, 500);
+      return;
+    }
+
+    this.sendMove(move, fen);
+  }
+
+  private sendMove(move: string, fen: string): void {
     if (!this.client?.connected || !this.gameId || !this.playerId) {
-      console.error('❌ Not connected to game');
       return;
     }
 
@@ -221,10 +293,14 @@ export class GameService {
     
     // Force close WebSocket connection
     if (this.client) {
-      this.client.deactivate();
-      // Additional cleanup
-      if (this.client.webSocket) {
-        this.client.webSocket.close();
+      try {
+        this.client.deactivate();
+        // Additional cleanup
+        if (this.client.webSocket) {
+          this.client.webSocket.close();
+        }
+      } catch (error) {
+        console.warn('⚠️ Error during WebSocket disconnect:', error);
       }
     }
     
