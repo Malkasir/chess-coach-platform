@@ -5,8 +5,10 @@ import { AuthenticationForm } from './components/AuthenticationForm';
 import { GameLobby } from './components/GameLobby';
 import { ActiveGame } from './components/ActiveGame';
 import { NotificationBanner } from './components/NotificationBanner';
+import { PuzzleInterface } from './components/PuzzleInterface';
 import { debugError, debugLog } from './utils/debug';
 import { ChessPersonality } from './types/personality.types';
+import { Puzzle, getPuzzleService } from './services/puzzle-service';
 
 export const ChessCoachAppReact: React.FC = () => {
   const {
@@ -41,6 +43,10 @@ export const ChessCoachAppReact: React.FC = () => {
   // AI game state
   const [aiGameState, setAiGameState] = useState<any>(null);
   const [aiService, setAiService] = useState<any>(null);
+
+  // Puzzle state
+  const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
+  const [puzzleMode, setPuzzleMode] = useState(false);
 
   // Poll for received invitations when authenticated
   useEffect(() => {
@@ -264,6 +270,45 @@ export const ChessCoachAppReact: React.FC = () => {
     }
   };
 
+  // Puzzle Handlers
+  const handlePuzzleStart = (puzzle: Puzzle) => {
+    debugLog('🧩 Starting puzzle from ChessCoachApp:', { puzzleId: puzzle.id, theme: puzzle.theme });
+    setCurrentPuzzle(puzzle);
+    setPuzzleMode(true);
+  };
+
+  const handlePuzzleExit = () => {
+    debugLog('🧩 Exiting puzzle mode');
+    setCurrentPuzzle(null);
+    setPuzzleMode(false);
+  };
+
+  const handleNextPuzzle = async () => {
+    debugLog('🧩 Getting next puzzle');
+    try {
+      const puzzleService = getPuzzleService();
+      
+      // Try to get a random puzzle with similar characteristics
+      let nextPuzzle: Puzzle;
+      
+      if (currentPuzzle?.theme) {
+        try {
+          nextPuzzle = await puzzleService.getRandomPuzzleByTheme(currentPuzzle.theme);
+        } catch {
+          // Fallback to completely random puzzle
+          nextPuzzle = await puzzleService.getRandomPuzzle();
+        }
+      } else {
+        nextPuzzle = await puzzleService.getRandomPuzzle();
+      }
+      
+      setCurrentPuzzle(nextPuzzle);
+      debugLog('✅ Next puzzle loaded:', { puzzleId: nextPuzzle.id, theme: nextPuzzle.theme });
+    } catch (error) {
+      debugError('❌ Failed to get next puzzle:', error);
+    }
+  };
+
   // AI Move Handler - wraps the regular move handler to also trigger AI responses
   const handleAIMove = async (move: string, fen: string, moveObj?: { from: string; to: string; promotion?: string }) => {
     debugLog('🎯 Player move in AI game:', { move, fen, moveObj });
@@ -341,6 +386,17 @@ export const ChessCoachAppReact: React.FC = () => {
     );
   }
 
+  // Show puzzle interface when in puzzle mode
+  if (puzzleMode && currentPuzzle) {
+    return (
+      <PuzzleInterface
+        puzzle={currentPuzzle}
+        onExit={handlePuzzleExit}
+        onNextPuzzle={handleNextPuzzle}
+      />
+    );
+  }
+
   // Show game lobby when not in a game
   if (gameState.gameStatus === 'disconnected') {
     return (
@@ -359,6 +415,7 @@ export const ChessCoachAppReact: React.FC = () => {
           onRoomCodeInputChange={(code) => updateGameField('roomCodeInput', code)}
           onColorPreferenceChange={(color) => updateGameField('colorPreference', color)}
           onAIGameStart={handleAIGameStart}
+          onPuzzleStart={handlePuzzleStart}
         />
         <NotificationBanner
           invitation={currentInvitation}

@@ -60,6 +60,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/test-db").permitAll()
                 .requestMatchers("/h2-console/**").permitAll() // H2 console for development
                 .requestMatchers("/actuator/health").permitAll() // Health check
+                .requestMatchers("/api/puzzles/**").permitAll() // Puzzle endpoints (public access)
                 // Presence and invitation endpoints (require authentication but allow access)
                 .requestMatchers("/api/presence/**").authenticated()
                 .requestMatchers("/api/invitations/**").authenticated()

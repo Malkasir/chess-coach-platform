@@ -5,7 +5,10 @@ import { AppHeader } from './AppHeader';
 import { OnlinePlayersList } from './OnlinePlayersList';
 import { GameInvitationModal, InvitationData } from './GameInvitationModal';
 import { AIPersonalitySelector } from './AIPersonalitySelector';
+import { PuzzleSelector } from './PuzzleSelector';
+import { PuzzleCreator } from './PuzzleCreator';
 import { ChessPersonality } from '../types/personality.types';
+import { Puzzle } from '../services/puzzle-service';
 import { apiClient } from '../services/api-client';
 import { debugLog, debugError } from '../utils/debug';
 
@@ -23,6 +26,7 @@ interface GameLobbyProps {
   onRoomCodeInputChange: (code: string) => void;
   onColorPreferenceChange: (color: 'white' | 'black' | 'random') => void;
   onAIGameStart: (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => void;
+  onPuzzleStart: (puzzle: Puzzle) => void;
 }
 
 export const GameLobby: React.FC<GameLobbyProps> = ({
@@ -39,10 +43,13 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   onRoomCodeInputChange,
   onColorPreferenceChange,
   onAIGameStart,
+  onPuzzleStart,
 }) => {
   const [showOnlinePlayers, setShowOnlinePlayers] = useState(false);
   const [showInvitationModal, setShowInvitationModal] = useState(false);
   const [showAISelector, setShowAISelector] = useState(false);
+  const [showPuzzleSelector, setShowPuzzleSelector] = useState(false);
+  const [showPuzzleCreator, setShowPuzzleCreator] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<{ id: number; name: string } | null>(null);
 
   const handleInvitePlayer = (playerId: number, playerName: string) => {
@@ -71,6 +78,18 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   const handleAIGameStart = (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => {
     debugLog('🤖 GameLobby: Delegating AI game start to parent:', { personality: personality.name, userColor });
     onAIGameStart(personality, userColor);
+  };
+
+  const handlePuzzleStart = (puzzle: Puzzle) => {
+    debugLog('🧩 GameLobby: Delegating puzzle start to parent:', { puzzleId: puzzle.id, theme: puzzle.theme });
+    onPuzzleStart(puzzle);
+  };
+
+  const handlePuzzleCreated = (puzzle: Puzzle) => {
+    debugLog('🎯 GameLobby: Puzzle created successfully:', { puzzleId: puzzle.id, theme: puzzle.theme });
+    setShowPuzzleCreator(false);
+    // Optionally start the puzzle immediately
+    onPuzzleStart(puzzle);
   };
   return (
     <div className={styles.app}>
@@ -114,6 +133,20 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   style={{ marginLeft: '1rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
                 >
                   🤖 Play vs AI
+                </button>
+                <button 
+                  onClick={() => setShowPuzzleSelector(true)} 
+                  className={styles.primaryButton}
+                  style={{ marginLeft: '1rem', background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)' }}
+                >
+                  🧩 Solve Puzzles
+                </button>
+                <button 
+                  onClick={() => setShowPuzzleCreator(true)} 
+                  className={styles.primaryButton}
+                  style={{ marginLeft: '1rem', background: 'linear-gradient(135deg, #9c27b0 0%, #673ab7 100%)' }}
+                >
+                  🎯 Create Puzzle
                 </button>
               </div>
               <div className={styles.controlsRow}>
@@ -191,6 +224,17 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         isVisible={showAISelector}
         onClose={() => setShowAISelector(false)}
         onSelectPersonality={handleAIGameStart}
+      />
+      <PuzzleSelector
+        isVisible={showPuzzleSelector}
+        onClose={() => setShowPuzzleSelector(false)}
+        onPuzzleSelect={handlePuzzleStart}
+      />
+
+      <PuzzleCreator
+        isVisible={showPuzzleCreator}
+        onClose={() => setShowPuzzleCreator(false)}
+        onPuzzleCreated={handlePuzzleCreated}
       />
     </div>
   );
