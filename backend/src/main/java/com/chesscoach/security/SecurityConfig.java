@@ -81,16 +81,18 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Restore proper CORS configuration with correct Netlify domain
+        // Allow both Render and Netlify domains for frontend access
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:*", 
             "http://127.0.0.1:*",
+            "https://chess-coach-frontend.onrender.com",
+            "https://*.onrender.com",
             "https://clever-centaur-198ab4.netlify.app",
             "https://*.netlify.app"
         ));
         
         // Add debug logging
-        System.out.println("🚀 CORS Configuration Applied - Allowing Netlify and localhost origins");
+        System.out.println("🚀 CORS Configuration Applied - Allowing Render, Netlify, and localhost origins");
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
