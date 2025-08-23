@@ -1,5 +1,5 @@
-# Use OpenJDK 17 as base image
-FROM openjdk:17-jdk-slim
+# Multi-stage build for smaller final image
+FROM eclipse-temurin:17-jdk-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -21,8 +21,17 @@ COPY src src
 # Build the application
 RUN ./mvnw clean package -DskipTests
 
-# Expose port
+# Production stage
+FROM eclipse-temurin:17-jre-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy the built jar from builder stage
+COPY --from=builder /app/target/*.jar app.jar
+
+# Expose port (Render uses PORT environment variable)
 EXPOSE 8080
 
 # Run the application
-CMD ["sh", "-c", "java -jar target/*.jar"]
+CMD ["java", "-jar", "app.jar"]

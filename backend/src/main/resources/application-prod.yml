@@ -1,4 +1,7 @@
 # Production Profile Configuration
+server:
+  port: ${PORT:8080}
+
 spring:
   datasource:
     url: ${DATABASE_URL}
