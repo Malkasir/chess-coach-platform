@@ -17,7 +17,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate # Validate schema matches entities
+      ddl-auto: create # Create schema from entities for initial deployment
     show-sql: false
   
   
