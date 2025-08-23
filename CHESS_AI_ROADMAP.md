@@ -1,5 +1,7 @@
 # 🧠 Chess AI Personalities & Adaptive Difficulty - Development Roadmap
 
+> **⚠️ IMPLEMENTATION STATUS**: This is a future roadmap document. Currently, only basic Stockfish integration exists. The personality system and adaptive difficulty features described below are planned for future development.
+
 ## 📋 Project Overview
 
 Transform the chess coaching platform with ChessMaster-inspired AI personalities that adapt to player skill, exhibit unique playing styles, and provide targeted training experiences.

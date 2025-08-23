@@ -10,6 +10,7 @@ This is a chess coaching platform with video calling capabilities, built as a fu
 - **Backend**: Spring Boot application with Java 17, Maven for dependency management
 - **Chess Integration**: Uses chess.js for game logic and react-chessboard for the interactive board
 - **Video Calling**: Integrated Jitsi Meet for real-time communication
+- **AI Chess**: Basic Stockfish integration for AI opponents (personalities system planned)
 
 ## Development Commands
 
@@ -45,7 +46,7 @@ Environment variables are configured directly in the frontend source code.
   - `AIPersonalitySelector.tsx` - AI opponent personality selection interface
   - `ActiveGame.tsx` - Main game interface for active chess games
 - **Chess Logic**: Uses chess.js library for move validation and game state management
-- **AI Engine**: Stockfish integration with personality-driven play styles
+- **AI Engine**: Basic Stockfish integration (advanced personality system in roadmap)
 - **Styling**: CSS Modules with comprehensive design system and CSS variables
 - **State Management**: React hooks (useState, useEffect, useCallback) with custom hooks (useAuth, useGameState, useToasts)
 - **API Integration**: Centralized API client with error handling
@@ -61,7 +62,7 @@ Environment variables are configured directly in the frontend source code.
 - **Services**: Complete service layer with GameService, UserService, GameInvitationService, etc.
 - **Security**: JWT authentication with SecurityConfig and JwtUtil
 - **WebSocket**: Full STOMP implementation for real-time chess moves
-- **Database**: JPA entities for User, Game, GameInvitation, UserPresence
+- **Database**: JPA entities for User, Game, GameInvitation, UserPresence (H2 dev, PostgreSQL prod)
 
 ### Key Integration Points
 - Frontend chess board handles drag-and-drop with real-time validation via chess.js
@@ -119,7 +120,7 @@ Environment variables are configured directly in the frontend source code.
 - Modal components include proper focus trapping and escape key handling
 - Responsive design supports mobile and desktop experiences
 - CSS variables enable easy theming (light mode ready)
-- Backend is set up for WebSocket integration but controllers are not yet implemented
+- Backend has full WebSocket integration with STOMP controllers implemented
 - Chess moves are validated client-side before allowing piece placement
 - The application supports promotion (defaults to queen) and standard chess rules
 - Total estimated monthly cost: $0-6 for first 100 users

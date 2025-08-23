@@ -8,6 +8,7 @@ Your backend is now ready for deployment with:
 - ✅ Dynamic port configuration (`${PORT:8080}`)
 - ✅ CORS enabled for production
 - ✅ Java 17 & Spring Boot 3.5.3
+- ✅ PostgreSQL & H2 database support
 
 ### Step 2: Push to GitHub
 ```bash

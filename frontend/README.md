@@ -6,10 +6,10 @@ A React-based chess coaching platform with video calling capabilities and AI opp
 
 - **Real-time Chess Gameplay**: Collaborative chess games with WebSocket synchronization
 - **Video Communication**: Integrated Jitsi Meet for coach-student sessions
-- **AI Opponents**: Multiple AI personalities with different playing styles powered by Stockfish
+- **AI Opponents**: Basic AI opponents powered by Stockfish (personality system UI implemented but behavioral differences not yet active)
 - **Game Invitations**: Player discovery and invitation system
 - **User Authentication**: JWT-based secure authentication
-- **Responsive Design**: Works on desktop and mobile devices
+- **Responsive Design**: Optimized for desktop with mobile support (breakpoint at 768px)
 
 ## Technology Stack
 
@@ -17,7 +17,7 @@ A React-based chess coaching platform with video calling capabilities and AI opp
 - **Vite** for development and building
 - **Chess.js** for game logic and move validation
 - **react-chessboard** for interactive board UI
-- **Stockfish** chess engine for AI opponents
+- **Stockfish.js** chess engine with Web Worker implementation for AI opponents
 - **Jitsi Meet** for video calling
 - **STOMP WebSocket** for real-time communication
 
@@ -86,9 +86,8 @@ The app connects to the backend at `http://localhost:8080` by default. No additi
 
 ## AI Opponents
 
-The platform includes multiple AI personalities:
-- **Aggressive**: Tactical, attack-focused play
-- **Strategic**: Positional, patient approach
-- **Balanced**: Well-rounded playing style
-- **Tactical**: Sharp, puzzle-solving oriented
-- **Defensive**: Solid, counter-attacking style
+The platform includes basic AI integration:
+- **Stockfish Engine**: Industry-standard chess engine with Web Worker implementation
+- **Personality UI**: 5 personality options available (Aggressive Alex, Strategic Sophia, Tactical Tim, Steady Sam, Balanced Beth)
+- **Skill Levels**: Configurable difficulty levels using Stockfish skill parameter
+- **Note**: Personality behavioral differences are not yet implemented - currently uses basic Stockfish with different skill levels
