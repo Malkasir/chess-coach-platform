@@ -40,6 +40,11 @@ dist/
 build/
 target/
 
+# Database files
+/backend/data/
+*.mv.db
+*.trace.db
+
 # Environment variables
 .env
 .env.local

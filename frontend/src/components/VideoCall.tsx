@@ -18,7 +18,7 @@ export const VideoCall: React.FC<VideoCallProps> = ({ gameId }) => {
 
     return new Promise<void>((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = 'https://meet.jit.si/external_api.js';
+      script.src = 'https://meet.ffmuc.net/external_api.js';
       script.onload = () => {
         scriptLoadedRef.current = true;
         resolve();
@@ -41,9 +41,9 @@ export const VideoCall: React.FC<VideoCallProps> = ({ gameId }) => {
             apiRef.current.dispose();
           }
 
-          const domain = 'meet.jit.si';
+          const domain = 'meet.ffmuc.net';
           const options = {
-            roomName: `room${gameId}`,
+            roomName: `ChessCoach${gameId}`,
             width: '100%',
             height: 300,
             parentNode: containerRef.current,
@@ -53,7 +53,9 @@ export const VideoCall: React.FC<VideoCallProps> = ({ gameId }) => {
               prejoinPageEnabled: false,
               requireDisplayName: false,
               enableWelcomePage: false,
-              enableUserRolesBasedOnToken: false
+              enableUserRolesBasedOnToken: false,
+              enableNoAudioDetection: false,
+              enableNoisyMicDetection: false
             },
             interfaceConfigOverwrite: {
               TOOLBAR_BUTTONS: [
@@ -88,7 +90,22 @@ export const VideoCall: React.FC<VideoCallProps> = ({ gameId }) => {
     );
   }
 
-  return <div ref={containerRef} style={styles.container} />;
+  // Fallback: Direct Jitsi link if embed fails
+  const fallbackUrl = `https://meet.ffmuc.net/ChessCoach${gameId}`;
+
+  return (
+    <div style={styles.container}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      <div style={styles.fallback}>
+        <p style={{ fontSize: '12px', margin: '5px 0' }}>
+          Having video issues? 
+          <a href={fallbackUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#4CAF50', marginLeft: '5px' }}>
+            Open video call in new tab
+          </a>
+        </p>
+      </div>
+    </div>
+  );
 };
 
 const styles = {
@@ -98,7 +115,8 @@ const styles = {
     height: '300px',
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: '12px',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    position: 'relative' as const
   },
   placeholder: {
     width: '400px',
@@ -108,6 +126,17 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    color: 'white',
+    textAlign: 'center' as const
+  },
+  fallback: {
+    position: 'absolute' as const,
+    bottom: '5px',
+    left: '5px',
+    right: '5px',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: '4px',
+    padding: '5px',
     color: 'white',
     textAlign: 'center' as const
   }
