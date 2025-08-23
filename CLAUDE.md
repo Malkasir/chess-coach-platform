@@ -20,9 +20,9 @@ This is a chess coaching platform with video calling capabilities, built as a fu
 - **Custom elements analysis**: `npm run analyze` (generates custom-elements.json)
 
 ### Environment Setup
-- Copy `.env.example` to `.env` and configure:
-  - `VITE_API_BASE_URL`: Backend API URL (defaults to http://localhost:8080)
-  - `VITE_DEBUG`: Enable/disable debug logging (true for development)
+Environment variables are configured directly in the frontend source code.
+- Backend API URL defaults to http://localhost:8080
+- Debug logging controlled via `VITE_DEBUG` environment variable
 
 ### Backend (located in `backend/`)
 - **Run application**: `./mvnw spring-boot:run` (starts Spring Boot on port 8080)
@@ -36,21 +36,32 @@ This is a chess coaching platform with video calling capabilities, built as a fu
 - **Components**: 
   - `VideoCall.tsx` - Jitsi Meet integration for video calling
   - `ChessBoard.tsx` - Interactive chess board using react-chessboard with drag-and-drop
-  - `GameLobby.tsx` - Game creation and joining interface
+  - `GameLobby.tsx` - Game creation and joining interface with AI personality selection
   - `OnlinePlayersList.tsx` - Player discovery and invitation system
   - `GameInvitationModal.tsx` - Modal for sending game invitations
   - `NotificationBanner.tsx` - Real-time invitation notifications
   - `PageHeader.tsx` - Consistent navigation header
   - `Toast.tsx` - Centralized error and success notifications
+  - `AIPersonalitySelector.tsx` - AI opponent personality selection interface
+  - `ActiveGame.tsx` - Main game interface for active chess games
 - **Chess Logic**: Uses chess.js library for move validation and game state management
+- **AI Engine**: Stockfish integration with personality-driven play styles
 - **Styling**: CSS Modules with comprehensive design system and CSS variables
-- **State Management**: React hooks (useState, useEffect, useCallback) with custom hooks
-- **API Integration**: Centralized API client with environment-based URLs and error handling
+- **State Management**: React hooks (useState, useEffect, useCallback) with custom hooks (useAuth, useGameState, useToasts)
+- **API Integration**: Centralized API client with error handling
 
 ### Backend Architecture
-- **Main Class**: `BackendApplication.java` - Spring Boot entry point with basic REST controller
-- **Planned Features**: WebSocket support for real-time chess moves (dependencies included)
-- **Chess Engine**: Uses chesslib (com.github.bhlangonijr) for server-side chess logic
+- **Main Class**: `BackendApplication.java` - Spring Boot entry point
+- **Controllers**: 
+  - `AuthController.java` - User authentication and registration
+  - `GameController.java` - Game creation and management
+  - `GameWebSocketController.java` - Real-time game communication
+  - `GameInvitationController.java` - Player invitation system
+  - `UserPresenceController.java` - Online player tracking
+- **Services**: Complete service layer with GameService, UserService, GameInvitationService, etc.
+- **Security**: JWT authentication with SecurityConfig and JwtUtil
+- **WebSocket**: Full STOMP implementation for real-time chess moves
+- **Database**: JPA entities for User, Game, GameInvitation, UserPresence
 
 ### Key Integration Points
 - Frontend chess board handles drag-and-drop with real-time validation via chess.js
@@ -63,8 +74,11 @@ This is a chess coaching platform with video calling capabilities, built as a fu
 ### Target Features
 1. **Video Communication**: Coach-student video calls during chess sessions
 2. **Interactive Chess Board**: Real-time collaborative chess gameplay
-3. **Chess Puzzle System**: Ability to set and solve chess puzzles
-4. **Screenshot Analysis**: Read chess positions from screenshots (future feature)
+3. **AI Chess Opponents**: Multiple AI personalities with different playing styles
+4. **Game Invitations**: Player-to-player game invitation system
+5. **User Presence**: Online player tracking and discovery
+6. **Chess Puzzle System**: Ability to set and solve chess puzzles (planned)
+7. **Screenshot Analysis**: Read chess positions from screenshots (future feature)
 
 ### Scale & Cost Constraints
 - **Expected Users**: <100 users in first year

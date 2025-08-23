@@ -46,19 +46,17 @@ For a complete production solution, deploy your backend to a cloud service:
    - Render.com
    - DigitalOcean App Platform
 
-2. **Update environment variables:**
-   Edit `.env.production`:
+2. **Update backend URL:**
+   Update the backend URL in your frontend code to point to your deployed backend:
    ```
-   VITE_BACKEND_URL=https://your-deployed-backend.herokuapp.com
+   https://your-deployed-backend.herokuapp.com
    ```
 
 3. **Rebuild and redeploy frontend**
 
-## Environment Variables
+## Configuration
 
-- `.env` - Default development settings
-- `.env.local` - Local network testing (git ignored)
-- `.env.production` - Production deployment settings
+Backend URL configuration is handled directly in the frontend source code. For production deployments, update the API base URL to point to your deployed backend service.
 
 ## Current Issue Analysis
 

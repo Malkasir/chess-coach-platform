@@ -1,35 +1,94 @@
-# \<chess-coach-app>
+# Chess Coach Platform - Frontend
 
-This webcomponent follows the [open-wc](https://github.com/open-wc/open-wc) recommendation.
+A React-based chess coaching platform with video calling capabilities and AI opponents.
 
-## Installation
+## Features
 
-```bash
-npm i chess-coach-app
+- **Real-time Chess Gameplay**: Collaborative chess games with WebSocket synchronization
+- **Video Communication**: Integrated Jitsi Meet for coach-student sessions
+- **AI Opponents**: Multiple AI personalities with different playing styles powered by Stockfish
+- **Game Invitations**: Player discovery and invitation system
+- **User Authentication**: JWT-based secure authentication
+- **Responsive Design**: Works on desktop and mobile devices
+
+## Technology Stack
+
+- **React 18** with TypeScript
+- **Vite** for development and building
+- **Chess.js** for game logic and move validation
+- **react-chessboard** for interactive board UI
+- **Stockfish** chess engine for AI opponents
+- **Jitsi Meet** for video calling
+- **STOMP WebSocket** for real-time communication
+
+## Development
+
+### Prerequisites
+- Node.js 18+
+- npm
+
+### Getting Started
+
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Start development server**:
+   ```bash
+   npm run dev
+   ```
+   Access the app at `http://localhost:5173` (Vite default port)
+
+3. **Build for production**:
+   ```bash
+   npm run build
+   ```
+
+4. **Type checking**:
+   ```bash
+   npm run typecheck
+   ```
+
+### Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── ChessBoard.tsx          # Interactive chess board
+│   ├── GameLobby.tsx           # Game creation/joining
+│   ├── AIPersonalitySelector.tsx  # AI opponent selection
+│   ├── VideoCall.tsx           # Jitsi Meet integration
+│   └── ...
+├── hooks/              # Custom React hooks
+│   ├── useAuth.ts             # Authentication state
+│   ├── useGameState.ts        # Game state management
+│   └── useToasts.ts           # Toast notifications
+├── services/           # API and business logic
+│   ├── api-client.ts          # Backend API integration
+│   ├── chess-engine/          # AI chess engine services
+│   └── ...
+├── styles/             # CSS modules and themes
+└── types/              # TypeScript type definitions
 ```
 
-## Usage
+## Configuration
 
-```html
-<script type="module">
-  import 'chess-coach-app/chess-coach-app.js';
-</script>
+The app connects to the backend at `http://localhost:8080` by default. No additional environment setup is required for development.
 
-<chess-coach-app></chess-coach-app>
-```
+## Key Components
 
+- **ChessCoachApp**: Root component managing authentication and routing
+- **GameLobby**: Interface for creating games and selecting AI opponents
+- **ActiveGame**: Main game interface with chess board and video call
+- **AIPersonalitySelector**: Modal for choosing AI opponent personality
+- **ChessBoard**: Interactive board with drag-and-drop move input
 
+## AI Opponents
 
-## Tooling configs
-
-For most of the tools, the configuration is in the `package.json` to reduce the amount of files in your project.
-
-If you customize the configuration a lot, you can consider moving them to individual files.
-
-## Local Demo with `web-dev-server`
-
-```bash
-npm start
-```
-
-To run a local development server that serves the basic demo located in `demo/index.html`
+The platform includes multiple AI personalities:
+- **Aggressive**: Tactical, attack-focused play
+- **Strategic**: Positional, patient approach
+- **Balanced**: Well-rounded playing style
+- **Tactical**: Sharp, puzzle-solving oriented
+- **Defensive**: Solid, counter-attacking style
