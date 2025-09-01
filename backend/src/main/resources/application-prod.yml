@@ -3,7 +3,10 @@ server:
   port: ${PORT:8080}
 
 spring:
-  # Spring Boot will auto-configure datasource from DATABASE_URL environment variable
+  # Override datasource configuration for production
+  datasource:
+    url: ${DATABASE_URL}
+    driver-class-name: org.postgresql.Driver
   
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
