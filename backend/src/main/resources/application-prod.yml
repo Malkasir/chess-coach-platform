@@ -8,6 +8,10 @@ spring:
     hikari:
       data-source-properties:
         sslmode: require
+        ssl: true
+        sslcert: ""
+        sslkey: ""
+        sslrootcert: ""
   
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
