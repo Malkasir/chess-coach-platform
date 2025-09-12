@@ -4,6 +4,10 @@ server:
 
 spring:
   # Spring Boot will auto-configure datasource from DATABASE_URL environment variable
+  datasource:
+    hikari:
+      data-source-properties:
+        sslmode: require
   
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
