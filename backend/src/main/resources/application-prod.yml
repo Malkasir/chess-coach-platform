@@ -6,6 +6,7 @@ spring:
   # Spring Boot will auto-configure datasource from DATABASE_URL environment variable
   
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update # Update schema, create tables if they don't exist
     show-sql: false
