@@ -4,6 +4,9 @@ server:
 
 spring:
   # Spring Boot will auto-configure datasource from DATABASE_URL environment variable
+  datasource:
+    properties:
+      sslmode: require
   
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -12,9 +15,6 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        connection:
-          ssl: true
-          sslmode: require
         jdbc:
           time_zone: UTC
   
