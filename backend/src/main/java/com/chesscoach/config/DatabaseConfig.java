@@ -17,29 +17,31 @@ public class DatabaseConfig {
 
     @Bean
     @Primary
-    @ConfigurationProperties("spring.datasource")
-    public DataSourceProperties dataSourceProperties() {
-        return new DataSourceProperties();
-    }
-
-    @Bean
-    @Primary
-    public DataSource dataSource(DataSourceProperties properties) {
-        String url = properties.getUrl();
+    public DataSource dataSource() {
+        String databaseUrl = System.getenv("DATABASE_URL");
         
-        // Add SSL parameters if they're not already present
-        if (url != null && url.contains("postgresql") && !url.contains("sslmode")) {
-            url += (url.contains("?") ? "&" : "?") + "sslmode=require&ssl=true";
+        if (databaseUrl == null) {
+            throw new IllegalStateException("DATABASE_URL environment variable is not set");
         }
         
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(url);
-        config.setUsername(properties.getUsername());
-        config.setPassword(properties.getPassword());
+        System.out.println("Original DATABASE_URL: " + databaseUrl);
         
-        // Additional SSL properties for PostgreSQL
-        config.addDataSourceProperty("ssl", "true");
-        config.addDataSourceProperty("sslmode", "require");
+        // Replace sslmode=disable with sslmode=require if present
+        if (databaseUrl.contains("sslmode=disable")) {
+            databaseUrl = databaseUrl.replace("sslmode=disable", "sslmode=require");
+        } else if (databaseUrl.contains("postgresql") && !databaseUrl.contains("sslmode")) {
+            // Add SSL parameters if they're not already present
+            databaseUrl += (databaseUrl.contains("?") ? "&" : "?") + "sslmode=require";
+        }
+        
+        System.out.println("Modified DATABASE_URL: " + databaseUrl);
+        
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(databaseUrl);
+        
+        // Set connection timeout and other properties
+        config.setConnectionTimeout(20000);
+        config.setMaximumPoolSize(5);
         
         return new HikariDataSource(config);
     }
