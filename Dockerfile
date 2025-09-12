@@ -1,22 +1,14 @@
 # Multi-stage build for smaller final image
 FROM eclipse-temurin:17-jdk-alpine AS builder
 
-# Set working directory
+# Set working directory to /app
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml first (for better caching) from backend directory
-COPY backend/mvnw .
-COPY backend/.mvn .mvn
-COPY backend/pom.xml .
+# Copy the entire backend directory
+COPY backend/ .
 
-# Make mvnw executable
+# Grant execute permission to the maven wrapper
 RUN chmod +x ./mvnw
-
-# Download dependencies (this layer will be cached if pom.xml doesn't change)
-RUN ./mvnw dependency:go-offline -B
-
-# Copy source code from backend directory
-COPY backend/src src
 
 # Build the application
 RUN ./mvnw clean package -DskipTests
@@ -27,10 +19,10 @@ FROM eclipse-temurin:17-jre-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy the built jar from builder stage
+# Copy the built jar from the builder stage
 COPY --from=builder /app/target/*.jar app.jar
 
-# Expose port (Render uses PORT environment variable)
+# Expose the port the app runs on
 EXPOSE 8080
 
 # Run the application
