@@ -149,6 +149,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       if (!hostId) return;
 
       const response = await gameServiceRef.current?.createGame(hostId, gameState.colorPreference);
+      if (!response) return;
       const { gameId, roomCode, hostColor } = response;
 
       setGameState(prev => ({
@@ -174,6 +175,8 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
 
     try {
       const gameStateResponse = await gameServiceRef.current?.joinGameByCode(gameState.roomCodeInput, guestId);
+      if (!gameStateResponse) return;
+
       setGameState(prev => ({
         ...prev,
         playerId: guestId,
