@@ -73,6 +73,16 @@ public class GameController {
         }
     }
 
+    @PostMapping("/{gameId}/leave")
+    public ResponseEntity<?> leaveGame(@PathVariable String gameId, @RequestBody LeaveGameRequest request) {
+        try {
+            gameService.leaveGame(gameId, request.getUserId());
+            return ResponseEntity.ok(Map.of("message", "Successfully left the game"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     public static class CreateGameRequest {
         private String hostId;
         private String colorPreference = "random"; // default to random
@@ -124,6 +134,18 @@ public class GameController {
 
         public void setGuestId(String guestId) {
             this.guestId = guestId;
+        }
+    }
+
+    public static class LeaveGameRequest {
+        private Long userId;
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
         }
     }
 }

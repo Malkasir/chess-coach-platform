@@ -317,9 +317,14 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
 
   const exitGame = async () => {
     try {
+      // Notify backend that user is leaving the game
+      if (gameState.gameId && gameState.playerId) {
+        await gameServiceRef.current.leaveGame(gameState.gameId, gameState.playerId);
+      }
+
       // Disconnect from WebSocket
       gameServiceRef.current.disconnect();
-      
+
       // Reset game state
       setGameState(prev => ({
         ...prev,
@@ -332,10 +337,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         playerColor: null,
         moveHistory: []
       }));
-      
+
       // Reset chess engine
       gameRef.current = new Chess();
-      
+
     } catch (error) {
       console.error('Error exiting game:', error);
     }
