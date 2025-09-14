@@ -57,7 +57,7 @@ public class Game {
     private String result;
     
     public enum GameStatus {
-        WAITING_FOR_GUEST, ACTIVE, PAUSED, ENDED
+        WAITING_FOR_GUEST, ACTIVE, PAUSED, ENDED, ABANDONED
     }
     
     public enum PlayerColor {
@@ -101,6 +101,12 @@ public class Game {
     public void endGame(String result) {
         this.status = GameStatus.ENDED;
         this.result = result;
+        this.endedAt = LocalDateTime.now();
+    }
+
+    public void abandonGame() {
+        this.status = GameStatus.ABANDONED;
+        this.result = "abandoned";
         this.endedAt = LocalDateTime.now();
     }
     

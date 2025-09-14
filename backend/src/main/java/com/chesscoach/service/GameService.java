@@ -17,11 +17,13 @@ public class GameService {
 
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
+    private final UserPresenceService userPresenceService;
 
     @Autowired
-    public GameService(GameRepository gameRepository, UserRepository userRepository) {
+    public GameService(GameRepository gameRepository, UserRepository userRepository, UserPresenceService userPresenceService) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
+        this.userPresenceService = userPresenceService;
     }
 
     public Map<String, Object> createGame(String hostId) {
@@ -171,5 +173,27 @@ public class GameService {
             return new String[0];
         }
         return cleaned.split(",");
+    }
+
+    public void leaveGame(String gameId, Long userId) {
+        Game game = gameRepository.findByGameId(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        // Verify the user is actually in this game
+        boolean isHost = game.getHost() != null && game.getHost().getId().equals(userId);
+        boolean isGuest = game.getGuest() != null && game.getGuest().getId().equals(userId);
+
+        if (!isHost && !isGuest) {
+            throw new RuntimeException("User is not part of this game");
+        }
+
+        // Only abandon games that are currently active or waiting for a guest
+        if (game.getStatus() == Game.GameStatus.ACTIVE || game.getStatus() == Game.GameStatus.WAITING_FOR_GUEST) {
+            game.abandonGame();
+            gameRepository.save(game);
+        }
+
+        // Update user presence to ONLINE (from IN_GAME)
+        userPresenceService.setUserOnline(userId, null);
     }
 }
