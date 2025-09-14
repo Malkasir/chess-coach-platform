@@ -1,5 +1,6 @@
 package com.chesscoach.service;
 
+import com.chesscoach.dto.InvitationMessage;
 import com.chesscoach.entity.Game;
 import com.chesscoach.entity.GameInvitation;
 import com.chesscoach.entity.GameInvitation.InvitationStatus;
@@ -284,57 +285,57 @@ public class GameInvitationService {
     }
 
     private void sendInvitationNotification(GameInvitation invitation) {
-        Map<String, Object> notification = new HashMap<>();
-        notification.put("type", "GAME_INVITATION");
-        notification.put("invitation", buildInvitationResponse(invitation));
-        
-        messagingTemplate.convertAndSendToUser(
-                invitation.getRecipient().getId().toString(),
-                "/queue/notifications",
-                notification
+        InvitationMessage message = InvitationMessage.newInvitation(invitation);
+
+        System.out.println("📤 Sending new invitation notification to user " + invitation.getRecipient().getId());
+        messagingTemplate.convertAndSend(
+                "/topic/user/" + invitation.getRecipient().getId() + "/notifications",
+                message
         );
     }
 
     private void sendGameCreatedNotification(GameInvitation invitation, Map<String, Object> gameResponse) {
-        Map<String, Object> notification = new HashMap<>();
-        notification.put("type", "GAME_CREATED");
-        notification.put("game", gameResponse);
-        notification.put("invitation", buildInvitationResponse(invitation));
-        
-        // Notify both sender and recipient
-        messagingTemplate.convertAndSendToUser(
-                invitation.getSender().getId().toString(),
-                "/queue/notifications",
-                notification
+        InvitationMessage message = InvitationMessage.invitationAccepted(invitation);
+        message.setGameId((String) gameResponse.get("gameId"));
+        message.setRoomCode((String) gameResponse.get("roomCode"));
+
+        System.out.println("🎮 Sending game ready notifications to both players");
+
+        // Notify sender (who accepted the invitation)
+        messagingTemplate.convertAndSend(
+                "/topic/user/" + invitation.getSender().getId() + "/notifications",
+                message
         );
-        messagingTemplate.convertAndSendToUser(
-                invitation.getRecipient().getId().toString(),
-                "/queue/notifications",
-                notification
+
+        // Notify recipient (who sent the invitation originally)
+        messagingTemplate.convertAndSend(
+                "/topic/user/" + invitation.getRecipient().getId() + "/notifications",
+                message
         );
     }
 
     private void sendInvitationDeclinedNotification(GameInvitation invitation) {
-        Map<String, Object> notification = new HashMap<>();
-        notification.put("type", "INVITATION_DECLINED");
-        notification.put("invitation", buildInvitationResponse(invitation));
-        
-        messagingTemplate.convertAndSendToUser(
-                invitation.getSender().getId().toString(),
-                "/queue/notifications",
-                notification
+        InvitationMessage message = InvitationMessage.invitationDeclined(invitation);
+
+        System.out.println("❌ Sending invitation declined notification to sender " + invitation.getSender().getId());
+        messagingTemplate.convertAndSend(
+                "/topic/user/" + invitation.getSender().getId() + "/notifications",
+                message
         );
     }
 
     private void sendInvitationCancelledNotification(GameInvitation invitation) {
-        Map<String, Object> notification = new HashMap<>();
-        notification.put("type", "INVITATION_CANCELLED");
-        notification.put("invitation", buildInvitationResponse(invitation));
-        
-        messagingTemplate.convertAndSendToUser(
-                invitation.getRecipient().getId().toString(),
-                "/queue/notifications",
-                notification
+        InvitationMessage message = new InvitationMessage(InvitationMessage.Type.INVITATION_CANCELLED);
+        message.setInvitationId(invitation.getId());
+        message.setSenderId(invitation.getSender().getId());
+        message.setSenderName(invitation.getSender().getFullName());
+        message.setRecipientId(invitation.getRecipient().getId());
+        message.setRecipientName(invitation.getRecipient().getFullName());
+
+        System.out.println("🚫 Sending invitation cancelled notification to recipient " + invitation.getRecipient().getId());
+        messagingTemplate.convertAndSend(
+                "/topic/user/" + invitation.getRecipient().getId() + "/notifications",
+                message
         );
     }
 
