@@ -271,17 +271,32 @@ export class GameService {
 
   async getGameState(gameId: string): Promise<GameState> {
     const headers = this.authService ? this.authService.getAuthHeaders() : { 'Content-Type': 'application/json' };
-    
+
     const response = await fetch(`${this.baseUrl}/api/games/${gameId}`, {
       headers
     });
-    
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Failed to get game state' }));
       throw new Error(error.error || 'Failed to get game state');
     }
 
     return response.json();
+  }
+
+  async leaveGame(gameId: string, userId: string): Promise<void> {
+    const headers = this.authService ? this.authService.getAuthHeaders() : { 'Content-Type': 'application/json' };
+
+    const response = await fetch(`${this.baseUrl}/api/games/${gameId}/leave`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ userId: parseInt(userId) })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to leave game' }));
+      throw new Error(error.error || 'Failed to leave game');
+    }
   }
 
   setGameUpdateListener(callback: (message: GameMessage) => void): void {
