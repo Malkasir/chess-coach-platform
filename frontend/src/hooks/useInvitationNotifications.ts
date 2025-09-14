@@ -209,14 +209,14 @@ export const useInvitationNotifications = (
     return () => {
       disconnectFromNotifications();
     };
-  }, [userId, authService, connectToNotifications, disconnectFromNotifications]);
+  }, [userId, authService]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       disconnectFromNotifications();
     };
-  }, [disconnectFromNotifications]);
+  }, []);
 
   return {
     connectionStatus,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useGameState } from './hooks/useGameState';
 import { useInvitationNotifications, InvitationMessage, InvitationNotificationCallbacks } from './hooks/useInvitationNotifications';
@@ -43,8 +43,8 @@ export const ChessCoachAppReact: React.FC = () => {
   const [aiGameState, setAiGameState] = useState<any>(null);
   const [aiService, setAiService] = useState<any>(null);
 
-  // Real-time invitation notification callbacks
-  const invitationCallbacks: InvitationNotificationCallbacks = {
+  // Real-time invitation notification callbacks - memoized to prevent reconnection loops
+  const invitationCallbacks: InvitationNotificationCallbacks = useMemo(() => ({
     onNewInvitation: (message: InvitationMessage) => {
       debugLog('📨 Received new invitation:', message);
 
@@ -101,12 +101,10 @@ export const ChessCoachAppReact: React.FC = () => {
 
     onInvitationCancelled: (message: InvitationMessage) => {
       debugLog('🚫 Invitation cancelled:', message);
-      // Remove the invitation from current invitation if it matches
-      if (currentInvitation?.id === message.invitationId) {
-        setCurrentInvitation(null);
-      }
+      // Remove the invitation from current invitation if it matches using functional update
+      setCurrentInvitation(prev => prev?.id === message.invitationId ? null : prev);
     }
-  };
+  }), [authState.currentUser, joinGameFromInvitation]);
 
   // Use real-time invitation notifications instead of polling
   const { connectionStatus } = useInvitationNotifications(

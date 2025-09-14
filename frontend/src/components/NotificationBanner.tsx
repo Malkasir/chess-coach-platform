@@ -3,13 +3,14 @@ import styles from '../styles/shared.module.css';
 
 interface GameInvitation {
   id: number;
+  senderId: number;
+  senderName: string;
+  recipientId: number;
+  recipientName: string;
   type: 'quick_game' | 'lesson' | 'puzzle_session';
-  sender: {
-    id: number;
-    fullName: string;
-  };
   message: string;
-  expiresAt: string;
+  status: string;
+  timestamp: string;
   senderColor?: string;
 }
 
@@ -82,18 +83,18 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
         
         <div className={styles.notificationInfo}>
           <div className={styles.notificationTitle}>
-            <strong>{invitation.sender.fullName}</strong> invited you to a {getTypeText(invitation.type)}
+            <strong>{invitation.senderName}</strong> invited you to a {getTypeText(invitation.type)}
           </div>
-          
+
           {invitation.message && (
             <div className={styles.notificationMessage}>
               "{invitation.message}"
             </div>
           )}
-          
+
           <div className={styles.notificationMeta}>
             <span className={styles.timeRemaining}>
-              ⏱️ {getTimeRemaining(invitation.expiresAt)}
+              ⏱️ Just now
             </span>
             {invitation.senderColor && invitation.senderColor !== 'random' && (
               <span className={styles.colorInfo}>
