@@ -102,7 +102,7 @@ export const ChessCoachAppReact: React.FC = () => {
     onInvitationCancelled: (message: InvitationMessage) => {
       debugLog('🚫 Invitation cancelled:', message);
       // Remove the invitation from current invitation if it matches using functional update
-      setCurrentInvitation(prev => prev?.id === message.invitationId ? null : prev);
+      setCurrentInvitation((prev: any) => prev?.id === message.invitationId ? null : prev);
     }
   }), [authState.currentUser, joinGameFromInvitation]);
 

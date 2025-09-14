@@ -61,7 +61,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       try {
         // Check if user is in an active game
         const response = await authService.authenticatedFetch(
-          `${gameServiceRef.current.getBaseUrl()}/api/games/user/${currentUser.id}/current`
+          `${gameServiceRef.current?.getBaseUrl()}/api/games/user/${currentUser.id}/current`
         );
 
         if (response.ok) {
@@ -96,7 +96,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
                 }));
 
                 // Reconnect to WebSocket
-                await gameServiceRef.current.joinGame(activeGame.gameId, currentUser.id.toString(), isHost);
+                await gameServiceRef.current?.joinGame(activeGame.gameId, currentUser.id.toString(), isHost);
               }
             }
           }
@@ -148,7 +148,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       const hostId = currentUser?.id.toString();
       if (!hostId) return;
 
-      const response = await gameServiceRef.current.createGame(hostId, gameState.colorPreference);
+      const response = await gameServiceRef.current?.createGame(hostId, gameState.colorPreference);
       const { gameId, roomCode, hostColor } = response;
 
       setGameState(prev => ({
@@ -162,7 +162,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         gameStatus: 'waiting'
       }));
 
-      await gameServiceRef.current.joinGame(gameId, hostId, true);
+      await gameServiceRef.current?.joinGame(gameId, hostId, true);
     } catch (error) {
       console.error('Failed to create game:', error);
     }
@@ -173,7 +173,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     if (!guestId || !gameState.roomCodeInput) return;
 
     try {
-      const gameStateResponse = await gameServiceRef.current.joinGameByCode(gameState.roomCodeInput, guestId);
+      const gameStateResponse = await gameServiceRef.current?.joinGameByCode(gameState.roomCodeInput, guestId);
       setGameState(prev => ({
         ...prev,
         playerId: guestId,
@@ -185,14 +185,14 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         gameStatus: 'active'
       }));
 
-      await gameServiceRef.current.joinGame(gameStateResponse.gameId, guestId, false);
+      await gameServiceRef.current?.joinGame(gameStateResponse.gameId, guestId, false);
     } catch (error) {
       console.error('Failed to join game:', error);
     }
   };
 
   const resetGame = () => {
-    gameServiceRef.current.disconnect();
+    gameServiceRef.current?.disconnect();
     gameRef.current = new Chess();
     
     setGameState(prev => ({
@@ -214,7 +214,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     gameRef.current.load(fen);
     
     // Send move to server
-    gameServiceRef.current.makeMove(move, fen);
+    gameServiceRef.current?.makeMove(move, fen);
     
     // Update local state
     setGameState(prev => ({
@@ -302,7 +302,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       }));
 
       // Connect to WebSocket for real-time updates
-      await gameServiceRef.current.joinGame(gameId, playerId, isHost);
+      await gameServiceRef.current?.joinGame(gameId, playerId, isHost);
       
       // Wait a moment to ensure WebSocket subscription is established
       setTimeout(() => {
@@ -325,11 +325,11 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     try {
       // Notify backend that user is leaving the game
       if (gameState.gameId && gameState.playerId) {
-        await gameServiceRef.current.leaveGame(gameState.gameId, gameState.playerId);
+        await gameServiceRef.current?.leaveGame(gameState.gameId, gameState.playerId);
       }
 
       // Disconnect from WebSocket
-      gameServiceRef.current.disconnect();
+      gameServiceRef.current?.disconnect();
 
       // Reset game state
       setGameState(prev => ({
