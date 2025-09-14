@@ -31,10 +31,16 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
   });
 
   const gameRef = useRef(new Chess());
-  const gameServiceRef = useRef(new GameService());
+  const gameServiceRef = useRef<GameService | null>(null);
+
+  // Lazy initialization of GameService
+  if (!gameServiceRef.current) {
+    gameServiceRef.current = new GameService();
+  }
 
   useEffect(() => {
     const gameService = gameServiceRef.current;
+    if (!gameService) return;
 
     // Inject auth service into game service for authenticated requests
     gameService.setAuthService(authService);

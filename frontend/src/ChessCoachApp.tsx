@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useGameState } from './hooks/useGameState';
+import { useInvitationNotifications, InvitationMessage, InvitationNotificationCallbacks } from './hooks/useInvitationNotifications';
 import { AuthenticationForm } from './components/AuthenticationForm';
 import { GameLobby } from './components/GameLobby';
 import { ActiveGame } from './components/ActiveGame';
@@ -42,96 +43,75 @@ export const ChessCoachAppReact: React.FC = () => {
   const [aiGameState, setAiGameState] = useState<any>(null);
   const [aiService, setAiService] = useState<any>(null);
 
-  // Poll for received invitations when authenticated
-  useEffect(() => {
-    if (!authState.isAuthenticated || !authState.currentUser) {
-      return;
-    }
+  // Real-time invitation notification callbacks - memoized to prevent reconnection loops
+  const invitationCallbacks: InvitationNotificationCallbacks = useMemo(() => ({
+    onNewInvitation: (message: InvitationMessage) => {
+      debugLog('📨 Received new invitation:', message);
 
-    const pollInvitations = async () => {
-      try {
-        // Use the authService to make authenticated requests
-        const response = await authService.authenticatedFetch(
-          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/invitations/pending/${authState.currentUser?.id}`
-        );
+      // Convert the message to the format expected by the UI
+      const invitation = {
+        id: message.invitationId,
+        senderId: message.senderId,
+        senderName: message.senderName,
+        recipientId: message.recipientId,
+        recipientName: message.recipientName,
+        type: message.gameType,
+        senderColor: message.senderColor,
+        message: message.message,
+        status: 'PENDING',
+        timestamp: message.timestamp
+      };
 
-        if (response.ok) {
-          const invitations = await response.json();
-          const pendingInvitation = invitations.find((inv: any) => inv.status === 'PENDING' || inv.status === 'pending');
-          
-          if (pendingInvitation && (!currentInvitation || currentInvitation.id !== pendingInvitation.id)) {
-            setCurrentInvitation(pendingInvitation);
+      setCurrentInvitation(invitation);
+    },
+
+    onInvitationAccepted: async (message: InvitationMessage) => {
+      debugLog('✅ Invitation accepted, joining game:', message);
+
+      if (message.gameId && message.roomCode && authState.currentUser) {
+        try {
+          // The sender (current user) becomes the host when their invitation is accepted
+          let senderColor: 'white' | 'black' = 'white'; // Default sender color
+          if (message.senderColor === 'white') {
+            senderColor = 'white';
+          } else if (message.senderColor === 'black') {
+            senderColor = 'black';
+          } else {
+            // If no preference or random, sender gets white
+            senderColor = 'white';
           }
+
+          await joinGameFromInvitation(message.gameId, message.roomCode, senderColor, true);
+          debugLog('✅ Successfully joined game from accepted invitation:', message.gameId);
+        } catch (error) {
+          debugError('❌ Error joining game from accepted invitation:', error);
         }
-      } catch (error) {
-        debugError('Error polling invitations:', error);
       }
-    };
+    },
 
-    // Poll immediately and then every 15 seconds (reduced frequency)
-    pollInvitations();
-    const interval = setInterval(pollInvitations, 15000);
+    onInvitationDeclined: (message: InvitationMessage) => {
+      debugLog('❌ Invitation declined:', message);
+      // Update sent invitations to reflect the decline
+      setSentInvitations(prev =>
+        prev.map(inv =>
+          inv.id === message.invitationId ? { ...inv, status: 'declined' } : inv
+        )
+      );
+    },
 
-    return () => clearInterval(interval);
-  }, [authState.isAuthenticated, authState.currentUser, currentInvitation?.id]);
-
-  // Poll for sent invitations to check if they've been accepted
-  useEffect(() => {
-    if (!authState.isAuthenticated || !authState.currentUser) {
-      return;
+    onInvitationCancelled: (message: InvitationMessage) => {
+      debugLog('🚫 Invitation cancelled:', message);
+      // Remove the invitation from current invitation if it matches using functional update
+      setCurrentInvitation(prev => prev?.id === message.invitationId ? null : prev);
     }
+  }), [authState.currentUser, joinGameFromInvitation]);
 
-    const pollSentInvitations = async () => {
-      try {
-        const response = await authService.authenticatedFetch(
-          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/invitations/sent/${authState.currentUser?.id}`
-        );
-
-        if (response.ok) {
-          const invitations = await response.json();
-          
-          // Check if any previously pending invitations are now accepted
-          const acceptedInvitations = invitations.filter((inv: any) => 
-            inv.status === 'accepted' && 
-            !sentInvitations.find(sent => sent.id === inv.id && sent.status === 'accepted')
-          );
-          
-          if (acceptedInvitations.length > 0) {
-            
-            // Use the game info returned by the backend for accepted invitations
-            for (const invitation of acceptedInvitations) {
-              if (invitation.game && invitation.game.gameId) {
-                // Set sender color - they get what they requested or default white
-                let senderColor: 'white' | 'black' = 'white'; // Default sender color
-                if (invitation.senderColor === 'white') {
-                  senderColor = 'white';
-                } else if (invitation.senderColor === 'black') {
-                  senderColor = 'black';
-                } else {
-                  // If no preference or random, sender gets white
-                  senderColor = 'white';
-                }
-                
-                // Join game with proper WebSocket connection (sender/host)
-                await joinGameFromInvitation(invitation.game.gameId, invitation.game.roomCode, senderColor, true);
-                break; // Only join the first game
-              }
-            }
-          }
-          
-          setSentInvitations(invitations);
-        }
-      } catch (error) {
-        debugError('Error polling sent invitations:', error);
-      }
-    };
-
-    // Poll every 15 seconds for sent invitation updates (reduced frequency)
-    const interval = setInterval(pollSentInvitations, 15000);
-    pollSentInvitations(); // Poll immediately
-
-    return () => clearInterval(interval);
-  }, [authState.isAuthenticated, authState.currentUser]);
+  // Use real-time invitation notifications instead of polling
+  const { connectionStatus } = useInvitationNotifications(
+    authState.currentUser?.id?.toString() || null,
+    authService,
+    invitationCallbacks
+  );
 
   const handleAcceptInvitation = async (invitationId: number) => {
     try {
@@ -359,6 +339,7 @@ export const ChessCoachAppReact: React.FC = () => {
           onRoomCodeInputChange={(code) => updateGameField('roomCodeInput', code)}
           onColorPreferenceChange={(color) => updateGameField('colorPreference', color)}
           onAIGameStart={handleAIGameStart}
+          invitationConnectionStatus={connectionStatus}
         />
         <NotificationBanner
           invitation={currentInvitation}

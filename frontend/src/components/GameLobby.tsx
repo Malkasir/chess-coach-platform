@@ -23,6 +23,7 @@ interface GameLobbyProps {
   onRoomCodeInputChange: (code: string) => void;
   onColorPreferenceChange: (color: 'white' | 'black' | 'random') => void;
   onAIGameStart: (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => void;
+  invitationConnectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error';
 }
 
 export const GameLobby: React.FC<GameLobbyProps> = ({
@@ -39,6 +40,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   onRoomCodeInputChange,
   onColorPreferenceChange,
   onAIGameStart,
+  invitationConnectionStatus = 'disconnected',
 }) => {
   const [showOnlinePlayers, setShowOnlinePlayers] = useState(false);
   const [showInvitationModal, setShowInvitationModal] = useState(false);
