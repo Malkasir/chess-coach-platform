@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Chess } from 'chess.js';
 import { GameService, GameMessage } from '../services/game-service';
 import { AuthService, User } from '../services/auth-service';
@@ -38,80 +38,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     gameServiceRef.current = new GameService();
   }
 
-  useEffect(() => {
-    const gameService = gameServiceRef.current;
-    if (!gameService) return;
-
-    // Inject auth service into game service for authenticated requests
-    gameService.setAuthService(authService);
-
-    // Set up game message listener
-    gameService.setGameUpdateListener(handleGameMessage);
-
-    return () => {
-      gameService.disconnect();
-    };
-  }, [authService]);
-
-  // Restore game state on page reload if user is in an active game
-  useEffect(() => {
-    const restoreGameState = async () => {
-      if (!currentUser) return;
-
-      try {
-        // Check if user is in an active game
-        const response = await authService.authenticatedFetch(
-          `${gameServiceRef.current?.getBaseUrl()}/api/games/user/${currentUser.id}/current`
-        );
-
-        if (response.ok) {
-          const activeGame = await response.json();
-          if (activeGame && activeGame.gameId) {
-            // Check if the game is recent (within last 30 minutes) to avoid resuming very old games
-            const gameCreatedAt = new Date(activeGame.createdAt);
-            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-            
-            // Only restore if game is recent and user confirms
-            if (gameCreatedAt > thirtyMinutesAgo) {
-              const shouldResume = window.confirm(
-                'You have an active game. Would you like to resume it?\n\n' +
-                `Room Code: ${activeGame.roomCode}\n` +
-                'Click "Cancel" to start fresh.'
-              );
-              
-              if (shouldResume) {
-                // Determine if user is host or guest
-                const isHost = activeGame.hostId === currentUser.id;
-                const playerColor = isHost ? activeGame.hostColor : activeGame.guestColor;
-                
-                // Restore game state
-                setGameState(prev => ({
-                  ...prev,
-                  playerId: currentUser.id.toString(),
-                  isHost,
-                  gameId: activeGame.gameId,
-                  roomCode: activeGame.roomCode,
-                  playerColor: playerColor?.toLowerCase() as 'white' | 'black',
-                  gameStatus: 'active'
-                }));
-
-                // Reconnect to WebSocket
-                await gameServiceRef.current?.joinGame(activeGame.gameId, currentUser.id.toString(), isHost);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        // Silently ignore - no active game to restore
-      }
-    };
-
-    if (currentUser && authService && gameState.gameStatus === 'disconnected') {
-      restoreGameState();
-    }
-  }, [currentUser, authService]);
-
-  const handleGameMessage = (message: GameMessage) => {
+  const handleGameMessage = useCallback((message: GameMessage) => {
     switch (message.type) {
       case 'MOVE':
         if (message.fen && message.move) {
@@ -141,7 +68,79 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         console.error('❌ Game error:', message.message);
         break;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const gameService = gameServiceRef.current;
+    if (!gameService) return;
+
+    // Inject auth service into game service for authenticated requests
+    gameService.setAuthService(authService);
+
+    // Set up game message listener BEFORE any connection attempts
+    gameService.setGameUpdateListener(handleGameMessage);
+
+    // DO NOT disconnect on cleanup - preserve connection for game flow
+    // Only disconnect when explicitly leaving a game
+  }, [authService, handleGameMessage]);
+
+  // Restore game state on page reload if user is in an active game
+  useEffect(() => {
+    const restoreGameState = async () => {
+      if (!currentUser) return;
+
+      try {
+        // Check if user is in an active game
+        const response = await authService.authenticatedFetch(
+          `${gameServiceRef.current?.getBaseUrl()}/api/games/user/${currentUser.id}/current`
+        );
+
+        if (response.ok) {
+          const activeGame = await response.json();
+          if (activeGame && activeGame.gameId) {
+            // Check if the game is recent (within last 30 minutes) to avoid resuming very old games
+            const gameCreatedAt = new Date(activeGame.createdAt);
+            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+            // Only restore if game is recent and user confirms
+            if (gameCreatedAt > thirtyMinutesAgo) {
+              const shouldResume = window.confirm(
+                'You have an active game. Would you like to resume it?\n\n' +
+                `Room Code: ${activeGame.roomCode}\n` +
+                'Click "Cancel" to start fresh.'
+              );
+
+              if (shouldResume) {
+                // Determine if user is host or guest
+                const isHost = activeGame.hostId === currentUser.id;
+                const playerColor = isHost ? activeGame.hostColor : activeGame.guestColor;
+
+                // Restore game state
+                setGameState(prev => ({
+                  ...prev,
+                  playerId: currentUser.id.toString(),
+                  isHost,
+                  gameId: activeGame.gameId,
+                  roomCode: activeGame.roomCode,
+                  playerColor: playerColor?.toLowerCase() as 'white' | 'black',
+                  gameStatus: 'active'
+                }));
+
+                // Reconnect to WebSocket
+                await gameServiceRef.current?.joinGame(activeGame.gameId, currentUser.id.toString(), isHost);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        // Silently ignore - no active game to restore
+      }
+    };
+
+    if (currentUser && authService && gameState.gameStatus === 'disconnected') {
+      restoreGameState();
+    }
+  }, [currentUser, authService, gameState.gameStatus]);
 
   const createGame = async () => {
     try {

@@ -305,27 +305,22 @@ export class GameService {
 
   disconnect(): void {
     console.log('🔌 Disconnecting from game service...');
-    
-    // Force close WebSocket connection
+
+    // Deactivate WebSocket connection but keep client instance
     if (this.client) {
       try {
         this.client.deactivate();
-        // Additional cleanup
-        if (this.client.webSocket) {
-          this.client.webSocket.close();
-        }
       } catch (error) {
         console.warn('⚠️ Error during WebSocket disconnect:', error);
       }
     }
-    
-    // Clear all references
-    this.client = null;
+
+    // Clear game-specific references but preserve client and callback
     this.gameId = null;
     this.playerId = null;
-    this.onGameUpdate = null;
-    
-    console.log('✅ Game service disconnected and cleaned up');
+    // NOTE: Do NOT clear this.client or this.onGameUpdate to allow reconnection
+
+    console.log('✅ Game service disconnected (client preserved for reconnection)');
   }
 
   getBaseUrl(): string {
