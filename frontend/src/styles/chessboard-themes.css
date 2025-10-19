@@ -13,29 +13,8 @@
   /* Removed transition to prevent shifting */
 }
 
-.chess-board-container::before {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
-  background: conic-gradient(
-    from 0deg,
-    var(--accent-color),
-    transparent,
-    var(--accent-color)
-  );
-  border-radius: 16px;
-  opacity: 0.3;
-  z-index: -1;
-  animation: borderRotate 8s linear infinite;
-}
-
-@keyframes borderRotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+/* Removed spinning border animation - it was distracting */
+/* .chess-board-container::before removed */
 
 /* ====================================== */
 /* THEME-SPECIFIC BOARD STYLES */
@@ -75,16 +54,7 @@
     inset 0 2px 6px rgba(255, 255, 255, 0.2);
 }
 
-[data-theme="marble"] .chess-board-container::before {
-  background: conic-gradient(
-    from 0deg,
-    #4169e1,
-    #1e90ff,
-    #87ceeb,
-    #4169e1
-  );
-  opacity: 0.4;
-}
+/* Removed marble theme spinning border */
 
 /* Neon Cyberpunk Theme */
 [data-theme="neon"] .chess-board-container {
@@ -95,17 +65,7 @@
     inset 0 0 20px rgba(0, 255, 255, 0.1);
 }
 
-[data-theme="neon"] .chess-board-container::before {
-  background: conic-gradient(
-    from 0deg,
-    #00ffff,
-    #ff00ff,
-    #ffff00,
-    #00ffff
-  );
-  opacity: 0.6;
-  animation: borderRotate 4s linear infinite;
-}
+/* Removed neon theme spinning border */
 
 [data-theme="neon"] .chess-board-container::after {
   content: '';
@@ -137,17 +97,7 @@
     inset 0 1px 2px rgba(255, 255, 255, 0.3);
 }
 
-[data-theme="glass"] .chess-board-container::before {
-  background: conic-gradient(
-    from 0deg,
-    rgba(139, 92, 246, 0.5),
-    rgba(236, 72, 153, 0.5),
-    rgba(59, 130, 246, 0.5),
-    rgba(139, 92, 246, 0.5)
-  );
-  opacity: 0.5;
-  filter: blur(2px);
-}
+/* Removed glass theme spinning border */
 
 /* Medieval Theme */
 [data-theme="medieval"] .chess-board-container {
@@ -159,39 +109,9 @@
   position: relative;
 }
 
-[data-theme="medieval"] .chess-board-container::before {
-  background: conic-gradient(
-    from 0deg,
-    #ffd700,
-    #ffed4e,
-    #daa520,
-    #ffd700
-  );
-  opacity: 0.5;
-}
+/* Removed medieval theme spinning border */
 
-[data-theme="medieval"] .chess-board-container::after {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: -6px;
-  right: -6px;
-  bottom: -6px;
-  background: repeating-conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(255, 215, 0, 0.2) 45deg,
-    transparent 90deg
-  );
-  border-radius: 18px;
-  pointer-events: none;
-  animation: medievalGlow 6s ease-in-out infinite alternate;
-}
-
-@keyframes medievalGlow {
-  0% { opacity: 0.3; transform: rotate(0deg); }
-  100% { opacity: 0.6; transform: rotate(180deg); }
-}
+/* Removed medieval theme spinning ::after animation */
 
 /* ====================================== */
 /* PIECE MOVEMENT ANIMATIONS */
