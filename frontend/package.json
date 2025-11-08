@@ -17,6 +17,9 @@
     "start": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
     "prepublish": "npm run typecheck && npm run analyze -- --exclude dist",
     "get-ip": "ifconfig | grep -E 'inet.*192\\.168|inet.*10\\.|inet.*172\\.' | grep -v 127.0.0.1 | awk '{print $2}' | head -1"
   },
@@ -36,13 +39,18 @@
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.3",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
     "@types/sockjs-client": "^1.5.4",
+    "@vitest/ui": "^4.0.8",
     "@web/dev-server": "^0.4.6",
     "@web/dev-server-esbuild": "^1.0.4",
     "concurrently": "^8.2.2",
+    "jsdom": "^27.1.0",
     "tslib": "^2.6.3",
     "typescript": "^5.5.3",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "vitest": "^4.0.8"
   },
   "customElements": "custom-elements.json"
 }

@@ -1,10 +1,12 @@
 package com.chesscoach.controller;
 
+import com.chesscoach.dto.ClockState;
 import com.chesscoach.dto.GameMessage;
 import com.chesscoach.entity.Game;
 import com.chesscoach.entity.User;
 import com.chesscoach.repository.GameRepository;
 import com.chesscoach.repository.UserRepository;
+import com.chesscoach.service.ClockService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -21,14 +23,17 @@ public class GameWebSocketController {
     private final SimpMessagingTemplate messagingTemplate;
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
+    private final ClockService clockService;
 
     @Autowired
-    public GameWebSocketController(SimpMessagingTemplate messagingTemplate, 
-                                   GameRepository gameRepository, 
-                                   UserRepository userRepository) {
+    public GameWebSocketController(SimpMessagingTemplate messagingTemplate,
+                                   GameRepository gameRepository,
+                                   UserRepository userRepository,
+                                   ClockService clockService) {
         this.messagingTemplate = messagingTemplate;
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
+        this.clockService = clockService;
     }
 
     @MessageMapping("/game/join")
@@ -52,13 +57,18 @@ public class GameWebSocketController {
             System.out.println("📢 Broadcasting join message to /topic/game/" + message.getGameId());
             messagingTemplate.convertAndSend("/topic/game/" + message.getGameId(), joinMessage);
 
-            // Send current game state to the joining player
+            // Send current game state to the joining player (with clock state)
             List<String> moveHistory = parseJsonArrayToList(game.getMoveHistory());
             GameMessage stateMessage = GameMessage.gameStateMessage(
-                message.getGameId(), 
-                game.getCurrentFen(), 
+                message.getGameId(),
+                game.getCurrentFen(),
                 moveHistory
             );
+
+            // Include authoritative clock state
+            ClockState clockState = clockService.buildClockState(game);
+            stateMessage.setClockState(clockState);
+
             messagingTemplate.convertAndSend("/topic/game/" + message.getGameId() + "/" + message.getPlayerId(), stateMessage);
 
         } catch (Exception e) {
@@ -99,6 +109,35 @@ public class GameWebSocketController {
                 return;
             }
 
+            // Determine which player is making the move
+            Game.PlayerColor movingColor = isHost ? game.getHostColor() : game.getGuestColor();
+
+            // CRITICAL: Check if the moving player's clock has expired BEFORE accepting the move
+            if (clockService.isTimeExpired(game, movingColor)) {
+                // Player ran out of time - reject the move and end the game
+                Game.PlayerColor winner = (movingColor == Game.PlayerColor.WHITE)
+                    ? Game.PlayerColor.BLACK : Game.PlayerColor.WHITE;
+
+                game.endGame(winner + " wins on time");
+                gameRepository.save(game);
+
+                // Broadcast timeout message
+                GameMessage timeoutMsg = GameMessage.timeoutMessage(
+                    message.getGameId(),
+                    movingColor.toString(),
+                    winner.toString()
+                );
+
+                // Include final clock state
+                ClockState finalClockState = clockService.buildClockState(game);
+                timeoutMsg.setClockState(finalClockState);
+
+                messagingTemplate.convertAndSend("/topic/game/" + message.getGameId(), timeoutMsg);
+
+                System.out.println("⏰ Game " + message.getGameId() + " ended - " + winner + " wins on time!");
+                return;
+            }
+
             // Update game state in database
             game.setCurrentFen(message.getFen());
             
@@ -106,22 +145,56 @@ public class GameWebSocketController {
             List<String> currentMoves = parseJsonArrayToList(game.getMoveHistory());
             currentMoves.add(message.getMove());
             game.setMoveHistory(formatListToJsonArray(currentMoves));
-            
+
+            // Update clock after the move (server-authoritative)
+            ClockService.TimeoutResult timeoutResult = clockService.updateClockAfterMove(game, movingColor);
+
+            // Save game with updated clock state
             gameRepository.save(game);
 
-            // Broadcast move to all players in the game
+            // Check if timeout occurred AFTER clock update
+            if (timeoutResult.isTimeout()) {
+                // Player ran out of time during their move
+                Game.PlayerColor winner = timeoutResult.getWinner();
+
+                game.endGame(winner + " wins on time");
+                gameRepository.save(game);
+
+                // Broadcast timeout message
+                GameMessage timeoutMsg = GameMessage.timeoutMessage(
+                    message.getGameId(),
+                    movingColor.toString(),
+                    winner.toString()
+                );
+
+                // Include final clock state
+                ClockState finalClockState = clockService.buildClockState(game);
+                timeoutMsg.setClockState(finalClockState);
+
+                messagingTemplate.convertAndSend("/topic/game/" + message.getGameId(), timeoutMsg);
+
+                System.out.println("⏰ Game " + message.getGameId() + " ended - " + winner + " wins on time!");
+                return;
+            }
+
+            // Build move message with updated clock state
             GameMessage moveMessage = GameMessage.moveMessage(
-                message.getGameId(), 
-                message.getPlayerId(), 
-                message.getMove(), 
+                message.getGameId(),
+                message.getPlayerId(),
+                message.getMove(),
                 message.getFen()
             );
             moveMessage.setMoveHistory(currentMoves);
-            
+
+            // Include authoritative clock state in every move broadcast
+            ClockState clockState = clockService.buildClockState(game);
+            moveMessage.setClockState(clockState);
+
             System.out.println("🚀 Broadcasting move to /topic/game/" + message.getGameId());
             System.out.println("📤 Move message: " + moveMessage.toString());
             System.out.println("🎯 Player " + message.getPlayerId() + " made move: " + message.getMove());
-            
+            System.out.println("⏱️ Clock state: " + clockState.toString());
+
             messagingTemplate.convertAndSend("/topic/game/" + message.getGameId(), moveMessage);
             
             System.out.println("✅ Move broadcast completed for game " + message.getGameId());

@@ -329,15 +329,11 @@ export const ChessCoachAppReact: React.FC = () => {
           currentUser={authState.currentUser!}
           gameStatus={gameState.gameStatus}
           roomCode={gameState.roomCode}
-          roomCodeInput={gameState.roomCodeInput}
-          colorPreference={gameState.colorPreference}
           onCreateGame={createGame}
           onJoinByRoomCode={joinByRoomCode}
           onResetGame={resetGame}
           onCopyRoomCode={copyRoomCode}
           onLogout={logout}
-          onRoomCodeInputChange={(code) => updateGameField('roomCodeInput', code)}
-          onColorPreferenceChange={(color) => updateGameField('colorPreference', color)}
           onAIGameStart={handleAIGameStart}
           invitationConnectionStatus={connectionStatus}
         />
@@ -364,6 +360,7 @@ export const ChessCoachAppReact: React.FC = () => {
         position={gameState.position}
         playerColor={gameState.playerColor}
         game={gameRef}
+        clockState={gameState.clockState}
         isMyTurn={isMyTurn}
         getCurrentTurnDisplay={getCurrentTurnDisplay}
         onMove={isAIGame ? handleAIMove : makeMove}

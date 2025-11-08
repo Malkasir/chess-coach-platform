@@ -1,6 +1,7 @@
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { AuthService } from './auth-service';
+import { ClockState, TimeControl } from '../types/clock.types';
 
 export interface GameMessage {
   type: string;
@@ -10,6 +11,7 @@ export interface GameMessage {
   fen?: string;
   message?: string;
   moveHistory?: string[];
+  clockState?: ClockState;
 }
 
 export interface GameState {
@@ -90,13 +92,29 @@ export class GameService {
     });
   }
 
-  async createGame(hostId: string, colorPreference: string = 'random'): Promise<{ gameId: string, roomCode: string, hostColor: 'white' | 'black' }> {
+  async createGame(
+    hostId: string,
+    colorPreference: string = 'random',
+    timeControl?: TimeControl
+  ): Promise<{ gameId: string, roomCode: string, hostColor: 'white' | 'black' }> {
     const headers = this.authService ? this.authService.getAuthHeaders() : { 'Content-Type': 'application/json' };
-    
+
+    const requestBody: any = {
+      hostId,
+      colorPreference
+    };
+
+    // Add time control parameters if provided
+    if (timeControl) {
+      requestBody.gameMode = timeControl.mode;
+      requestBody.baseTimeSeconds = timeControl.baseTimeSeconds;
+      requestBody.incrementSeconds = timeControl.incrementSeconds;
+    }
+
     const response = await fetch(`${this.baseUrl}/api/games/create`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ hostId, colorPreference })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {

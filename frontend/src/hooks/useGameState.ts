@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Chess } from 'chess.js';
 import { GameService, GameMessage } from '../services/game-service';
 import { AuthService, User } from '../services/auth-service';
+import { ClockState, TimeControl } from '../types/clock.types';
 
 interface GameState {
   gameId: string;
@@ -14,6 +15,7 @@ interface GameState {
   moveHistory: string[];
   roomCodeInput: string;
   colorPreference: 'white' | 'black' | 'random';
+  clockState: ClockState | null;
 }
 
 export const useGameState = (authService: AuthService, currentUser: User | null) => {
@@ -27,7 +29,8 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     playerColor: null,
     moveHistory: [],
     roomCodeInput: '',
-    colorPreference: 'random'
+    colorPreference: 'random',
+    clockState: null
   });
 
   const gameRef = useRef(new Chess());
@@ -46,7 +49,8 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
           setGameState(prev => ({
             ...prev,
             position: message.fen!,
-            moveHistory: message.moveHistory || [...prev.moveHistory, message.move!]
+            moveHistory: message.moveHistory || [...prev.moveHistory, message.move!],
+            clockState: message.clockState || prev.clockState
           }));
         }
         break;
@@ -57,12 +61,37 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
             ...prev,
             position: message.fen!,
             moveHistory: message.moveHistory || prev.moveHistory,
-            gameStatus: prev.gameStatus === 'waiting' && prev.playerColor ? 'active' : prev.gameStatus
+            gameStatus: prev.gameStatus === 'waiting' && prev.playerColor ? 'active' : prev.gameStatus,
+            clockState: message.clockState || prev.clockState
           }));
         }
         break;
       case 'PLAYER_JOINED':
-        setGameState(prev => ({ ...prev, gameStatus: 'active' }));
+        setGameState(prev => ({
+          ...prev,
+          gameStatus: 'active',
+          clockState: message.clockState || prev.clockState
+        }));
+        break;
+      case 'GAME_OVER':
+        console.log('🏁 Game over:', message.message);
+
+        // Show user-friendly notification for game over
+        if (message.message) {
+          // Check if it's a timeout message
+          const isTimeout = message.message.toLowerCase().includes('time');
+          const alertMessage = isTimeout
+            ? `⏰ Time's Up!\n\n${message.message}`
+            : `🏁 Game Over\n\n${message.message}`;
+
+          setTimeout(() => alert(alertMessage), 100);
+        }
+
+        setGameState(prev => ({
+          ...prev,
+          gameStatus: 'ended',
+          clockState: message.clockState || prev.clockState
+        }));
         break;
       case 'ERROR':
         console.error('❌ Game error:', message.message);
@@ -142,12 +171,16 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     }
   }, [currentUser, authService, gameState.gameStatus]);
 
-  const createGame = async () => {
+  const createGame = async (timeControl: TimeControl, colorPreference: 'white' | 'black' | 'random' = 'random') => {
     try {
       const hostId = currentUser?.id.toString();
       if (!hostId) return;
 
-      const response = await gameServiceRef.current?.createGame(hostId, gameState.colorPreference);
+      const response = await gameServiceRef.current?.createGame(
+        hostId,
+        colorPreference,
+        timeControl
+      );
       if (!response) return;
       const { gameId, roomCode, hostColor } = response;
 
@@ -159,7 +192,9 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         roomCode,
         playerColor: hostColor as 'white' | 'black',
         moveHistory: [],
-        gameStatus: 'waiting'
+        gameStatus: 'waiting',
+        clockState: null, // Will be populated when WebSocket connects
+        colorPreference // Update color preference in state
       }));
 
       await gameServiceRef.current?.joinGame(gameId, hostId, true);
@@ -168,12 +203,12 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     }
   };
 
-  const joinByRoomCode = async () => {
+  const joinByRoomCode = async (roomCode: string) => {
     const guestId = currentUser?.id.toString();
-    if (!guestId || !gameState.roomCodeInput) return;
+    if (!guestId || !roomCode) return;
 
     try {
-      const gameStateResponse = await gameServiceRef.current?.joinGameByCode(gameState.roomCodeInput, guestId);
+      const gameStateResponse = await gameServiceRef.current?.joinGameByCode(roomCode, guestId);
       if (!gameStateResponse) return;
 
       setGameState(prev => ({
@@ -181,7 +216,8 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         playerId: guestId,
         isHost: false,
         gameId: gameStateResponse.gameId,
-        roomCode: gameStateResponse.roomCode || '',
+        roomCode: gameStateResponse.roomCode || roomCode,
+        roomCodeInput: '', // Clear the input after successful join
         playerColor: gameStateResponse.guestColor,
         moveHistory: [],
         gameStatus: 'active'

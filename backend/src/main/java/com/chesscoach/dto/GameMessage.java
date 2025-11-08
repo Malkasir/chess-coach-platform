@@ -10,6 +10,7 @@ public class GameMessage {
     private String fen;
     private String message;
     private List<String> moveHistory;
+    private ClockState clockState; // Clock state for timed games
 
     public GameMessage() {}
 
@@ -46,6 +47,12 @@ public class GameMessage {
         return msg;
     }
 
+    public static GameMessage timeoutMessage(String gameId, String losingColor, String winningColor) {
+        GameMessage msg = new GameMessage("GAME_OVER", gameId);
+        msg.setMessage(winningColor + " wins on time! " + losingColor + " ran out of time.");
+        return msg;
+    }
+
     // Getters and setters
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
@@ -67,4 +74,7 @@ public class GameMessage {
 
     public List<String> getMoveHistory() { return moveHistory; }
     public void setMoveHistory(List<String> moveHistory) { this.moveHistory = moveHistory; }
+
+    public ClockState getClockState() { return clockState; }
+    public void setClockState(ClockState clockState) { this.clockState = clockState; }
 }

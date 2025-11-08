@@ -5,6 +5,7 @@ import com.chesscoach.entity.Game;
 import com.chesscoach.entity.GameInvitation;
 import com.chesscoach.entity.GameInvitation.InvitationStatus;
 import com.chesscoach.entity.GameInvitation.InvitationType;
+import com.chesscoach.entity.GameMode;
 import com.chesscoach.entity.User;
 import com.chesscoach.repository.GameInvitationRepository;
 import com.chesscoach.repository.GameRepository;
@@ -45,9 +46,10 @@ public class GameInvitationService {
     }
 
     @Transactional
-    public Map<String, Object> sendGameInvitation(Long senderId, Long recipientId, InvitationType type, 
-                                                  String colorPreference, String message) {
-        
+    public Map<String, Object> sendGameInvitation(Long senderId, Long recipientId, InvitationType type,
+                                                  String colorPreference, String message,
+                                                  String gameMode, Integer baseTimeSeconds, Integer incrementSeconds) {
+
         // Validate users exist
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
@@ -78,7 +80,7 @@ public class GameInvitationService {
         // Create the invitation
         GameInvitation invitation = new GameInvitation(sender, recipient, type);
         invitation.setMessage(message);
-        
+
         // Set color preference if provided
         if (colorPreference != null && !colorPreference.equals("random")) {
             try {
@@ -87,6 +89,20 @@ public class GameInvitationService {
                 invitation.setSenderColor(null); // Default to random
             }
         }
+
+        // Set time control settings
+        if (gameMode != null) {
+            try {
+                invitation.setGameMode(GameMode.valueOf(gameMode.toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                invitation.setGameMode(GameMode.TIMED); // Default to TIMED
+            }
+        } else {
+            invitation.setGameMode(GameMode.TIMED); // Default to TIMED
+        }
+
+        invitation.setBaseTimeSeconds(baseTimeSeconds);
+        invitation.setIncrementSeconds(incrementSeconds != null ? incrementSeconds : 0);
 
         GameInvitation savedInvitation = invitationRepository.save(invitation);
 

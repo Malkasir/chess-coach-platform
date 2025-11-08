@@ -22,7 +22,13 @@ public class GameController {
     @PostMapping("/create")
     public ResponseEntity<?> createGame(@RequestBody CreateGameRequest request) {
         try {
-            Map<String, Object> newGame = gameService.createGame(request.getHostId(), request.getColorPreference());
+            Map<String, Object> newGame = gameService.createGame(
+                request.getHostId(),
+                request.getColorPreference(),
+                request.getGameMode(),
+                request.getBaseTimeSeconds(),
+                request.getIncrementSeconds()
+            );
             return ResponseEntity.ok(newGame);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -86,6 +92,9 @@ public class GameController {
     public static class CreateGameRequest {
         private String hostId;
         private String colorPreference = "random"; // default to random
+        private String gameMode; // TIMED or TRAINING (defaults to TIMED if null)
+        private Integer baseTimeSeconds; // Base time in seconds (e.g., 600 for 10 minutes)
+        private Integer incrementSeconds; // Increment in seconds (e.g., 5 for 5 seconds)
 
         public String getHostId() {
             return hostId;
@@ -101,6 +110,30 @@ public class GameController {
 
         public void setColorPreference(String colorPreference) {
             this.colorPreference = colorPreference;
+        }
+
+        public String getGameMode() {
+            return gameMode;
+        }
+
+        public void setGameMode(String gameMode) {
+            this.gameMode = gameMode;
+        }
+
+        public Integer getBaseTimeSeconds() {
+            return baseTimeSeconds;
+        }
+
+        public void setBaseTimeSeconds(Integer baseTimeSeconds) {
+            this.baseTimeSeconds = baseTimeSeconds;
+        }
+
+        public Integer getIncrementSeconds() {
+            return incrementSeconds;
+        }
+
+        public void setIncrementSeconds(Integer incrementSeconds) {
+            this.incrementSeconds = incrementSeconds;
         }
     }
 
