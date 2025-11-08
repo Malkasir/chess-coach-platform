@@ -52,9 +52,29 @@ public class Game {
     // Game moves as JSON array
     @Column(columnDefinition = "TEXT")
     private String moveHistory;
-    
+
     // Game result
     private String result;
+
+    // Clock and time control fields
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private GameMode gameMode;
+
+    // Base time in seconds for each player (null for TRAINING mode)
+    private Integer baseTimeSeconds;
+
+    // Increment in seconds added after each move (0 for no increment)
+    private Integer incrementSeconds;
+
+    // Current time remaining for white in seconds
+    private Integer whiteTimeRemaining;
+
+    // Current time remaining for black in seconds
+    private Integer blackTimeRemaining;
+
+    // Timestamp (epoch milliseconds) when the last move was made
+    private Long lastMoveTimestamp;
     
     public enum GameStatus {
         WAITING_FOR_GUEST, ACTIVE, PAUSED, ENDED, ABANDONED
@@ -73,6 +93,12 @@ public class Game {
         }
         if (moveHistory == null) {
             moveHistory = "[]"; // Empty JSON array
+        }
+        if (gameMode == null) {
+            gameMode = GameMode.TIMED; // Default to TIMED mode
+        }
+        if (incrementSeconds == null) {
+            incrementSeconds = 0; // Default to no increment
         }
     }
     
@@ -229,5 +255,89 @@ public class Game {
     
     public void setResult(String result) {
         this.result = result;
+    }
+
+    public GameMode getGameMode() {
+        return gameMode;
+    }
+
+    public void setGameMode(GameMode gameMode) {
+        this.gameMode = gameMode;
+    }
+
+    public Integer getBaseTimeSeconds() {
+        return baseTimeSeconds;
+    }
+
+    public void setBaseTimeSeconds(Integer baseTimeSeconds) {
+        this.baseTimeSeconds = baseTimeSeconds;
+    }
+
+    public Integer getIncrementSeconds() {
+        return incrementSeconds;
+    }
+
+    public void setIncrementSeconds(Integer incrementSeconds) {
+        this.incrementSeconds = incrementSeconds;
+    }
+
+    public Integer getWhiteTimeRemaining() {
+        return whiteTimeRemaining;
+    }
+
+    public void setWhiteTimeRemaining(Integer whiteTimeRemaining) {
+        this.whiteTimeRemaining = whiteTimeRemaining;
+    }
+
+    public Integer getBlackTimeRemaining() {
+        return blackTimeRemaining;
+    }
+
+    public void setBlackTimeRemaining(Integer blackTimeRemaining) {
+        this.blackTimeRemaining = blackTimeRemaining;
+    }
+
+    public Long getLastMoveTimestamp() {
+        return lastMoveTimestamp;
+    }
+
+    public void setLastMoveTimestamp(Long lastMoveTimestamp) {
+        this.lastMoveTimestamp = lastMoveTimestamp;
+    }
+
+    /**
+     * Check if a player's clock has expired
+     * @param color The player color to check
+     * @return true if the player's time has expired
+     */
+    public boolean isTimeExpired(PlayerColor color) {
+        if (gameMode != GameMode.TIMED) {
+            return false; // No time limit in training mode
+        }
+
+        Integer timeRemaining = (color == PlayerColor.WHITE) ? whiteTimeRemaining : blackTimeRemaining;
+        return timeRemaining != null && timeRemaining <= 0;
+    }
+
+    /**
+     * Get time remaining for a specific player
+     * @param color The player color
+     * @return Time remaining in seconds, or null if not applicable
+     */
+    public Integer getTimeRemaining(PlayerColor color) {
+        return (color == PlayerColor.WHITE) ? whiteTimeRemaining : blackTimeRemaining;
+    }
+
+    /**
+     * Set time remaining for a specific player
+     * @param color The player color
+     * @param timeInSeconds Time remaining in seconds
+     */
+    public void setTimeRemaining(PlayerColor color, Integer timeInSeconds) {
+        if (color == PlayerColor.WHITE) {
+            this.whiteTimeRemaining = timeInSeconds;
+        } else {
+            this.blackTimeRemaining = timeInSeconds;
+        }
     }
 }

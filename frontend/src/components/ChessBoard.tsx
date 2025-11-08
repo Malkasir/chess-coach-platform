@@ -10,6 +10,7 @@ interface ChessBoardProps {
   playerColor: 'white' | 'black' | null;
   isMyTurn: () => boolean;
   onMove: (move: string, fen: string, moveObj?: { from: string; to: string; promotion?: string }) => void;
+  isTimeExpired?: boolean; // Prevents moves when player's time has run out
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({
@@ -17,7 +18,8 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   game,
   playerColor,
   isMyTurn,
-  onMove
+  onMove,
+  isTimeExpired = false
 }) => {
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>(playerColor || 'white');
   const [localPosition, setLocalPosition] = useState<string>(position);
@@ -39,6 +41,12 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
 
   // Handle piece drop with useCallback
   const onDrop = useCallback((sourceSquare: Square, targetSquare: Square): boolean => {
+    // Check if time has expired
+    if (isTimeExpired) {
+      debugLog('⏰ Move blocked: Time expired');
+      return false;
+    }
+
     // Check if it's the player's turn
     if (!isMyTurn()) {
       return false;
@@ -78,10 +86,15 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     });
     
     return true;
-  }, [localPosition, playerColor, isMyTurn, onMove]);
+  }, [localPosition, playerColor, isMyTurn, onMove, isTimeExpired]);
 
   // Determine if a piece can be dragged
   const isDraggablePiece = useCallback(({ piece, sourceSquare }: any): boolean => {
+    // Don't allow dragging if time has expired
+    if (isTimeExpired) {
+      return false;
+    }
+
     // Don't allow dragging if no playerColor set
     if (!playerColor) {
       return false;
@@ -90,14 +103,14 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     // Don't allow dragging pieces of the wrong color
     const pieceColor = piece.startsWith('w') ? 'white' : 'black';
     const isMyPiece = playerColor === pieceColor;
-    
+
     if (!isMyPiece) {
       return false;
     }
 
     // Check if it's the player's turn
     const myTurn = isMyTurn();
-    
+
     if (!myTurn) {
       return false;
     }
@@ -109,7 +122,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       return false;
     }
     return true;
-  }, [rulesGame, playerColor, isMyTurn]);
+  }, [rulesGame, playerColor, isMyTurn, isTimeExpired]);
 
   const flipBoard = () => {
     setBoardOrientation(boardOrientation === 'white' ? 'black' : 'white');

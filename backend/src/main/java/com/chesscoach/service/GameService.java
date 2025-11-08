@@ -1,6 +1,7 @@
 package com.chesscoach.service;
 
 import com.chesscoach.entity.Game;
+import com.chesscoach.entity.GameMode;
 import com.chesscoach.entity.User;
 import com.chesscoach.repository.GameRepository;
 import com.chesscoach.repository.UserRepository;
@@ -18,19 +19,36 @@ public class GameService {
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final UserPresenceService userPresenceService;
+    private final ClockService clockService;
 
     @Autowired
-    public GameService(GameRepository gameRepository, UserRepository userRepository, UserPresenceService userPresenceService) {
+    public GameService(GameRepository gameRepository, UserRepository userRepository,
+                      UserPresenceService userPresenceService, ClockService clockService) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.userPresenceService = userPresenceService;
+        this.clockService = clockService;
     }
 
     public Map<String, Object> createGame(String hostId) {
-        return createGame(hostId, "random");
+        return createGame(hostId, "random", null, null, null);
     }
 
     public Map<String, Object> createGame(String hostId, String colorPreference) {
+        return createGame(hostId, colorPreference, null, null, null);
+    }
+
+    /**
+     * Create a new game with full time control options
+     * @param hostId The host user ID
+     * @param colorPreference white, black, or random
+     * @param gameMode TIMED or TRAINING (defaults to TIMED if null)
+     * @param baseTimeSeconds Base time in seconds (required for TIMED, ignored for TRAINING)
+     * @param incrementSeconds Increment per move (defaults to 0 if null)
+     * @return Game state map
+     */
+    public Map<String, Object> createGame(String hostId, String colorPreference,
+                                         String gameMode, Integer baseTimeSeconds, Integer incrementSeconds) {
         User host = userRepository.findById(Long.parseLong(hostId))
                 .orElseThrow(() -> new RuntimeException("Host not found"));
 
@@ -66,8 +84,38 @@ public class GameService {
         game.setHostColor(hostColor);
         game.setGuestColor(guestColor);
 
+        // Set game mode and initialize clocks
+        GameMode mode = (gameMode != null && gameMode.equalsIgnoreCase("TRAINING"))
+                ? GameMode.TRAINING : GameMode.TIMED;
+        game.setGameMode(mode);
+
+        if (mode == GameMode.TIMED) {
+            // TIMED mode requires base time (default to 10 minutes if not provided)
+            int baseTime = (baseTimeSeconds != null && baseTimeSeconds > 0) ? baseTimeSeconds : 600;
+            int increment = (incrementSeconds != null && incrementSeconds >= 0) ? incrementSeconds : 0;
+
+            // Validate time control
+            if (baseTime < 60) {
+                throw new RuntimeException("Base time must be at least 60 seconds (1 minute)");
+            }
+            if (increment < 0 || increment > 60) {
+                throw new RuntimeException("Increment must be between 0 and 60 seconds");
+            }
+
+            clockService.initializeClocks(game, baseTime, increment);
+        } else {
+            // TRAINING mode - no clocks
+            clockService.initializeClocks(game, null, null);
+        }
+
         Game savedGame = gameRepository.save(game);
-        
+
+        // Analytics: Log game mode creation
+        System.out.println("📊 ANALYTICS: Game created - Mode: " + savedGame.getGameMode() +
+                ", BaseTime: " + savedGame.getBaseTimeSeconds() +
+                ", Increment: " + savedGame.getIncrementSeconds() +
+                ", GameId: " + savedGame.getGameId());
+
         return Map.of(
                 "gameId", savedGame.getGameId(),
                 "roomCode", savedGame.getRoomCode(),
@@ -139,17 +187,27 @@ public class GameService {
     }
 
     private Map<String, Object> buildGameStateResponse(Game game) {
-        return Map.of(
-                "gameId", game.getGameId(),
-                "roomCode", game.getRoomCode(),
-                "hostId", game.getHost().getId().toString(),
-                "guestId", game.getGuest() != null ? game.getGuest().getId().toString() : "",
-                "hostColor", game.getHostColor().toString().toLowerCase(),
-                "guestColor", game.getGuestColor().toString().toLowerCase(),
-                "fen", game.getCurrentFen(),
-                "status", game.getStatus().toString(),
-                "moveHistory", parseJsonArray(game.getMoveHistory())
-        );
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("gameId", game.getGameId());
+        response.put("roomCode", game.getRoomCode());
+        response.put("hostId", game.getHost().getId().toString());
+        response.put("guestId", game.getGuest() != null ? game.getGuest().getId().toString() : "");
+        response.put("hostColor", game.getHostColor().toString().toLowerCase());
+        response.put("guestColor", game.getGuestColor().toString().toLowerCase());
+        response.put("fen", game.getCurrentFen());
+        response.put("status", game.getStatus().toString());
+        response.put("moveHistory", parseJsonArray(game.getMoveHistory()));
+
+        // Add clock information
+        response.put("gameMode", game.getGameMode().toString());
+        if (game.getGameMode() == GameMode.TIMED) {
+            response.put("baseTimeSeconds", game.getBaseTimeSeconds());
+            response.put("incrementSeconds", game.getIncrementSeconds());
+            response.put("whiteTimeRemaining", game.getWhiteTimeRemaining());
+            response.put("blackTimeRemaining", game.getBlackTimeRemaining());
+        }
+
+        return response;
     }
 
     public Map<String, Object> getCurrentGameForUser(Long userId) {

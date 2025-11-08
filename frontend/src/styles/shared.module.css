@@ -197,6 +197,14 @@
   gap: var(--space-xl);
   align-items: flex-start;
   flex-wrap: wrap;
+  width: 100%;
+}
+
+.videoSection {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 400px;
+  min-width: 300px;
 }
 
 @media (max-width: 768px) {
@@ -204,7 +212,12 @@
     flex-direction: column;
     gap: var(--space-md);
   }
-  
+
+  .videoSection {
+    max-width: 100%;
+    width: 100%;
+  }
+
   .chessPanel {
     max-width: 100%;
   }
@@ -213,6 +226,71 @@
 .chessPanel {
   flex: 1;
   max-width: 500px;
+}
+
+/* Game Container - Board + Side Panel Layout */
+.gameContainer {
+  display: flex;
+  gap: var(--space-lg);
+  align-items: flex-start;
+  flex: 1 1 auto;
+  min-width: 0; /* Allow flex item to shrink */
+}
+
+.boardWrapper {
+  flex: 1;
+  max-width: 600px;
+  min-width: 300px;
+}
+
+.sidePanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: 240px;
+  min-width: 200px;
+  flex-shrink: 0; /* Don't shrink side panel */
+}
+
+/* Responsive: Stack vertically on mobile/tablet */
+@media (max-width: 1400px) {
+  .gameArea {
+    flex-direction: column;
+  }
+
+  .videoSection {
+    max-width: 100%;
+  }
+
+  .gameContainer {
+    width: 100%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .gameContainer {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .boardWrapper {
+    max-width: 500px;
+    width: 100%;
+  }
+
+  .sidePanel {
+    width: 100%;
+    max-width: 500px;
+    flex-direction: row;
+    justify-content: space-around;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidePanel {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
 }
 
 .turnIndicator {
@@ -606,6 +684,29 @@
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.8rem;
   font-style: italic;
+}
+
+.modalBody {
+  /* Inherits from modalContent padding */
+}
+
+.modalCloseButton {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  font-size: 1.5rem;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.modalCloseButton:hover {
+  background-color: rgba(255, 107, 107, 0.2);
 }
 
 .modalFooter {

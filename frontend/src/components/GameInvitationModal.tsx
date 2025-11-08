@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from '../styles/shared.module.css';
+import { TimeControl, DEFAULT_TIME_CONTROL } from '../types/clock.types';
+import { TimeControlSelector } from './TimeControlSelector';
 
 interface GameInvitationModalProps {
   isVisible: boolean;
@@ -15,6 +17,7 @@ export interface InvitationData {
   type: 'quick_game' | 'lesson' | 'puzzle_session';
   colorPreference: 'white' | 'black' | 'random';
   message: string;
+  timeControl: TimeControl;
 }
 
 export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
@@ -27,6 +30,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
 }) => {
   const [invitationType, setInvitationType] = useState<'quick_game' | 'lesson' | 'puzzle_session'>('quick_game');
   const [colorPreference, setColorPreference] = useState<'white' | 'black' | 'random'>('random');
+  const [timeControl, setTimeControl] = useState<TimeControl>(DEFAULT_TIME_CONTROL);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const firstInputRef = useRef<HTMLSelectElement>(null);
@@ -74,6 +78,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
       recipientId: playerId,
       type: invitationType,
       colorPreference,
+      timeControl,
       message: message.trim() || getDefaultMessage()
     };
 
@@ -84,6 +89,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
       setMessage('');
       setInvitationType('quick_game');
       setColorPreference('random');
+      setTimeControl(DEFAULT_TIME_CONTROL);
       onClose();
     } catch (error) {
       // Error handling is done in parent component
@@ -188,6 +194,22 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
                 <option value="white">White</option>
                 <option value="black">Black</option>
               </select>
+            </div>
+          </div>
+
+          <div className={styles.formSection}>
+            <label className={styles.formLabel}>Time Control:</label>
+            <div style={{
+              padding: 'var(--space-md)',
+              backgroundColor: 'var(--bg-panel)',
+              borderRadius: '8px',
+              border: '1px solid var(--border-subtle)'
+            }}>
+              <TimeControlSelector
+                value={timeControl}
+                onChange={setTimeControl}
+                disabled={false}
+              />
             </div>
           </div>
 

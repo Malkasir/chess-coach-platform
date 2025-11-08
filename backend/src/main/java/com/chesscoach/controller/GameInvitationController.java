@@ -30,7 +30,10 @@ public class GameInvitationController {
                     request.getRecipientId(),
                     type,
                     request.getColorPreference(),
-                    request.getMessage()
+                    request.getMessage(),
+                    request.getGameMode(),
+                    request.getBaseTimeSeconds(),
+                    request.getIncrementSeconds()
             );
             return ResponseEntity.ok(invitation);
         } catch (IllegalArgumentException e) {
@@ -107,6 +110,9 @@ public class GameInvitationController {
         private String type; // "quick_game", "lesson", "puzzle_session"
         private String colorPreference; // "white", "black", "random"
         private String message;
+        private String gameMode; // "TIMED", "TRAINING"
+        private Integer baseTimeSeconds;
+        private Integer incrementSeconds;
 
         public Long getSenderId() {
             return senderId;
@@ -146,6 +152,30 @@ public class GameInvitationController {
 
         public void setMessage(String message) {
             this.message = message;
+        }
+
+        public String getGameMode() {
+            return gameMode;
+        }
+
+        public void setGameMode(String gameMode) {
+            this.gameMode = gameMode;
+        }
+
+        public Integer getBaseTimeSeconds() {
+            return baseTimeSeconds;
+        }
+
+        public void setBaseTimeSeconds(Integer baseTimeSeconds) {
+            this.baseTimeSeconds = baseTimeSeconds;
+        }
+
+        public Integer getIncrementSeconds() {
+            return incrementSeconds;
+        }
+
+        public void setIncrementSeconds(Integer incrementSeconds) {
+            this.incrementSeconds = incrementSeconds;
         }
     }
 

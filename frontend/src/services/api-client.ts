@@ -117,6 +117,9 @@ class APIClient {
     type: string;
     message: string;
     colorPreference: string;
+    gameMode?: string;
+    baseTimeSeconds?: number | null;
+    incrementSeconds?: number;
   }) {
     return this.request('/api/invitations/send', {
       method: 'POST',

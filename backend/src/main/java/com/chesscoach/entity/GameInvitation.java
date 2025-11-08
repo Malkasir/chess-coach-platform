@@ -30,7 +30,15 @@ public class GameInvitation {
     // Game preferences
     @Enumerated(EnumType.STRING)
     private Game.PlayerColor senderColor;
-    
+
+    // Time control preferences
+    @Enumerated(EnumType.STRING)
+    private GameMode gameMode; // TIMED or TRAINING
+
+    private Integer baseTimeSeconds; // Base time for TIMED mode
+
+    private Integer incrementSeconds; // Increment for TIMED mode
+
     @Column(length = 500)
     private String message;
     
@@ -189,5 +197,29 @@ public class GameInvitation {
     
     public void cancel() {
         this.status = InvitationStatus.CANCELLED;
+    }
+
+    public GameMode getGameMode() {
+        return gameMode;
+    }
+
+    public void setGameMode(GameMode gameMode) {
+        this.gameMode = gameMode;
+    }
+
+    public Integer getBaseTimeSeconds() {
+        return baseTimeSeconds;
+    }
+
+    public void setBaseTimeSeconds(Integer baseTimeSeconds) {
+        this.baseTimeSeconds = baseTimeSeconds;
+    }
+
+    public Integer getIncrementSeconds() {
+        return incrementSeconds;
+    }
+
+    public void setIncrementSeconds(Integer incrementSeconds) {
+        this.incrementSeconds = incrementSeconds;
     }
 }
