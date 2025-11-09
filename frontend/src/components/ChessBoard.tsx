@@ -11,6 +11,7 @@ interface ChessBoardProps {
   isMyTurn: () => boolean;
   onMove: (move: string, fen: string, moveObj?: { from: string; to: string; promotion?: string }) => void;
   isTimeExpired?: boolean; // Prevents moves when player's time has run out
+  reviewMode?: boolean; // NEW: Disable moves when reviewing history
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({
@@ -19,7 +20,8 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   playerColor,
   isMyTurn,
   onMove,
-  isTimeExpired = false
+  isTimeExpired = false,
+  reviewMode = false
 }) => {
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>(playerColor || 'white');
   const [localPosition, setLocalPosition] = useState<string>(position);
@@ -41,6 +43,12 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
 
   // Handle piece drop with useCallback
   const onDrop = useCallback((sourceSquare: Square, targetSquare: Square): boolean => {
+    // Prevent moves in review mode
+    if (reviewMode) {
+      debugLog('📖 Move blocked: Currently reviewing game history');
+      return false;
+    }
+
     // Check if time has expired
     if (isTimeExpired) {
       debugLog('⏰ Move blocked: Time expired');
@@ -86,10 +94,15 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     });
     
     return true;
-  }, [localPosition, playerColor, isMyTurn, onMove, isTimeExpired]);
+  }, [localPosition, playerColor, isMyTurn, onMove, isTimeExpired, reviewMode]);
 
   // Determine if a piece can be dragged
   const isDraggablePiece = useCallback(({ piece, sourceSquare }: any): boolean => {
+    // Can't drag in review mode
+    if (reviewMode) {
+      return false;
+    }
+
     // Don't allow dragging if time has expired
     if (isTimeExpired) {
       return false;
@@ -122,7 +135,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       return false;
     }
     return true;
-  }, [rulesGame, playerColor, isMyTurn, isTimeExpired]);
+  }, [rulesGame, playerColor, isMyTurn, isTimeExpired, reviewMode]);
 
   const flipBoard = () => {
     setBoardOrientation(boardOrientation === 'white' ? 'black' : 'white');

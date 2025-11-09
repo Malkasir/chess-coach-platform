@@ -1,0 +1,151 @@
+.movePanel {
+  background-color: var(--bg-card);
+  border-radius: 8px;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.moveList {
+  flex: 1;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: var(--text-sm);
+  min-height: 100px;
+}
+
+.emptyState {
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-lg);
+  font-size: var(--text-sm);
+}
+
+.moveRow {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.moveRow:hover {
+  background-color: var(--bg-card-hover);
+}
+
+.number {
+  color: var(--text-muted);
+  text-align: right;
+  font-weight: var(--font-medium);
+}
+
+.white,
+.black {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+  color: var(--text-primary);
+}
+
+.white:hover,
+.black:hover {
+  background-color: var(--bg-card-hover);
+}
+
+.white.active,
+.black.active {
+  background-color: rgba(103, 80, 164, 0.3);
+  font-weight: var(--font-semibold);
+}
+
+/* Navigation Controls */
+.navigationControls {
+  padding: var(--space-sm) 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  margin: var(--space-sm) 0;
+}
+
+.reviewBanner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(103, 80, 164, 0.2);
+  padding: var(--space-sm);
+  border-radius: 6px;
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-sm);
+}
+
+.exitReviewBtn {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--text-xs);
+  transition: opacity 0.2s;
+}
+
+.exitReviewBtn:hover {
+  opacity: 0.9;
+}
+
+.navButtons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-xs);
+}
+
+.navButtons button {
+  padding: var(--space-sm);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-normal);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.navButtons button:hover:not(:disabled) {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-focus);
+  transform: translateY(-1px);
+}
+
+.navButtons button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* PGN Controls */
+.pgnControls {
+  display: flex;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.pgnControls button {
+  flex: 1;
+  padding: var(--space-sm);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-normal);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pgnControls button:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-focus);
+}

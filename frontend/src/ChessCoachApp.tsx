@@ -32,7 +32,13 @@ export const ChessCoachAppReact: React.FC = () => {
     isMyTurn,
     getCurrentTurnDisplay,
     copyRoomCode,
-    updateGameField
+    updateGameField,
+    // NEW: Navigation functions
+    navigateToMove,
+    navigateBack,
+    navigateForward,
+    navigateToStart,
+    navigateToEnd
   } = useGameState(authService, authState.currentUser);
 
   // Notification state for game invitations
@@ -361,6 +367,16 @@ export const ChessCoachAppReact: React.FC = () => {
         playerColor={gameState.playerColor}
         game={gameRef}
         clockState={gameState.clockState}
+        // NEW: Pass move history and navigation
+        moveHistory={gameState.moveHistory}
+        reviewMode={gameState.reviewMode}
+        reviewIndex={gameState.reviewIndex}
+        onNavigateToMove={navigateToMove}
+        onNavigateBack={navigateBack}
+        onNavigateForward={navigateForward}
+        onNavigateToStart={navigateToStart}
+        onNavigateToEnd={navigateToEnd}
+        // Existing handlers
         isMyTurn={isMyTurn}
         getCurrentTurnDisplay={getCurrentTurnDisplay}
         onMove={isAIGame ? handleAIMove : makeMove}
