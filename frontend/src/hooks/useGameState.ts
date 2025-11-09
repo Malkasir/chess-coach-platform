@@ -51,6 +51,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     switch (message.type) {
       case 'MOVE':
         if (message.fen && message.move) {
+          const fen = message.fen; // Capture for TypeScript type narrowing
           setGameState(prev => {
             // If in review mode, only update moveHistory but keep review position
             if (prev.reviewMode) {
@@ -62,10 +63,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
             }
 
             // Not in review mode - update position normally
-            gameRef.current.load(message.fen);
+            gameRef.current.load(fen);
             return {
               ...prev,
-              position: message.fen!,
+              position: fen,
               moveHistory: message.moveHistory || [...prev.moveHistory, message.move!],
               clockState: message.clockState || prev.clockState
             };
@@ -74,6 +75,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         break;
       case 'GAME_STATE':
         if (message.fen) {
+          const fen = message.fen; // Capture for TypeScript type narrowing
           setGameState(prev => {
             // If in review mode, only update moveHistory but keep review position
             if (prev.reviewMode) {
@@ -85,10 +87,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
             }
 
             // Not in review mode - update position normally
-            gameRef.current.load(message.fen);
+            gameRef.current.load(fen);
             return {
               ...prev,
-              position: message.fen!,
+              position: fen,
               moveHistory: message.moveHistory || prev.moveHistory,
               gameStatus: prev.gameStatus === 'waiting' && prev.playerColor ? 'active' : prev.gameStatus,
               clockState: message.clockState || prev.clockState

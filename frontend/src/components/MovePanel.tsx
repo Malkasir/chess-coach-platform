@@ -73,7 +73,7 @@ export const MovePanel: React.FC<MovePanelProps> = ({
       moveHistory.forEach(move => tempGame.move(move));
       pgnText = tempGame.pgn({
         maxWidth: 80,
-        newlineChar: '\n'
+        newline: '\n'
       });
     } catch (error) {
       console.error('Failed to reconstruct game for PGN:', error);
