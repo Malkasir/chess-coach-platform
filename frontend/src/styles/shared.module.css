@@ -192,54 +192,35 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Main game area - horizontal layout on desktop */
 .gameArea {
   display: flex;
-  gap: var(--space-xl);
+  gap: var(--space-lg);
   align-items: flex-start;
-  flex-wrap: wrap;
   width: 100%;
+  justify-content: center;
 }
 
+/* Video section - left side */
 .videoSection {
   flex: 0 0 auto;
-  width: 100%;
-  max-width: 400px;
+  width: 350px;
+  max-width: 350px;
   min-width: 300px;
 }
 
-@media (max-width: 768px) {
-  .gameArea {
-    flex-direction: column;
-    gap: var(--space-md);
-  }
-
-  .videoSection {
-    max-width: 100%;
-    width: 100%;
-  }
-
-  .chessPanel {
-    max-width: 100%;
-  }
-}
-
-.chessPanel {
-  flex: 1;
-  max-width: 500px;
-}
-
-/* Game Container - Board + Side Panel Layout */
+/* Game Container - Board + Side Panel Layout (center/right) */
 .gameContainer {
   display: flex;
   gap: var(--space-lg);
   align-items: flex-start;
-  flex: 1 1 auto;
-  min-width: 0; /* Allow flex item to shrink */
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .boardWrapper {
-  flex: 1;
-  max-width: 600px;
+  flex: 0 0 auto;
+  width: 466px; /* Fixed width to match chess board */
   min-width: 300px;
 }
 
@@ -247,26 +228,40 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  width: 240px;
-  min-width: 200px;
-  flex-shrink: 0; /* Don't shrink side panel */
+  width: 280px; /* Increased from 240px to fit move panel */
+  min-width: 240px;
+  flex-shrink: 0;
 }
 
-/* Responsive: Stack vertically on mobile/tablet */
-@media (max-width: 1400px) {
+/* Large screens: Video | Board | Side Panel */
+@media (min-width: 1201px) {
+  .gameArea {
+    flex-direction: row;
+  }
+}
+
+/* Medium screens: (Board + Side Panel) then Video below */
+@media (max-width: 1200px) {
   .gameArea {
     flex-direction: column;
+    align-items: center;
   }
 
   .videoSection {
-    max-width: 100%;
+    order: 2;
+    width: 100%;
+    max-width: 600px;
   }
 
   .gameContainer {
+    order: 1;
     width: 100%;
+    max-width: 800px;
+    justify-content: center;
   }
 }
 
+/* Tablet: Board + Side Panel stacked, clocks horizontal */
 @media (max-width: 1024px) {
   .gameContainer {
     flex-direction: column;
@@ -274,22 +269,47 @@
   }
 
   .boardWrapper {
-    max-width: 500px;
     width: 100%;
+    max-width: 500px;
   }
 
   .sidePanel {
     width: 100%;
     max-width: 500px;
-    flex-direction: row;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "clock-opp clock-player"
+      "moves moves"
+      "turn turn"
+      "time-control time-control";
+    gap: var(--space-md);
   }
+
+  /* Assign grid areas to children (in order) */
+  .sidePanel > *:nth-child(1) { grid-area: clock-opp; }     /* Opponent Clock */
+  .sidePanel > *:nth-child(2) { grid-area: moves; }         /* MovePanel */
+  .sidePanel > *:nth-child(3) { grid-area: turn; }          /* Turn Indicator */
+  .sidePanel > *:nth-child(4) { grid-area: clock-player; }  /* Player Clock */
+  .sidePanel > *:nth-child(5) { grid-area: time-control; }  /* Time Control Info */
 }
 
+/* Mobile: Everything stacked vertically */
 @media (max-width: 640px) {
+  .videoSection {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .boardWrapper {
+    width: 100%;
+  }
+
   .sidePanel {
+    display: flex;
     flex-direction: column;
     gap: var(--space-sm);
+    width: 100%;
   }
 }
 

@@ -5,6 +5,7 @@ import { ChessBoard } from './ChessBoard';
 import { VideoCall } from './VideoCall';
 import { AppHeader } from './AppHeader';
 import { GameClock } from './GameClock';
+import { MovePanel } from './MovePanel';
 import { useGameClock } from '../hooks/useGameClock';
 import { ClockState } from '../types/clock.types';
 import styles from '../styles/shared.module.css';
@@ -18,6 +19,16 @@ interface ActiveGameProps {
   playerColor: 'white' | 'black' | null;
   game: Chess;
   clockState: ClockState | null;
+  // NEW: Move history and navigation
+  moveHistory: string[];
+  reviewMode?: boolean;
+  reviewIndex?: number;
+  onNavigateToMove?: (index: number) => void;
+  onNavigateBack?: () => void;
+  onNavigateForward?: () => void;
+  onNavigateToStart?: () => void;
+  onNavigateToEnd?: () => void;
+  // Existing handlers
   isMyTurn: () => boolean;
   getCurrentTurnDisplay: () => string;
   onMove: (move: string, fen: string) => void;
@@ -36,6 +47,14 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
   playerColor,
   game,
   clockState,
+  moveHistory,
+  reviewMode,
+  reviewIndex,
+  onNavigateToMove,
+  onNavigateBack,
+  onNavigateForward,
+  onNavigateToStart,
+  onNavigateToEnd,
   isMyTurn,
   getCurrentTurnDisplay,
   onMove,
@@ -109,6 +128,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                   isMyTurn={isMyTurn}
                   onMove={onMove}
                   isTimeExpired={isTimeExpired}
+                  reviewMode={reviewMode}
                 />
               ) : (
                 <div className={styles.loadingBoard}>
@@ -121,7 +141,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
 
             {/* Side Panel - Clocks & Info */}
             <div className={styles.sidePanel}>
-              {/* Opponent Clock (Top) */}
+              {/* 1. Opponent Clock (Top) */}
               <GameClock
                 clockState={clockState}
                 playerColor={playerColor}
@@ -131,7 +151,21 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                 showClock={playerColor === 'white' ? 'black' : 'white'}
               />
 
-              {/* Turn Indicator */}
+              {/* 2. Move Panel */}
+              <MovePanel
+                moveHistory={moveHistory}
+                currentMoveIndex={reviewIndex ?? -1}
+                gameMode={clockState?.gameMode || 'TIMED'}
+                reviewMode={reviewMode}
+                game={game}
+                onMoveClick={onNavigateToMove}
+                onNavigateBack={onNavigateBack}
+                onNavigateForward={onNavigateForward}
+                onNavigateToStart={onNavigateToStart}
+                onNavigateToEnd={onNavigateToEnd}
+              />
+
+              {/* 3. Turn Indicator */}
               <div className={`${styles.turnIndicator} turn-indicator`} style={{
                 textAlign: 'center',
                 padding: 'var(--space-md)',
@@ -144,7 +178,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                 {getCurrentTurnDisplay()}
               </div>
 
-              {/* Player Clock (Bottom) */}
+              {/* 4. Player Clock (Bottom) */}
               <GameClock
                 clockState={clockState}
                 playerColor={playerColor}

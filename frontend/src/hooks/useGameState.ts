@@ -16,6 +16,9 @@ interface GameState {
   roomCodeInput: string;
   colorPreference: 'white' | 'black' | 'random';
   clockState: ClockState | null;
+  // NEW: Navigation state for move review
+  reviewMode: boolean;
+  reviewIndex: number; // -1 = live position, 0+ = reviewing that ply
 }
 
 export const useGameState = (authService: AuthService, currentUser: User | null) => {
@@ -30,7 +33,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     moveHistory: [],
     roomCodeInput: '',
     colorPreference: 'random',
-    clockState: null
+    clockState: null,
+    // NEW: Navigation state initialization
+    reviewMode: false,
+    reviewIndex: -1
   });
 
   const gameRef = useRef(new Chess());
@@ -45,25 +51,49 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     switch (message.type) {
       case 'MOVE':
         if (message.fen && message.move) {
-          gameRef.current.load(message.fen);
-          setGameState(prev => ({
-            ...prev,
-            position: message.fen!,
-            moveHistory: message.moveHistory || [...prev.moveHistory, message.move!],
-            clockState: message.clockState || prev.clockState
-          }));
+          setGameState(prev => {
+            // If in review mode, only update moveHistory but keep review position
+            if (prev.reviewMode) {
+              return {
+                ...prev,
+                moveHistory: message.moveHistory || [...prev.moveHistory, message.move!],
+                clockState: message.clockState || prev.clockState
+              };
+            }
+
+            // Not in review mode - update position normally
+            gameRef.current.load(message.fen);
+            return {
+              ...prev,
+              position: message.fen!,
+              moveHistory: message.moveHistory || [...prev.moveHistory, message.move!],
+              clockState: message.clockState || prev.clockState
+            };
+          });
         }
         break;
       case 'GAME_STATE':
         if (message.fen) {
-          gameRef.current.load(message.fen);
-          setGameState(prev => ({
-            ...prev,
-            position: message.fen!,
-            moveHistory: message.moveHistory || prev.moveHistory,
-            gameStatus: prev.gameStatus === 'waiting' && prev.playerColor ? 'active' : prev.gameStatus,
-            clockState: message.clockState || prev.clockState
-          }));
+          setGameState(prev => {
+            // If in review mode, only update moveHistory but keep review position
+            if (prev.reviewMode) {
+              return {
+                ...prev,
+                moveHistory: message.moveHistory || prev.moveHistory,
+                clockState: message.clockState || prev.clockState
+              };
+            }
+
+            // Not in review mode - update position normally
+            gameRef.current.load(message.fen);
+            return {
+              ...prev,
+              position: message.fen!,
+              moveHistory: message.moveHistory || prev.moveHistory,
+              gameStatus: prev.gameStatus === 'waiting' && prev.playerColor ? 'active' : prev.gameStatus,
+              clockState: message.clockState || prev.clockState
+            };
+          });
         }
         break;
       case 'PLAYER_JOINED':
@@ -194,7 +224,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         moveHistory: [],
         gameStatus: 'waiting',
         clockState: null, // Will be populated when WebSocket connects
-        colorPreference // Update color preference in state
+        colorPreference, // Update color preference in state
+        // Reset navigation state when creating new game
+        reviewMode: false,
+        reviewIndex: -1
       }));
 
       await gameServiceRef.current?.joinGame(gameId, hostId, true);
@@ -220,7 +253,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         roomCodeInput: '', // Clear the input after successful join
         playerColor: gameStateResponse.guestColor,
         moveHistory: [],
-        gameStatus: 'active'
+        gameStatus: 'active',
+        // Reset navigation state when joining game
+        reviewMode: false,
+        reviewIndex: -1
       }));
 
       await gameServiceRef.current?.joinGame(gameStateResponse.gameId, guestId, false);
@@ -232,7 +268,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
   const resetGame = () => {
     gameServiceRef.current?.disconnect();
     gameRef.current = new Chess();
-    
+
     setGameState(prev => ({
       ...prev,
       gameId: '',
@@ -243,7 +279,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       position: 'start',
       playerColor: null,
       moveHistory: [],
-      roomCodeInput: ''
+      roomCodeInput: '',
+      // Reset navigation state
+      reviewMode: false,
+      reviewIndex: -1
     }));
   };
 
@@ -336,7 +375,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         gameId,
         roomCode,
         playerColor,
-        gameStatus: 'connecting'
+        gameStatus: 'connecting',
+        // Reset navigation state when joining from invitation
+        reviewMode: false,
+        reviewIndex: -1
       }));
 
       // Connect to WebSocket for real-time updates
@@ -379,7 +421,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         gameStatus: 'disconnected',
         position: 'start',
         playerColor: null,
-        moveHistory: []
+        moveHistory: [],
+        // Reset navigation state
+        reviewMode: false,
+        reviewIndex: -1
       }));
 
       // Reset chess engine
@@ -389,6 +434,73 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       console.error('Error exiting game:', error);
     }
   };
+
+  // Navigation functions for move review
+  const navigateToMove = useCallback((index: number) => {
+    if (gameState.clockState?.gameMode !== 'TRAINING') {
+      console.warn('Navigation only available in training mode');
+      return;
+    }
+
+    // Reconstruct position by replaying moves up to index
+    const reviewGame = new Chess();
+    for (let i = 0; i <= index && i < gameState.moveHistory.length; i++) {
+      reviewGame.move(gameState.moveHistory[i]);
+    }
+
+    // Update gameRef for consistency
+    gameRef.current.load(reviewGame.fen());
+
+    // Update state with navigation position
+    setGameState(prev => ({
+      ...prev,
+      reviewMode: true,
+      reviewIndex: index,
+      position: reviewGame.fen()
+    }));
+  }, [gameState.moveHistory, gameState.clockState]);
+
+  const navigateBack = useCallback(() => {
+    // Special case: if at live position (-1), jump to last move
+    if (gameState.reviewIndex === -1) {
+      const lastMoveIndex = gameState.moveHistory.length - 1;
+      if (lastMoveIndex >= 0) {
+        navigateToMove(lastMoveIndex);
+      }
+      return;
+    }
+
+    // Otherwise, step back one move
+    const newIndex = gameState.reviewIndex - 1;
+    if (newIndex >= -1) {
+      navigateToMove(newIndex);
+    }
+  }, [gameState.reviewIndex, gameState.moveHistory.length, navigateToMove]);
+
+  const navigateForward = useCallback(() => {
+    const newIndex = gameState.reviewIndex + 1;
+    if (newIndex < gameState.moveHistory.length) {
+      navigateToMove(newIndex);
+    }
+  }, [gameState.reviewIndex, gameState.moveHistory.length, navigateToMove]);
+
+  const navigateToStart = useCallback(() => {
+    navigateToMove(-1); // -1 = starting position
+  }, [navigateToMove]);
+
+  const navigateToEnd = useCallback(() => {
+    // Exit review mode and return to live position
+    const liveGame = new Chess();
+    gameState.moveHistory.forEach(move => liveGame.move(move));
+    gameRef.current.load(liveGame.fen());
+
+    setGameState(prev => ({
+      ...prev,
+      reviewMode: false,
+      reviewIndex: -1,
+      position: liveGame.fen()
+    }));
+  }, [gameState.moveHistory]);
 
   return {
     gameState,
@@ -402,6 +514,12 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     isMyTurn,
     getCurrentTurnDisplay,
     copyRoomCode,
-    updateGameField
+    updateGameField,
+    // NEW: Navigation functions
+    navigateToMove,
+    navigateBack,
+    navigateForward,
+    navigateToStart,
+    navigateToEnd
   };
 };
