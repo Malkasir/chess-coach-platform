@@ -7,6 +7,7 @@ import { GameInvitationModal, InvitationData } from './GameInvitationModal';
 import { AIPersonalitySelector } from './AIPersonalitySelector';
 import { NewGameModal } from './NewGameModal';
 import { JoinGameModal } from './JoinGameModal';
+import { LoadPositionModal } from './LoadPositionModal';
 import { ChessPersonality } from '../types/personality.types';
 import { TimeControl } from '../types/clock.types';
 import { apiClient } from '../services/api-client';
@@ -22,6 +23,7 @@ interface GameLobbyProps {
   onCopyRoomCode: () => void;
   onLogout: () => void;
   onAIGameStart: (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => void;
+  onLoadPosition: (fen: string) => void;
   invitationConnectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error';
 }
 
@@ -35,6 +37,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   onCopyRoomCode,
   onLogout,
   onAIGameStart,
+  onLoadPosition,
   invitationConnectionStatus = 'disconnected',
 }) => {
   const [showOnlinePlayers, setShowOnlinePlayers] = useState(false);
@@ -42,6 +45,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   const [showAISelector, setShowAISelector] = useState(false);
   const [showNewGameModal, setShowNewGameModal] = useState(false);
   const [showJoinGameModal, setShowJoinGameModal] = useState(false);
+  const [showLoadPositionModal, setShowLoadPositionModal] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<{ id: number; name: string } | null>(null);
 
   const handleInvitePlayer = (playerId: number, playerName: string) => {
@@ -160,6 +164,23 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   <span style={{ fontSize: '2rem' }}>🤖</span>
                   <span>Play vs AI</span>
                 </button>
+
+                <button
+                  onClick={() => setShowLoadPositionModal(true)}
+                  className={styles.secondaryButton}
+                  style={{
+                    padding: 'var(--space-lg)',
+                    fontSize: 'var(--text-lg)',
+                    fontWeight: 'var(--font-bold)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 'var(--space-xs)'
+                  }}
+                >
+                  <span style={{ fontSize: '2rem' }}>📋</span>
+                  <span>Load Position</span>
+                </button>
               </div>
             </>
           )}
@@ -208,6 +229,14 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         onClose={() => setShowJoinGameModal(false)}
         onJoinGame={(roomCode) => {
           onJoinByRoomCode(roomCode);
+        }}
+      />
+
+      <LoadPositionModal
+        isOpen={showLoadPositionModal}
+        onClose={() => setShowLoadPositionModal(false)}
+        onLoadPosition={(fen) => {
+          onLoadPosition(fen);
         }}
       />
 

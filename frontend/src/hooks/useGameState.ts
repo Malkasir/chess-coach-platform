@@ -16,9 +16,12 @@ interface GameState {
   roomCodeInput: string;
   colorPreference: 'white' | 'black' | 'random';
   clockState: ClockState | null;
-  // NEW: Navigation state for move review
+  // Navigation state for move review
   reviewMode: boolean;
   reviewIndex: number; // -1 = live position, 0+ = reviewing that ply
+  // Custom position loading
+  customStartPosition: string | null; // FEN of custom starting position
+  isCustomPosition: boolean; // Flag indicating loaded from custom position
 }
 
 export const useGameState = (authService: AuthService, currentUser: User | null) => {
@@ -34,9 +37,12 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     roomCodeInput: '',
     colorPreference: 'random',
     clockState: null,
-    // NEW: Navigation state initialization
+    // Navigation state initialization
     reviewMode: false,
-    reviewIndex: -1
+    reviewIndex: -1,
+    // Custom position initialization
+    customStartPosition: null,
+    isCustomPosition: false
   });
 
   const gameRef = useRef(new Chess());
@@ -504,6 +510,49 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     }));
   }, [gameState.moveHistory]);
 
+  // Load a custom position from FEN
+  const loadCustomPosition = useCallback((fen: string) => {
+    try {
+      // Validate FEN by attempting to create a game
+      const customGame = new Chess(fen);
+      const validatedFen = customGame.fen();
+
+      // Load position into game ref
+      gameRef.current.load(validatedFen);
+
+      // Update state with custom position
+      setGameState(prev => ({
+        ...prev,
+        gameId: `custom-${Date.now()}`, // Generate unique ID for custom position
+        roomCode: 'Custom Position',
+        playerId: currentUser?.id.toString() || 'local-player',
+        isHost: true, // User controls both sides in custom positions
+        gameStatus: 'active',
+        position: validatedFen,
+        playerColor: 'white', // Start as white, user can flip board
+        moveHistory: [],
+        clockState: {
+          gameMode: 'TRAINING', // Custom positions always use training mode
+          baseTimeSeconds: null,
+          incrementSeconds: 0,
+          whiteTimeRemaining: null,
+          blackTimeRemaining: null,
+          lastMoveTimestamp: null,
+          activeColor: customGame.turn() === 'w' ? 'WHITE' : 'BLACK'
+        },
+        reviewMode: false,
+        reviewIndex: -1,
+        customStartPosition: validatedFen,
+        isCustomPosition: true
+      }));
+
+      console.log('✅ Custom position loaded:', validatedFen);
+    } catch (error) {
+      console.error('❌ Failed to load custom position:', error);
+      throw new Error('Invalid FEN string');
+    }
+  }, [currentUser]);
+
   return {
     gameState,
     gameRef: gameRef.current,
@@ -517,11 +566,13 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     getCurrentTurnDisplay,
     copyRoomCode,
     updateGameField,
-    // NEW: Navigation functions
+    // Navigation functions
     navigateToMove,
     navigateBack,
     navigateForward,
     navigateToStart,
-    navigateToEnd
+    navigateToEnd,
+    // Custom position loading
+    loadCustomPosition
   };
 };

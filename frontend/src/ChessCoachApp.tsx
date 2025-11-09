@@ -33,12 +33,14 @@ export const ChessCoachAppReact: React.FC = () => {
     getCurrentTurnDisplay,
     copyRoomCode,
     updateGameField,
-    // NEW: Navigation functions
+    // Navigation functions
     navigateToMove,
     navigateBack,
     navigateForward,
     navigateToStart,
-    navigateToEnd
+    navigateToEnd,
+    // Custom position loading
+    loadCustomPosition
   } = useGameState(authService, authState.currentUser);
 
   // Notification state for game invitations
@@ -341,6 +343,7 @@ export const ChessCoachAppReact: React.FC = () => {
           onCopyRoomCode={copyRoomCode}
           onLogout={logout}
           onAIGameStart={handleAIGameStart}
+          onLoadPosition={loadCustomPosition}
           invitationConnectionStatus={connectionStatus}
         />
         <NotificationBanner
