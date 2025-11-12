@@ -12,6 +12,9 @@
   "create_game": {
     "button": "Create New Game",
     "title": "Create New Game",
+    "game_mode_label": "Game Mode",
+    "game_mode_timed": "Timed Game",
+    "game_mode_training": "Training (No Clock)",
     "mode": {
       "label": "Game Mode",
       "vs_player": "vs Player",
@@ -34,7 +37,13 @@
     "ai_personality": {
       "label": "AI Personality",
       "select": "Select opponent..."
-    }
+    },
+    "summary_title": "Game Summary:",
+    "summary_mode": "Mode:",
+    "summary_time": "Time:",
+    "summary_color": "Color:",
+    "cancel_button": "Cancel",
+    "create_button": "Create Game"
   },
   "join_game": {
     "button": "Join Game",

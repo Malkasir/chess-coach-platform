@@ -8,6 +8,9 @@
     "logout": "Logout",
     "theme": "Themes"
   },
+  "aria": {
+    "close_modal": "Close modal"
+  },
   "language": {
     "selector_title": "Change Language",
     "english": "English",

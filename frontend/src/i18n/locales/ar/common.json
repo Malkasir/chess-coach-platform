@@ -8,6 +8,9 @@
     "logout": "تسجيل الخروج",
     "theme": "السمات"
   },
+  "aria": {
+    "close_modal": "إغلاق النافذة"
+  },
   "language": {
     "selector_title": "تغيير اللغة",
     "english": "English",

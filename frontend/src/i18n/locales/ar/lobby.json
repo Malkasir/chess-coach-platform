@@ -12,6 +12,9 @@
   "create_game": {
     "button": "إنشاء لعبة جديدة",
     "title": "إنشاء لعبة جديدة",
+    "game_mode_label": "نمط اللعبة",
+    "game_mode_timed": "لعبة موقوتة",
+    "game_mode_training": "التدريب (بدون ساعة)",
     "mode": {
       "label": "نمط اللعبة",
       "vs_player": "ضد لاعب",
@@ -34,7 +37,13 @@
     "ai_personality": {
       "label": "شخصية الذكاء الاصطناعي",
       "select": "اختر الخصم..."
-    }
+    },
+    "summary_title": "ملخص اللعبة:",
+    "summary_mode": "النمط:",
+    "summary_time": "الوقت:",
+    "summary_color": "اللون:",
+    "cancel_button": "إلغاء",
+    "create_button": "إنشاء لعبة"
   },
   "join_game": {
     "button": "الانضمام إلى لعبة",

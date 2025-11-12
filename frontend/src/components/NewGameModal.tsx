@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TimeControl, DEFAULT_TIME_CONTROL } from '../types/clock.types';
 import { TimeControlSelector } from './TimeControlSelector';
 import styles from '../styles/shared.module.css';
@@ -14,6 +15,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
   onClose,
   onCreateGame,
 }) => {
+  const { t } = useTranslation(['lobby', 'common']);
   const [gameMode, setGameMode] = useState<'TIMED' | 'TRAINING'>('TIMED');
   const [selectedTimeControl, setSelectedTimeControl] = useState<TimeControl>(DEFAULT_TIME_CONTROL);
   const [colorPreference, setColorPreference] = useState<'white' | 'black' | 'random'>('random');
@@ -74,12 +76,12 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
         {/* Header */}
         <div className={styles.modalHeader}>
           <h2 id="new-game-modal-title" style={{ margin: 0, fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)' }}>
-            Create New Game
+            {t('lobby:create_game.title')}
           </h2>
           <button
             onClick={onClose}
             className={styles.modalCloseButton}
-            aria-label="Close modal"
+            aria-label={t('common:aria.close_modal')}
           >
             ✕
           </button>
@@ -96,7 +98,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
               marginBottom: 'var(--space-md)',
               color: 'var(--text-primary)'
             }}>
-              1. Game Mode
+              1. {t('lobby:create_game.game_mode_label')}
             </label>
             <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
               <button
@@ -111,7 +113,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                   color: gameMode === 'TIMED' ? 'white' : 'var(--text-primary)'
                 }}
               >
-                ⏱️ Timed Game
+                ⏱️ {t('lobby:create_game.game_mode_timed')}
               </button>
               <button
                 onClick={() => setGameMode('TRAINING')}
@@ -125,7 +127,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                   color: gameMode === 'TRAINING' ? 'white' : 'var(--text-primary)'
                 }}
               >
-                📚 Training (No Clock)
+                📚 {t('lobby:create_game.game_mode_training')}
               </button>
             </div>
           </div>
@@ -140,7 +142,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                 marginBottom: 'var(--space-md)',
                 color: 'var(--text-primary)'
               }}>
-                2. Time Control
+                2. {t('lobby:create_game.time_control.label')}
               </label>
               <div style={{
                 padding: 'var(--space-md)',
@@ -166,7 +168,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
               marginBottom: 'var(--space-md)',
               color: 'var(--text-primary)'
             }}>
-              {gameMode === 'TIMED' ? '3' : '2'}. Your Color
+              {gameMode === 'TIMED' ? '3' : '2'}. {t('lobby:create_game.color.label')}
             </label>
             <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
               {(['random', 'white', 'black'] as const).map((color) => (
@@ -187,7 +189,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                   {color === 'random' && '🎲 '}
                   {color === 'white' && '⚪ '}
                   {color === 'black' && '⚫ '}
-                  {color.charAt(0).toUpperCase() + color.slice(1)}
+                  {t(`lobby:create_game.color.${color}`)}
                 </button>
               ))}
             </div>
@@ -202,13 +204,13 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
             fontSize: 'var(--text-sm)',
             color: 'var(--text-muted)'
           }}>
-            <strong>Game Summary:</strong>
-            <ul style={{ marginTop: 'var(--space-xs)', paddingLeft: 'var(--space-lg)' }}>
-              <li>Mode: {gameMode === 'TIMED' ? 'Timed Game' : 'Training (No Clock)'}</li>
+            <strong>{t('lobby:create_game.summary_title')}</strong>
+            <ul style={{ marginTop: 'var(--space-xs)', paddingInlineStart: 'var(--space-lg)' }}>
+              <li>{t('lobby:create_game.summary_mode')} {gameMode === 'TIMED' ? t('lobby:create_game.game_mode_timed') : t('lobby:create_game.game_mode_training')}</li>
               {gameMode === 'TIMED' && (
-                <li>Time: {selectedTimeControl.label || `${Math.floor((selectedTimeControl.baseTimeSeconds || 0) / 60)}+${selectedTimeControl.incrementSeconds}`}</li>
+                <li>{t('lobby:create_game.summary_time')} {selectedTimeControl.label || `${Math.floor((selectedTimeControl.baseTimeSeconds || 0) / 60)}+${selectedTimeControl.incrementSeconds}`}</li>
               )}
-              <li>Color: {colorPreference.charAt(0).toUpperCase() + colorPreference.slice(1)}</li>
+              <li>{t('lobby:create_game.summary_color')} {t(`lobby:create_game.color.${colorPreference}`)}</li>
             </ul>
           </div>
         </div>
@@ -218,15 +220,15 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
           <button
             onClick={onClose}
             className={styles.secondaryButton}
-            style={{ marginRight: 'var(--space-md)' }}
+            style={{ marginInlineEnd: 'var(--space-md)' }}
           >
-            Cancel
+            {t('lobby:create_game.cancel_button')}
           </button>
           <button
             onClick={handleCreateGame}
             className={styles.primaryButton}
           >
-            Create Game
+            {t('lobby:create_game.create_button')}
           </button>
         </div>
       </div>
