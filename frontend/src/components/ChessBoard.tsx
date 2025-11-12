@@ -199,8 +199,8 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
 
 
   return (
-    <div style={{ textAlign: 'center' }}>
-      <div className="chess-board-container" style={{ width: '466px', height: '466px' }}>
+    <div style={{ textAlign: 'center', direction: 'ltr' }}>
+      <div className="chess-board-container" style={{ width: '466px', height: '466px', direction: 'ltr' }}>
         <Chessboard
           position={localPosition}
           onPieceDrop={onDrop}
@@ -222,7 +222,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
           showPromotionDialog={true}
         />
       </div>
-      <div style={{ marginTop: '1rem' }}>
+      <div style={{ marginTop: '1rem', direction: 'ltr' }}>
         <button
           onClick={flipBoard}
           style={{

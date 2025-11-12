@@ -97,12 +97,13 @@ export const MovePanel: React.FC<MovePanelProps> = ({
           </div>
         ) : (
           pairedMoves.map((pair, idx) => (
-            <div key={idx} className={styles.moveRow}>
-              <span className={styles.number}>{idx + 1}.</span>
+            <div key={idx} className={styles.moveRow} style={{ direction: 'ltr' }}>
+              <span className={styles.number} style={{ direction: 'ltr' }}>{idx + 1}.</span>
               {pair.white && (
                 <span
                   className={`${styles.white} ${currentMoveIndex === idx * 2 ? styles.active : ''}`}
                   onClick={() => handleMoveClick(idx, 'white')}
+                  style={{ direction: 'ltr' }}
                 >
                   {pair.white}
                 </span>
@@ -111,6 +112,7 @@ export const MovePanel: React.FC<MovePanelProps> = ({
                 <span
                   className={`${styles.black} ${currentMoveIndex === idx * 2 + 1 ? styles.active : ''}`}
                   onClick={() => handleMoveClick(idx, 'black')}
+                  style={{ direction: 'ltr' }}
                 >
                   {pair.black}
                 </span>
