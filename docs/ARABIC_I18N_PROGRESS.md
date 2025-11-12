@@ -2,26 +2,38 @@
 
 **Last Updated:** 2025-11-12
 **Branch:** `feature/arabic-translation`
-**Current Phase:** Phase 1A - Complete & In PR Review
-**Status:** ✅ Infrastructure + Core UI complete, ready for review
+**Current Phase:** Phase 1B - In Progress (20% Complete)
+**Status:** ✅ Phase 1A complete, Phase 1B started, ready for review
 
 ---
 
-## 🎯 Phase 1A Status: COMPLETE & IN REVIEW
+## 🎯 Current Status: Phase 1B (20% Complete)
 
-**What's in this PR:**
+### ✅ Completed in PR #14
+**Phase 1A (100% Complete):**
 - ✅ Full i18n infrastructure (react-i18next)
 - ✅ Authentication flow (100% bilingual)
 - ✅ App header & navigation (100% bilingual)
 - ✅ Game lobby buttons (100% bilingual)
 - ✅ RTL support from first paint
 - ✅ Arabic fonts integrated
-- ✅ 150+ translated strings (EN + AR)
+- ✅ Chessboard LTR fix (critical bug)
 
-**What's Next (Phase 1B):**
-- Remaining game components (ActiveGame, modals, toasts)
-- Backend locale support
-- Native speaker review
+**Phase 1B Progress (20% Complete):**
+- ✅ **ActiveGame component** - In-game UI translated
+- ✅ **Chess notation RTL fix** - Board stays LTR in Arabic
+
+### ⏳ Remaining in Phase 1B (80%)
+- ❌ NewGameModal - Game creation dialog
+- ❌ JoinGameModal - Join game dialog
+- ❌ GameInvitationModal - Player invitations
+- ❌ OnlinePlayersList - Player search
+- ❌ NotificationBanner - Game notifications
+- ❌ Toast - Success/error messages
+- ❌ API client error messages
+- ❌ Backend locale support (MessageSource + preferredLocale)
+
+**Estimated Time Remaining:** 4-6 hours
 
 ---
 
