@@ -22,9 +22,20 @@
     "accept_draw": "Accept Draw",
     "decline_draw": "Decline Draw",
     "new_game": "New Game",
+    "exit_game": "Exit Game",
     "rematch": "Rematch",
+    "copy_code": "Copy Code",
     "copy_game_id": "Copy Game ID",
     "leave_game": "Leave Game"
+  },
+  "info": {
+    "status_label": "Status",
+    "room_code_label": "Room Code",
+    "color_label": "Color",
+    "share_code": "Share this room code with your opponent!",
+    "initializing": "Initializing chess board...",
+    "color_white": "White",
+    "color_black": "Black"
   },
   "move_panel": {
     "title": "Moves",

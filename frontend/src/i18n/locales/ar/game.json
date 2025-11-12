@@ -22,9 +22,20 @@
     "accept_draw": "قبول التعادل",
     "decline_draw": "رفض التعادل",
     "new_game": "لعبة جديدة",
+    "exit_game": "الخروج من اللعبة",
     "rematch": "إعادة المباراة",
+    "copy_code": "نسخ الرمز",
     "copy_game_id": "نسخ معرف اللعبة",
     "leave_game": "مغادرة اللعبة"
+  },
+  "info": {
+    "status_label": "الحالة",
+    "room_code_label": "رمز الغرفة",
+    "color_label": "اللون",
+    "share_code": "شارك رمز الغرفة هذا مع خصمك!",
+    "initializing": "جاري تهيئة رقعة الشطرنج...",
+    "color_white": "أبيض",
+    "color_black": "أسود"
   },
   "move_panel": {
     "title": "الحركات",

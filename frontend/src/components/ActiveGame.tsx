@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import { User } from '../services/auth-service';
 import { ChessBoard } from './ChessBoard';
@@ -63,6 +64,8 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
   onCopyRoomCode,
   onLogout,
 }) => {
+  const { t } = useTranslation(['game']);
+
   // Use game clock hook for smooth countdown
   const { whiteTimeRemaining, blackTimeRemaining, isWhiteTimeExpired, isBlackTimeExpired } = useGameClock(clockState);
 
@@ -80,10 +83,10 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
         <div className={styles.controlsPanel}>
           <div className={styles.controlsRow}>
             <button onClick={onResetGame} className={styles.secondaryButton}>
-              New Game
+              {t('actions.new_game')}
             </button>
-            <button onClick={onExitGame} className={styles.secondaryButton} style={{ marginLeft: '1rem', backgroundColor: '#dc3545' }}>
-              Exit Game
+            <button onClick={onExitGame} className={styles.secondaryButton} style={{ marginInlineStart: '1rem', backgroundColor: '#dc3545' }}>
+              {t('actions.exit_game')}
             </button>
             {gameStatus === 'waiting' && roomCode && (
               <>
@@ -93,10 +96,10 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                   value={roomCode}
                   readOnly
                   className={styles.input}
-                  style={{ marginLeft: '1rem' }}
+                  style={{ marginInlineStart: '1rem', direction: 'ltr' }}
                 />
                 <button id="copy-button" onClick={onCopyRoomCode} className={styles.secondaryButton}>
-                  Copy Code
+                  {t('actions.copy_code')}
                 </button>
               </>
             )}
@@ -104,10 +107,10 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
         </div>
 
         <div className={styles.statusPanel}>
-          <div className={styles.statusCard}>Status: {gameStatus}</div>
-          {roomCode && <div className={styles.statusCard}>Room Code: {roomCode}</div>}
-          {playerColor && <div className={styles.statusCard}>Color: {playerColor}</div>}
-          {gameStatus === 'waiting' && <div className={styles.statusCard}>Share this room code with your opponent!</div>}
+          <div className={styles.statusCard}>{t('info.status_label')}: {gameStatus}</div>
+          {roomCode && <div className={styles.statusCard} style={{ direction: 'ltr' }}>{t('info.room_code_label')}: {roomCode}</div>}
+          {playerColor && <div className={styles.statusCard}>{t('info.color_label')}: {t(`info.color_${playerColor}`)}</div>}
+          {gameStatus === 'waiting' && <div className={styles.statusCard}>{t('info.share_code')}</div>}
         </div>
 
         <div className={styles.gameArea}>
@@ -133,7 +136,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
               ) : (
                 <div className={styles.loadingBoard}>
                   <div className={styles.loadingText}>
-                    {gameStatus === 'waiting' ? 'Waiting for opponent...' : 'Initializing chess board...'}
+                    {gameStatus === 'waiting' ? t('status.waiting') : t('info.initializing')}
                   </div>
                 </div>
               )}
