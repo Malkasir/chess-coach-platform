@@ -1,0 +1,27 @@
+{
+  "app_title": "Chess Coach Platform",
+  "button": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "save": "Save",
+    "logout": "Logout",
+    "theme": "Themes"
+  },
+  "language": {
+    "selector_title": "Change Language",
+    "english": "English",
+    "arabic": "العربية"
+  },
+  "welcome": "Welcome, {{name}}",
+  "error": {
+    "unexpected": "An unexpected error occurred",
+    "no_auth": "No authentication token found",
+    "network": "Network error. Please check your connection"
+  },
+  "status": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "success": "Success!"
+  }
+}

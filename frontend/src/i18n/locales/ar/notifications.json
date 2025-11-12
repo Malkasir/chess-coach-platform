@@ -1,0 +1,51 @@
+{
+  "invitation": {
+    "received": "دعوة للعبة من {{playerName}}",
+    "sent": "تم إرسال الدعوة إلى {{playerName}}",
+    "accepted": "{{playerName}} قبل دعوتك",
+    "declined": "{{playerName}} رفض دعوتك",
+    "expired": "انتهت صلاحية الدعوة",
+    "cancelled": "تم إلغاء الدعوة"
+  },
+  "game": {
+    "started": "بدأت اللعبة",
+    "ended": "انتهت اللعبة",
+    "opponent_joined": "انضم الخصم",
+    "opponent_left": "غادر الخصم اللعبة",
+    "move_made": "الحركة: {{move}}",
+    "illegal_move": "حركة غير قانونية",
+    "connection_lost": "فقد الاتصال. جاري إعادة الاتصال...",
+    "reconnected": "تم إعادة الاتصال باللعبة"
+  },
+  "error": {
+    "api_401": "يرجى تسجيل الدخول للمتابعة",
+    "api_403": "ليس لديك إذن لتنفيذ هذا الإجراء",
+    "api_404": "المورد المطلوب غير موجود",
+    "api_429": "طلبات كثيرة جداً. يرجى المحاولة لاحقاً",
+    "api_500": "خطأ في الخادم. يرجى المحاولة لاحقاً",
+    "api_503": "الخدمة غير متاحة مؤقتاً",
+    "game_not_found": "اللعبة غير موجودة",
+    "invalid_game_id": "معرف اللعبة غير صالح",
+    "game_full": "اللعبة ممتلئة",
+    "not_your_turn": "ليس دورك"
+  },
+  "success": {
+    "game_created": "تم إنشاء اللعبة بنجاح",
+    "joined_game": "تم الانضمام إلى اللعبة بنجاح",
+    "move_sent": "تم إرسال الحركة",
+    "settings_saved": "تم حفظ الإعدادات"
+  },
+  "websocket": {
+    "connecting": "جاري الاتصال...",
+    "connected": "متصل",
+    "disconnected": "غير متصل",
+    "error": "خطأ في الاتصال"
+  },
+  "relative_time": {
+    "just_now": "الآن",
+    "seconds_ago": "منذ {{count}} ثانية",
+    "minutes_ago": "منذ {{count}} دقيقة",
+    "hours_ago": "منذ {{count}} ساعة",
+    "days_ago": "منذ {{count}} يوم"
+  }
+}

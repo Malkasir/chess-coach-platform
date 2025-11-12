@@ -1,0 +1,63 @@
+{
+  "title": "صالة الألعاب",
+  "buttons": {
+    "new_game": "لعبة جديدة",
+    "join_game": "الانضمام إلى لعبة",
+    "find_players": "البحث عن لاعبين",
+    "play_vs_ai": "اللعب ضد الذكاء الاصطناعي",
+    "load_position": "تحميل وضعية",
+    "start_training": "بدء التدريب",
+    "join_training": "الانضمام للتدريب"
+  },
+  "create_game": {
+    "button": "إنشاء لعبة جديدة",
+    "title": "إنشاء لعبة جديدة",
+    "mode": {
+      "label": "نمط اللعبة",
+      "vs_player": "ضد لاعب",
+      "vs_ai": "ضد الذكاء الاصطناعي"
+    },
+    "color": {
+      "label": "لونك",
+      "white": "أبيض",
+      "black": "أسود",
+      "random": "عشوائي"
+    },
+    "time_control": {
+      "label": "التحكم بالوقت",
+      "unlimited": "غير محدود",
+      "blitz": "خاطف (5 دقائق)",
+      "rapid": "سريع (10 دقائق)",
+      "classical": "كلاسيكي (30 دقيقة)",
+      "custom": "مخصص"
+    },
+    "ai_personality": {
+      "label": "شخصية الذكاء الاصطناعي",
+      "select": "اختر الخصم..."
+    }
+  },
+  "join_game": {
+    "button": "الانضمام إلى لعبة",
+    "title": "الانضمام إلى لعبة موجودة",
+    "game_id_label": "معرف اللعبة",
+    "game_id_placeholder": "أدخل معرف اللعبة"
+  },
+  "online_players": {
+    "title": "اللاعبون المتصلون",
+    "search_placeholder": "البحث عن اللاعبين...",
+    "no_players": "لا يوجد لاعبون متصلون",
+    "invite_button": "دعوة"
+  },
+  "invitation": {
+    "send_title": "إرسال دعوة للعبة",
+    "send_to": "دعوة {{playerName}}",
+    "message_placeholder": "رسالة اختيارية...",
+    "send_button": "إرسال دعوة",
+    "received_title": "دعوة للعبة",
+    "from": "من: {{playerName}}",
+    "accept_button": "قبول",
+    "decline_button": "رفض",
+    "expired": "انتهت صلاحية الدعوة",
+    "pending": "الدعوة قيد الانتظار..."
+  }
+}

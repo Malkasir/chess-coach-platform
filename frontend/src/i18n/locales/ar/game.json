@@ -1,0 +1,55 @@
+{
+  "status": {
+    "waiting": "في انتظار الخصم...",
+    "your_turn": "دورك",
+    "opponent_turn": "دور الخصم",
+    "in_progress": "اللعبة قيد التقدم",
+    "check": "كش!",
+    "checkmate": "كش مات!",
+    "stalemate": "جمود",
+    "draw": "تعادل",
+    "draw_by_agreement": "تعادل بالاتفاق",
+    "draw_by_repetition": "تعادل بالتكرار الثلاثي",
+    "draw_by_fifty_moves": "تعادل بقاعدة الخمسين حركة",
+    "draw_insufficient_material": "تعادل لعدم كفاية القطع",
+    "white_wins": "الأبيض يفوز!",
+    "black_wins": "الأسود يفوز!",
+    "game_over": "انتهت اللعبة"
+  },
+  "actions": {
+    "resign": "استسلام",
+    "offer_draw": "عرض التعادل",
+    "accept_draw": "قبول التعادل",
+    "decline_draw": "رفض التعادل",
+    "new_game": "لعبة جديدة",
+    "rematch": "إعادة المباراة",
+    "copy_game_id": "نسخ معرف اللعبة",
+    "leave_game": "مغادرة اللعبة"
+  },
+  "move_panel": {
+    "title": "الحركات",
+    "no_moves": "لا توجد حركات بعد",
+    "export_pgn": "تصدير PGN",
+    "training_mode": "وضع التدريب"
+  },
+  "clock": {
+    "white": "أبيض",
+    "black": "أسود",
+    "time_up": "انتهى الوقت!",
+    "unlimited": "غير محدود"
+  },
+  "promotion": {
+    "title": "ترقية البيدق",
+    "queen": "وزير",
+    "rook": "قلعة",
+    "bishop": "فيل",
+    "knight": "حصان"
+  },
+  "video_call": {
+    "title": "مكالمة فيديو",
+    "start": "بدء مكالمة فيديو",
+    "end": "إنهاء المكالمة",
+    "muted": "كتم الصوت",
+    "unmuted": "إلغاء كتم الصوت"
+  }
+}

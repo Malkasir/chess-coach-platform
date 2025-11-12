@@ -1,0 +1,27 @@
+{
+  "app_title": "منصة مدرب الشطرنج",
+  "button": {
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "close": "إغلاق",
+    "save": "حفظ",
+    "logout": "تسجيل الخروج",
+    "theme": "السمات"
+  },
+  "language": {
+    "selector_title": "تغيير اللغة",
+    "english": "English",
+    "arabic": "العربية"
+  },
+  "welcome": "مرحباً، {{name}}",
+  "error": {
+    "unexpected": "حدث خطأ غير متوقع",
+    "no_auth": "لم يتم العثور على رمز المصادقة",
+    "network": "خطأ في الشبكة. يرجى التحقق من اتصالك"
+  },
+  "status": {
+    "loading": "جاري التحميل...",
+    "saving": "جاري الحفظ...",
+    "success": "نجح!"
+  }
+}

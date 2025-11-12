@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { User } from '../services/auth-service';
 import styles from '../styles/shared.module.css';
 import { AppHeader } from './AppHeader';
@@ -45,6 +46,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   onJoinTrainingSession,
   invitationConnectionStatus = 'disconnected',
 }) => {
+  const { t } = useTranslation(['lobby']);
   const [showOnlinePlayers, setShowOnlinePlayers] = useState(false);
   const [showInvitationModal, setShowInvitationModal] = useState(false);
   const [showAISelector, setShowAISelector] = useState(false);
@@ -116,7 +118,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   }}
                 >
                   <span style={{ fontSize: '2rem' }}>🎮</span>
-                  <span>New Game</span>
+                  <span>{t('buttons.new_game')}</span>
                 </button>
 
                 <button
@@ -133,7 +135,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   }}
                 >
                   <span style={{ fontSize: '2rem' }}>🚪</span>
-                  <span>Join Game</span>
+                  <span>{t('buttons.join_game')}</span>
                 </button>
 
                 <button
@@ -150,7 +152,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   }}
                 >
                   <span style={{ fontSize: '2rem' }}>🟢</span>
-                  <span>Find Players</span>
+                  <span>{t('buttons.find_players')}</span>
                 </button>
 
                 <button
@@ -168,7 +170,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   }}
                 >
                   <span style={{ fontSize: '2rem' }}>🤖</span>
-                  <span>Play vs AI</span>
+                  <span>{t('buttons.play_vs_ai')}</span>
                 </button>
 
                 <button
@@ -185,7 +187,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   }}
                 >
                   <span style={{ fontSize: '2rem' }}>📋</span>
-                  <span>Load Position</span>
+                  <span>{t('buttons.load_position')}</span>
                 </button>
 
                 <button
@@ -203,7 +205,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   }}
                 >
                   <span style={{ fontSize: '2rem' }}>👨‍🏫</span>
-                  <span>Start Training</span>
+                  <span>{t('buttons.start_training')}</span>
                 </button>
 
                 <button
@@ -220,7 +222,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   }}
                 >
                   <span style={{ fontSize: '2rem' }}>🎓</span>
-                  <span>Join Training</span>
+                  <span>{t('buttons.join_training')}</span>
                 </button>
               </div>
             </>
@@ -229,7 +231,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
           {(gameStatus === 'waiting' || gameStatus === 'active') && (
             <div className={styles.controlsRow}>
               <button onClick={onResetGame} className={styles.secondaryButton}>
-                New Game
+                {t('buttons.new_game')}
               </button>
               {gameStatus === 'waiting' && roomCode && (
                 <>
