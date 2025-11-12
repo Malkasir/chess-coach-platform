@@ -2,9 +2,11 @@ package com.chesscoach.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
-import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.config.ChannelRegistration;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -16,17 +18,26 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import com.chesscoach.security.WebSocketAuthChannelInterceptor;
+
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private static final Logger logger = LoggerFactory.getLogger(WebSocketConfig.class);
-    
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
-    
+
+    private final SimpMessagingTemplate messagingTemplate;
+    private final WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor;
+
     // Track active sessions and their game associations
     private final ConcurrentMap<String, String> sessionToGameMap = new ConcurrentHashMap<>();
+
+    @Autowired
+    public WebSocketConfig(@Lazy SimpMessagingTemplate messagingTemplate,
+                          WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor) {
+        this.messagingTemplate = messagingTemplate;
+        this.webSocketAuthChannelInterceptor = webSocketAuthChannelInterceptor;
+    }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -44,6 +55,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/chess-websocket")
                 .setAllowedOriginPatterns("*") // Allow all origins
                 .withSockJS(); // Enable SockJS fallback
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(webSocketAuthChannelInterceptor);
     }
     
     @EventListener

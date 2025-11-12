@@ -16,9 +16,19 @@ interface GameState {
   roomCodeInput: string;
   colorPreference: 'white' | 'black' | 'random';
   clockState: ClockState | null;
-  // NEW: Navigation state for move review
+  // Navigation state for move review
   reviewMode: boolean;
   reviewIndex: number; // -1 = live position, 0+ = reviewing that ply
+  // Custom position loading
+  customStartPosition: string | null; // FEN of custom starting position
+  isCustomPosition: boolean; // Flag indicating loaded from custom position
+  // Training session participants
+  participants: Array<{
+    id: number;
+    firstName: string;
+    lastName: string;
+    isCoach: boolean;
+  }>;
 }
 
 export const useGameState = (authService: AuthService, currentUser: User | null) => {
@@ -34,9 +44,14 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     roomCodeInput: '',
     colorPreference: 'random',
     clockState: null,
-    // NEW: Navigation state initialization
+    // Navigation state initialization
     reviewMode: false,
-    reviewIndex: -1
+    reviewIndex: -1,
+    // Custom position initialization
+    customStartPosition: null,
+    isCustomPosition: false,
+    // Training session participants initialization
+    participants: []
   });
 
   const gameRef = useRef(new Chess());
@@ -125,6 +140,94 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
           clockState: message.clockState || prev.clockState
         }));
         break;
+      // Training session message types
+      case 'SESSION_STATE':
+        console.log('📋 Training session state received:', message);
+        if (message.fen) {
+          const fen = message.fen;
+          gameRef.current.load(fen);
+          setGameState(prev => ({
+            ...prev,
+            position: fen,
+            moveHistory: message.moveHistory || [],
+            participants: message.participants || prev.participants
+          }));
+        }
+        break;
+      case 'PARTICIPANT_JOINED':
+        console.log('👋 Participant joined:', message.userName, 'Count:', message.participantCount);
+        // Backend sends userName (full name), userId, participantCount
+        // Existing participants only receive PARTICIPANT_JOINED (not SESSION_STATE)
+        // So we need to merge this participant into our local list
+        if (message.userId && message.userName) {
+          // Parse userId with explicit radix and validate
+          const newParticipantId = Number.parseInt(message.userId, 10);
+          if (Number.isNaN(newParticipantId)) {
+            console.warn('⚠️ Invalid userId in PARTICIPANT_JOINED:', message.userId);
+            break;
+          }
+
+          // Parse full name into first/last (simple split on first space)
+          const nameParts = message.userName.split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+          setGameState(prev => {
+            // Check if participant already exists (avoid duplicates)
+            const existingIds = prev.participants.map(p => p.id);
+
+            if (existingIds.includes(newParticipantId)) {
+              console.log('⚠️ Participant already in list, skipping');
+              return prev;
+            }
+
+            // Determine if this is the coach (self-join/reconnection case)
+            // Compare against current user's ID to preserve isCoach flag
+            const isSelf = prev.playerId === message.userId;
+            const isCoachUser = isSelf && prev.isHost;
+
+            // Add new participant to list
+            const newParticipant = {
+              id: newParticipantId,
+              firstName,
+              lastName,
+              isCoach: isCoachUser // Preserve coach status for self, false for others
+            };
+
+            console.log('✅ Adding participant to list:', newParticipant);
+
+            return {
+              ...prev,
+              participants: [...prev.participants, newParticipant]
+            };
+          });
+        }
+        break;
+      case 'POSITION_UPDATE':
+        console.log('🎯 Training position update:', message.fen);
+        if (message.fen) {
+          const fen = message.fen;
+          gameRef.current.load(fen);
+          setGameState(prev => ({
+            ...prev,
+            position: fen,
+            moveHistory: message.moveHistory || prev.moveHistory
+          }));
+        }
+        break;
+      case 'SESSION_ENDED':
+        console.log('🛑 Training session ended:', message.message);
+        alert(message.message || 'Training session has ended');
+        // Return to lobby
+        setGameState(prev => ({
+          ...prev,
+          gameId: '',
+          roomCode: '',
+          gameStatus: 'disconnected',
+          position: 'start',
+          participants: []
+        }));
+        break;
       case 'ERROR':
         console.error('❌ Game error:', message.message);
         break;
@@ -184,7 +287,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
                   gameId: activeGame.gameId,
                   roomCode: activeGame.roomCode,
                   playerColor: playerColor?.toLowerCase() as 'white' | 'black',
-                  gameStatus: 'active'
+                  gameStatus: 'active',
+                  // Clear custom position flags for backend-backed games
+                  customStartPosition: null,
+                  isCustomPosition: false
                 }));
 
                 // Reconnect to WebSocket
@@ -229,7 +335,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         colorPreference, // Update color preference in state
         // Reset navigation state when creating new game
         reviewMode: false,
-        reviewIndex: -1
+        reviewIndex: -1,
+        // Clear custom position flags for backend-backed games
+        customStartPosition: null,
+        isCustomPosition: false
       }));
 
       await gameServiceRef.current?.joinGame(gameId, hostId, true);
@@ -258,7 +367,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         gameStatus: 'active',
         // Reset navigation state when joining game
         reviewMode: false,
-        reviewIndex: -1
+        reviewIndex: -1,
+        // Clear custom position flags for backend-backed games
+        customStartPosition: null,
+        isCustomPosition: false
       }));
 
       await gameServiceRef.current?.joinGame(gameStateResponse.gameId, guestId, false);
@@ -284,17 +396,27 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       roomCodeInput: '',
       // Reset navigation state
       reviewMode: false,
-      reviewIndex: -1
+      reviewIndex: -1,
+      // Clear custom position flags when resetting
+      customStartPosition: null,
+      isCustomPosition: false,
+      // Clear participants when resetting
+      participants: []
     }));
   };
 
   const makeMove = (move: string, fen: string) => {
     // Update the game object with the new FEN
     gameRef.current.load(fen);
-    
-    // Send move to server
-    gameServiceRef.current?.makeMove(move, fen);
-    
+
+    // Send move to server only for backend-backed games (NOT training sessions or custom positions)
+    // Training sessions use updateTrainingPosition instead
+    // Custom positions are purely local and don't need server sync
+    const isRegularGame = gameState.gameStatus === 'active' || gameState.gameStatus === 'waiting';
+    if (isRegularGame && !gameState.isCustomPosition) {
+      gameServiceRef.current?.makeMove(move, fen);
+    }
+
     // Update local state
     setGameState(prev => ({
       ...prev,
@@ -380,7 +502,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         gameStatus: 'connecting',
         // Reset navigation state when joining from invitation
         reviewMode: false,
-        reviewIndex: -1
+        reviewIndex: -1,
+        // Clear custom position flags for backend-backed games
+        customStartPosition: null,
+        isCustomPosition: false
       }));
 
       // Connect to WebSocket for real-time updates
@@ -426,7 +551,12 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         moveHistory: [],
         // Reset navigation state
         reviewMode: false,
-        reviewIndex: -1
+        reviewIndex: -1,
+        // Clear custom position flags when exiting
+        customStartPosition: null,
+        isCustomPosition: false,
+        // Clear participants when exiting
+        participants: []
       }));
 
       // Reset chess engine
@@ -504,6 +634,230 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     }));
   }, [gameState.moveHistory]);
 
+  // Load a custom position from FEN
+  const loadCustomPosition = useCallback((fen: string) => {
+    try {
+      const customGame = new Chess(fen);
+      const validatedFen = customGame.fen();
+      const isSharedSession = gameState.gameStatus === 'trainingSession' && !!gameState.roomCode;
+
+      gameRef.current.load(validatedFen);
+
+      setGameState(prev => {
+        const baseState = {
+          ...prev,
+          position: validatedFen,
+          moveHistory: [],
+          reviewMode: false,
+          reviewIndex: -1,
+          customStartPosition: validatedFen,
+          isCustomPosition: true
+        };
+
+        if (isSharedSession) {
+          return baseState;
+        }
+
+        return {
+          ...baseState,
+          gameId: `training-${Date.now()}`,
+          roomCode: '',
+          playerId: currentUser?.id.toString() || 'local-player',
+          isHost: true,
+          gameStatus: 'trainingSession',
+          playerColor: 'white',
+          clockState: {
+            gameMode: 'TRAINING',
+            baseTimeSeconds: null,
+            incrementSeconds: 0,
+            whiteTimeRemaining: null,
+            blackTimeRemaining: null,
+            lastMoveTimestamp: null,
+            activeColor: customGame.turn() === 'w' ? 'WHITE' : 'BLACK'
+          }
+        };
+      });
+
+      if (isSharedSession && gameState.isHost && gameState.gameId) {
+        gameServiceRef.current?.updateTrainingPosition(gameState.gameId, validatedFen, []);
+      }
+
+      console.log('✅ Custom position loaded:', validatedFen);
+    } catch (error) {
+      console.error('❌ Failed to load custom position:', error);
+      throw new Error('Invalid FEN string');
+    }
+  }, [currentUser, gameState.gameStatus, gameState.roomCode, gameState.isHost, gameState.gameId]);
+
+  // Reset position to the custom start position in training mode
+  const resetPosition = useCallback(() => {
+    if (gameState.customStartPosition) {
+      gameRef.current.load(gameState.customStartPosition);
+      setGameState(prev => ({
+        ...prev,
+        position: prev.customStartPosition!,
+        moveHistory: [],
+        reviewMode: false,
+        reviewIndex: -1
+      }));
+      console.log('🔄 Position reset to:', gameState.customStartPosition);
+    }
+  }, [gameState.customStartPosition]);
+
+  // Exit training session and return to lobby
+  const exitTraining = useCallback(() => {
+    gameRef.current.reset();
+    setGameState({
+      gameId: '',
+      roomCode: '',
+      playerId: '',
+      isHost: false,
+      gameStatus: 'disconnected',
+      position: 'start',
+      playerColor: null,
+      moveHistory: [],
+      roomCodeInput: '',
+      colorPreference: 'random',
+      clockState: null,
+      reviewMode: false,
+      reviewIndex: -1,
+      customStartPosition: null,
+      isCustomPosition: false,
+      participants: []
+    });
+    console.log('👋 Exited training session');
+  }, []);
+
+  // Create a shared training session (for coach)
+  const createTrainingSession = async (initialFen?: string) => {
+    try {
+      const coachId = currentUser?.id.toString();
+      if (!coachId || !currentUser) return;
+
+      const response = await gameServiceRef.current?.createTrainingSession(initialFen);
+      if (!response) return;
+
+      const { sessionId, roomCode, currentFen } = response;
+
+      // Initialize participants with the coach
+      const initialParticipants = [{
+        id: currentUser.id,
+        firstName: currentUser.firstName,
+        lastName: currentUser.lastName,
+        isCoach: true
+      }];
+
+      setGameState(prev => ({
+        ...prev,
+        playerId: coachId,
+        isHost: true, // Coach is the host
+        gameId: sessionId,
+        roomCode,
+        playerColor: 'white', // Coach can control both sides
+        position: currentFen,
+        moveHistory: [],
+        gameStatus: 'trainingSession',
+        clockState: {
+          gameMode: 'TRAINING',
+          baseTimeSeconds: null,
+          incrementSeconds: 0,
+          whiteTimeRemaining: null,
+          blackTimeRemaining: null,
+          lastMoveTimestamp: null,
+          activeColor: 'WHITE'
+        },
+        reviewMode: false,
+        reviewIndex: -1,
+        customStartPosition: null,
+        isCustomPosition: false,
+        participants: initialParticipants
+      }));
+
+      // Connect to WebSocket with participant ID for SESSION_STATE subscription
+      await gameServiceRef.current?.joinTrainingSession(sessionId, coachId);
+
+      console.log('✅ Training session created:', { sessionId, roomCode, participants: initialParticipants });
+    } catch (error) {
+      console.error('Failed to create training session:', error);
+      throw error;
+    }
+  };
+
+  // Join a shared training session by room code (for student)
+  const joinTrainingSessionByCode = async (roomCode: string) => {
+    try {
+      const studentId = currentUser?.id.toString();
+      if (!studentId || !roomCode || !currentUser) return;
+
+      const response = await gameServiceRef.current?.joinTrainingSessionByCode(roomCode);
+      if (!response) return;
+
+      const { sessionId, currentFen, isCoach } = response;
+
+      setGameState(prev => ({
+        ...prev,
+        playerId: studentId,
+        isHost: isCoach,
+        gameId: sessionId,
+        roomCode: roomCode.toUpperCase(),
+        roomCodeInput: '', // Clear input after successful join
+        playerColor: 'white', // Spectator sees from white's perspective by default
+        position: currentFen,
+        moveHistory: [],
+        gameStatus: 'trainingSession',
+        clockState: {
+          gameMode: 'TRAINING',
+          baseTimeSeconds: null,
+          incrementSeconds: 0,
+          whiteTimeRemaining: null,
+          blackTimeRemaining: null,
+          lastMoveTimestamp: null,
+          activeColor: 'WHITE'
+        },
+        reviewMode: false,
+        reviewIndex: -1,
+        customStartPosition: null,
+        isCustomPosition: false,
+        // Participants will be populated via SESSION_STATE message after WebSocket connects
+        participants: []
+      }));
+
+      // Connect to WebSocket with participant ID - this will trigger SESSION_STATE message with full participant list
+      await gameServiceRef.current?.joinTrainingSession(sessionId, studentId);
+
+      console.log('✅ Joined training session:', { sessionId, roomCode, isCoach });
+    } catch (error) {
+      console.error('Failed to join training session:', error);
+      throw error;
+    }
+  };
+
+  // Update position in training session (coach only)
+  const updateTrainingPosition = (fen: string, moveHistory: string[]) => {
+    if (!gameState.gameId || !gameState.isHost) {
+      console.warn('⚠️ Only the coach can update the training position');
+      return;
+    }
+
+    gameServiceRef.current?.updateTrainingPosition(gameState.gameId, fen, moveHistory);
+  };
+
+  // End training session (coach only)
+  const endTrainingSession = async () => {
+    if (!gameState.gameId || !gameState.isHost) {
+      console.warn('⚠️ Only the coach can end the training session');
+      return;
+    }
+
+    try {
+      await gameServiceRef.current?.endTrainingSession(gameState.gameId);
+      // Reset to lobby
+      exitTraining();
+    } catch (error) {
+      console.error('Failed to end training session:', error);
+    }
+  };
+
   return {
     gameState,
     gameRef: gameRef.current,
@@ -517,11 +871,21 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     getCurrentTurnDisplay,
     copyRoomCode,
     updateGameField,
-    // NEW: Navigation functions
+    // Navigation functions
     navigateToMove,
     navigateBack,
     navigateForward,
     navigateToStart,
-    navigateToEnd
+    navigateToEnd,
+    // Custom position loading
+    loadCustomPosition,
+    // Training session functions
+    resetPosition,
+    exitTraining,
+    // Shared training session functions (backend-backed)
+    createTrainingSession,
+    joinTrainingSessionByCode,
+    updateTrainingPosition,
+    endTrainingSession
   };
 };

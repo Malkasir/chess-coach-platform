@@ -65,6 +65,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/invitations/**").authenticated()
                 // Game endpoints (existing)
                 .requestMatchers("/api/games/**").authenticated()
+                // Training session endpoints (require authentication)
+                .requestMatchers("/api/training/**").authenticated()
                 // WebSocket endpoints
                 .requestMatchers("/chess-websocket/**").permitAll() // WebSocket handshake
                 .requestMatchers("/app/**").permitAll() // WebSocket app destinations
