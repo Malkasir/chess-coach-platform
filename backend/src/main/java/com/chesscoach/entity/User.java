@@ -195,4 +195,18 @@ public class User implements UserDetails {
     public void setRating(Integer rating) {
         this.rating = rating;
     }
+
+    // Override equals and hashCode based on ID
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return id != null && id.equals(user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

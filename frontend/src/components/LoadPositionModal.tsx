@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
+import { BoardEditor } from './BoardEditor';
 import styles from './LoadPositionModal.module.css';
 
 interface LoadPositionModalProps {
@@ -8,6 +9,8 @@ interface LoadPositionModalProps {
   onClose: () => void;
   onLoadPosition: (fen: string) => void;
 }
+
+type TabMode = 'visual' | 'advanced';
 
 // Common positions for quick testing
 const EXAMPLE_POSITIONS = [
@@ -34,9 +37,11 @@ export const LoadPositionModal: React.FC<LoadPositionModalProps> = ({
   onClose,
   onLoadPosition
 }) => {
+  const [activeTab, setActiveTab] = useState<TabMode>('visual');
   const [fenInput, setFenInput] = useState('');
   const [previewFen, setPreviewFen] = useState('start');
   const [error, setError] = useState<string | null>(null);
+  const [visualPosition, setVisualPosition] = useState<string>('start');
 
   // Validate and update preview when FEN changes
   const handleFenChange = (value: string) => {
@@ -64,26 +69,45 @@ export const LoadPositionModal: React.FC<LoadPositionModalProps> = ({
     handleFenChange(fen);
   };
 
-  // Load the position
-  const handleLoad = () => {
-    if (!fenInput.trim()) {
-      setError('Please enter a FEN string');
-      return;
-    }
+  // Handle visual board position changes
+  const handleVisualPositionChange = (fen: string) => {
+    setVisualPosition(fen);
+    setError(null);
+  };
 
-    try {
-      const testGame = new Chess(fenInput);
-      onLoadPosition(testGame.fen());
-      handleClose();
-    } catch (e) {
-      setError('Invalid FEN string');
+  // Load the position (works for both tabs)
+  const handleLoad = () => {
+    if (activeTab === 'visual') {
+      // Load from visual board editor
+      try {
+        onLoadPosition(visualPosition);
+        handleClose();
+      } catch (e) {
+        setError('Invalid position');
+      }
+    } else {
+      // Load from FEN input
+      if (!fenInput.trim()) {
+        setError('Please enter a FEN string');
+        return;
+      }
+
+      try {
+        const testGame = new Chess(fenInput);
+        onLoadPosition(testGame.fen());
+        handleClose();
+      } catch (e) {
+        setError('Invalid FEN string');
+      }
     }
   };
 
   // Reset and close
   const handleClose = () => {
+    setActiveTab('visual');
     setFenInput('');
     setPreviewFen('start');
+    setVisualPosition('start');
     setError(null);
     onClose();
   };
@@ -117,63 +141,91 @@ export const LoadPositionModal: React.FC<LoadPositionModalProps> = ({
           </button>
         </div>
 
+        {/* Tab Navigation */}
+        <div className={styles.tabs}>
+          <button
+            className={`${styles.tab} ${activeTab === 'visual' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('visual')}
+          >
+            🎨 Visual Editor
+          </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'advanced' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('advanced')}
+          >
+            ⚙️ Advanced (FEN)
+          </button>
+        </div>
+
         <div className={styles.content}>
-          {/* FEN Input Section */}
-          <div className={styles.section}>
-            <label htmlFor="fen-input" className={styles.label}>
-              FEN String
-            </label>
-            <input
-              id="fen-input"
-              type="text"
-              className={`${styles.input} ${error ? styles.inputError : ''}`}
-              placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-              value={fenInput}
-              onChange={(e) => handleFenChange(e.target.value)}
-              autoFocus
-            />
-            {error && <div className={styles.error}>{error}</div>}
-            <div className={styles.hint}>
-              Enter a valid FEN (Forsyth-Edwards Notation) string to load a custom chess position.
+          {/* Visual Tab - Board Editor */}
+          {activeTab === 'visual' && (
+            <div className={styles.visualTab}>
+              <BoardEditor onPositionChange={handleVisualPositionChange} />
             </div>
-          </div>
+          )}
 
-          {/* Preview Board */}
-          <div className={styles.section}>
-            <label className={styles.label}>Preview</label>
-            <div className={styles.previewBoard}>
-              <Chessboard
-                position={previewFen}
-                boardWidth={300}
-                arePiecesDraggable={false}
-                customBoardStyle={{
-                  borderRadius: '8px'
-                }}
-                customLightSquareStyle={{
-                  backgroundColor: 'var(--board-light)'
-                }}
-                customDarkSquareStyle={{
-                  backgroundColor: 'var(--board-dark)'
-                }}
-              />
-            </div>
-          </div>
+          {/* Advanced Tab - FEN Input */}
+          {activeTab === 'advanced' && (
+            <>
+              {/* FEN Input Section */}
+              <div className={styles.section}>
+                <label htmlFor="fen-input" className={styles.label}>
+                  FEN String
+                </label>
+                <input
+                  id="fen-input"
+                  type="text"
+                  className={`${styles.input} ${error ? styles.inputError : ''}`}
+                  placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+                  value={fenInput}
+                  onChange={(e) => handleFenChange(e.target.value)}
+                  autoFocus
+                />
+                {error && <div className={styles.error}>{error}</div>}
+                <div className={styles.hint}>
+                  Enter a valid FEN (Forsyth-Edwards Notation) string to load a custom chess position.
+                </div>
+              </div>
 
-          {/* Example Positions */}
-          <div className={styles.section}>
-            <label className={styles.label}>Quick Examples</label>
-            <div className={styles.examples}>
-              {EXAMPLE_POSITIONS.map((example) => (
-                <button
-                  key={example.name}
-                  className={styles.exampleButton}
-                  onClick={() => handleExampleClick(example.fen)}
-                >
-                  {example.name}
-                </button>
-              ))}
-            </div>
-          </div>
+              {/* Preview Board */}
+              <div className={styles.section}>
+                <label className={styles.label}>Preview</label>
+                <div className={styles.previewBoard}>
+                  <Chessboard
+                    position={previewFen}
+                    boardWidth={300}
+                    arePiecesDraggable={false}
+                    customBoardStyle={{
+                      borderRadius: '8px'
+                    }}
+                    customLightSquareStyle={{
+                      backgroundColor: 'var(--board-light)'
+                    }}
+                    customDarkSquareStyle={{
+                      backgroundColor: 'var(--board-dark)'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Example Positions */}
+              <div className={styles.section}>
+                <label className={styles.label}>Quick Examples</label>
+                <div className={styles.examples}>
+                  {EXAMPLE_POSITIONS.map((example) => (
+                    <button
+                      key={example.name}
+                      className={styles.exampleButton}
+                      onClick={() => handleExampleClick(example.fen)}
+                    >
+                      {example.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer Actions */}
@@ -187,9 +239,9 @@ export const LoadPositionModal: React.FC<LoadPositionModalProps> = ({
           <button
             className={styles.loadButton}
             onClick={handleLoad}
-            disabled={!fenInput.trim() || !!error}
+            disabled={activeTab === 'advanced' && (!fenInput.trim() || !!error)}
           >
-            Load Position
+            {activeTab === 'visual' ? 'Start Training' : 'Load Position'}
           </button>
         </div>
       </div>

@@ -5,7 +5,9 @@ import { useInvitationNotifications, InvitationMessage, InvitationNotificationCa
 import { AuthenticationForm } from './components/AuthenticationForm';
 import { GameLobby } from './components/GameLobby';
 import { ActiveGame } from './components/ActiveGame';
+import { TrainingSession } from './components/TrainingSession';
 import { NotificationBanner } from './components/NotificationBanner';
+import { ConfirmationBanner } from './components/ConfirmationBanner';
 import { debugError, debugLog } from './utils/debug';
 import { ChessPersonality } from './types/personality.types';
 
@@ -40,7 +42,15 @@ export const ChessCoachAppReact: React.FC = () => {
     navigateToStart,
     navigateToEnd,
     // Custom position loading
-    loadCustomPosition
+    loadCustomPosition,
+    // Training session functions
+    resetPosition,
+    exitTraining,
+    // Shared training session functions (backend-backed)
+    createTrainingSession,
+    joinTrainingSessionByCode,
+    updateTrainingPosition,
+    endTrainingSession
   } = useGameState(authService, authState.currentUser);
 
   // Notification state for game invitations
@@ -50,6 +60,9 @@ export const ChessCoachAppReact: React.FC = () => {
   // AI game state
   const [aiGameState, setAiGameState] = useState<any>(null);
   const [aiService, setAiService] = useState<any>(null);
+
+  // Confirmation banner state
+  const [showConfirmationBanner, setShowConfirmationBanner] = useState(false);
 
   // Real-time invitation notification callbacks - memoized to prevent reconnection loops
   const invitationCallbacks: InvitationNotificationCallbacks = useMemo(() => ({
@@ -329,6 +342,12 @@ export const ChessCoachAppReact: React.FC = () => {
     );
   }
 
+  // Handler to create training session and show confirmation banner
+  const handleCreateTrainingSession = async () => {
+    await createTrainingSession();
+    setShowConfirmationBanner(true); // Show banner after successful creation
+  };
+
   // Show game lobby when not in a game
   if (gameState.gameStatus === 'disconnected') {
     return (
@@ -344,7 +363,75 @@ export const ChessCoachAppReact: React.FC = () => {
           onLogout={logout}
           onAIGameStart={handleAIGameStart}
           onLoadPosition={loadCustomPosition}
+          onCreateTrainingSession={handleCreateTrainingSession}
+          onJoinTrainingSession={joinTrainingSessionByCode}
           invitationConnectionStatus={connectionStatus}
+        />
+        <NotificationBanner
+          invitation={currentInvitation}
+          onAccept={handleAcceptInvitation}
+          onDecline={handleDeclineInvitation}
+          onDismiss={handleDismissNotification}
+        />
+      </>
+    );
+  }
+
+  // Show training session when in training mode
+  if (gameState.gameStatus === 'trainingSession') {
+    // Determine if this is a shared training session (backend-backed with room code)
+    const isSharedSession = !!gameState.roomCode;
+
+    // Handler for training session moves (coach only, with broadcast to spectators)
+    const handleTrainingMove = (move: string, fen: string) => {
+      // Update local state
+      makeMove(move, fen);
+
+      // If shared session and user is coach, broadcast to spectators
+      if (isSharedSession && gameState.isHost) {
+        const updatedMoveHistory = [...gameState.moveHistory, move];
+        updateTrainingPosition(fen, updatedMoveHistory);
+      }
+    };
+
+    // Show confirmation banner for coach when shared session is created
+    const shouldShowBanner = isSharedSession && gameState.isHost && showConfirmationBanner;
+
+    return (
+      <>
+        {shouldShowBanner && (
+          <ConfirmationBanner
+            message="🎉 Training session created successfully!"
+            roomCode={gameState.roomCode}
+            onCopyRoomCode={copyRoomCode}
+            onDismiss={() => setShowConfirmationBanner(false)}
+            variant="success"
+          />
+        )}
+        <TrainingSession
+          currentUser={authState.currentUser!}
+          position={gameState.position}
+          game={gameRef}
+          moveHistory={gameState.moveHistory}
+          reviewMode={gameState.reviewMode}
+          reviewIndex={gameState.reviewIndex}
+          onNavigateToMove={navigateToMove}
+          onNavigateBack={navigateBack}
+          onNavigateForward={navigateForward}
+          onNavigateToStart={navigateToStart}
+          onNavigateToEnd={navigateToEnd}
+          onMove={handleTrainingMove}
+          onPositionChange={loadCustomPosition}
+          onResetPosition={resetPosition}
+          onExitTraining={exitTraining}
+          onLogout={logout}
+          // Shared training session props
+          isSharedSession={isSharedSession}
+          roomCode={gameState.roomCode}
+          isCoach={gameState.isHost}
+          participants={gameState.participants}
+          onCopyRoomCode={copyRoomCode}
+          onEndSession={endTrainingSession}
         />
         <NotificationBanner
           invitation={currentInvitation}
@@ -358,7 +445,7 @@ export const ChessCoachAppReact: React.FC = () => {
 
   // Show active game when in a game
   const isAIGame = gameState.roomCode?.startsWith('AI-');
-  
+
   return (
     <>
       <ActiveGame

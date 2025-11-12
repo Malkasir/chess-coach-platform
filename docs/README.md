@@ -42,6 +42,19 @@ This directory contains technical documentation, implementation guides, and arch
 - Code: `frontend/src/components/MovePanel.tsx`, `frontend/src/hooks/usePairedMoves.ts`, `frontend/src/hooks/useScrollToBottom.ts`
 - Documentation: [features/move-panel.md](./features/move-panel.md)
 
+**Training Sessions (Phase 1)** ⭐ PRODUCTION READY
+- Real-time coach-to-student demonstration mode
+- Shared training sessions with room codes (TRAIN-XXX format)
+- Live board synchronization for spectators
+- Position editor for coaches (FEN-based)
+- Participant management with live updates
+- WebSocket-based real-time communication with JWT authentication
+- Transaction-managed service layer (no lazy loading errors)
+- User-friendly join flow with error handling
+- Status: Production Ready (shipped 2025-01-12, hardened 2025-11-12)
+- Code: `backend/src/main/java/com/chesscoach/entity/TrainingSession.java`, `backend/src/main/java/com/chesscoach/security/WebSocketAuthChannelInterceptor.java`, `frontend/src/components/TrainingSession.tsx`
+- Documentation: [features/training-sessions.md](./features/training-sessions.md)
+
 ---
 
 ### 🚧 Planned Features
@@ -96,7 +109,8 @@ chess-coach-platform/
 └── docs/                 # THIS DIRECTORY
     ├── README.md                                # This file
     ├── features/
-    │   └── move-panel.md                        # Move Panel architecture & decisions
+    │   ├── move-panel.md                        # Move Panel architecture & decisions
+    │   └── training-sessions.md                 # Training Sessions architecture & implementation
     ├── MOVE_PANEL_IMPLEMENTATION_ARCHIVE.md     # Original planning docs (archived)
     └── MOVE_PANEL_QUICK_START_ARCHIVE.md        # Original quick start (archived)
 ```
@@ -260,8 +274,10 @@ server.port=${PORT:8080}
 - [x] Modal-based UX improvements
 - [x] Side panel layout
 - [x] **Move Panel** ✅ (shipped 2025-01-09)
+- [x] **Training Sessions** ✅ (shipped 2025-01-12)
 
 ### Short Term (Q2 2025)
+- [ ] Training Sessions Phase 2 (interactive mode, student moves)
 - [ ] PGN import/export
 - [ ] Basic AI opponents (Stockfish)
 - [ ] Game database/history
@@ -292,11 +308,20 @@ A: No! Move history is already tracked. All navigation is client-side using ches
 **Q: Where can I learn about the move panel architecture?**
 A: See [features/move-panel.md](./features/move-panel.md) for architectural decisions, testing checklist, and implementation details.
 
+**Q: Where can I learn about training sessions architecture?**
+A: See [features/training-sessions.md](./features/training-sessions.md) for architecture, WebSocket flow, validation, and Phase 2 roadmap.
+
 **Q: Can users cheat by using the move panel in live games?**
 A: No. Navigation is disabled in TIMED mode. Only TRAINING mode allows back/forward.
 
 **Q: What about mobile users?**
 A: Fully responsive. Move panel collapses to stacked layout on small screens.
+
+**Q: How do training sessions work?**
+A: Coaches create shared sessions with room codes (TRAIN-XXX format), students join as spectators. Coaches have full board control and can edit positions. All moves and position changes are broadcast in real-time to spectators via WebSocket.
+
+**Q: Can students make moves in training sessions?**
+A: Not in Phase 1 (spectator mode only). Phase 2 will add interactive mode where students can make moves with coach approval.
 
 ---
 
@@ -308,7 +333,23 @@ A: Fully responsive. Move panel collapses to stacked layout on small screens.
 
 ---
 
-**Last Updated:** 2025-01-09
+## Recent Updates (2025-11-12)
+
+### Training Sessions - Production Hardening
+- ✅ **WebSocket Authentication**: Added `WebSocketAuthChannelInterceptor` for JWT validation on STOMP connections
+- ✅ **Transaction Management**: Applied `@Transactional` to `TrainingSessionService` to eliminate lazy initialization errors
+- ✅ **Circular Dependency Fix**: Used `@Lazy` injection for `SimpMessagingTemplate` in `WebSocketConfig`
+- ✅ **Stability Verified**: Backend running 3+ hours without crashes or memory leaks
+- ✅ **Production Ready**: All core flows tested and working (create, join, edit position, end session)
+
+**Files Modified:**
+- `backend/src/main/java/com/chesscoach/security/WebSocketAuthChannelInterceptor.java` (created)
+- `backend/src/main/java/com/chesscoach/config/WebSocketConfig.java` (updated)
+- `backend/src/main/java/com/chesscoach/service/TrainingSessionService.java` (added @Transactional)
+
+---
+
+**Last Updated:** 2025-11-12
 **Status:** Active Development
-**Current Version:** MVP + Clock + Move Panel
-**Next Feature:** PGN Import / AI Opponents
+**Current Version:** MVP + Clock + Move Panel + Training Sessions (Phase 1 - PRODUCTION READY)
+**Next Feature:** Training Sessions Phase 2 / PGN Import / AI Opponents

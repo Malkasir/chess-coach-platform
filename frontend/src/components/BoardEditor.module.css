@@ -1,0 +1,335 @@
+/* Container Layout */
+.container {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-xl);
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+}
+
+/* Piece Palette */
+.palette {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: var(--space-md);
+  border: 1px solid var(--border-color);
+  height: fit-content;
+}
+
+.paletteHeader {
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  text-align: center;
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.paletteInfo {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.4;
+  padding: var(--space-xs);
+  background: var(--bg-primary);
+  border-radius: 4px;
+}
+
+/* Selection Indicator */
+.selectionIndicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.6);
+  }
+}
+
+.selectedPieceIcon {
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.selectionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.selectionText strong {
+  color: white;
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+}
+
+.selectionText span {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--text-xs);
+}
+
+/* Piece Sections */
+.pieceSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.sectionLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pieceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xs);
+}
+
+.pieceButton {
+  aspect-ratio: 1;
+  padding: var(--space-xs);
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.pieceButton:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pieceButton:active {
+  transform: translateY(0);
+}
+
+.pieceButton.selected {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.4), 0 4px 12px rgba(99, 102, 241, 0.5);
+  transform: scale(1.1);
+}
+
+.pieceButton.selected::after {
+  content: '✓';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--primary-color);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.pieceImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.cancelButton {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--error-color);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Board Section */
+.boardSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  align-items: center;
+}
+
+.boardWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Custom cursor when piece is selected */
+.boardWrapper.withSelectedPiece {
+  cursor: none;
+}
+
+.boardWrapper.withSelectedPiece :global(.chess-board-container) {
+  cursor: none;
+}
+
+.customCursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  width: 50px;
+  height: 50px;
+  transform: translate(-50%, -50%);
+  opacity: 0.8;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+  transition: opacity 0.1s;
+}
+
+.customCursor img {
+  width: 100%;
+  height: 100%;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  width: 100%;
+}
+
+.controlButton {
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.controlButton:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.controlButton:active {
+  transform: translateY(0);
+}
+
+/* Instructions */
+.instructions {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: var(--space-md);
+  width: 100%;
+  max-width: 500px;
+}
+
+.instructions strong {
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.instructions ul {
+  margin: var(--space-sm) 0 0 0;
+  padding-left: var(--space-lg);
+  list-style-type: disc;
+}
+
+.instructions li {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  margin-bottom: var(--space-xs);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+    padding: var(--space-md);
+    gap: var(--space-lg);
+  }
+
+  .palette {
+    order: 2;
+  }
+
+  .boardSection {
+    order: 1;
+  }
+
+  .pieceGrid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .controls {
+    flex-direction: column;
+  }
+
+  .controlButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: var(--space-sm);
+  }
+
+  .pieceGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .boardWrapper {
+    width: 100%;
+  }
+
+  .instructions {
+    font-size: var(--text-xs);
+  }
+}

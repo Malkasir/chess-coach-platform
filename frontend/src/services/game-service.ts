@@ -12,6 +12,17 @@ export interface GameMessage {
   message?: string;
   moveHistory?: string[];
   clockState?: ClockState;
+  // Training session fields
+  participants?: Array<{
+    id: number;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    isCoach: boolean;
+  }>;
+  participantCount?: number;
+  userId?: string;
+  userName?: string;
 }
 
 export interface GameState {
@@ -92,6 +103,21 @@ export class GameService {
     });
   }
 
+  /**
+   * Get WebSocket connect headers with JWT token for authentication
+   */
+  private getConnectHeaders(): Record<string, string> {
+    const token = this.authService?.getToken();
+    if (token) {
+      console.log('🔐 Adding JWT token to WebSocket connection');
+      return {
+        Authorization: `Bearer ${token}`
+      };
+    }
+    console.warn('⚠️ No JWT token available for WebSocket connection');
+    return {};
+  }
+
   async createGame(
     hostId: string,
     colorPreference: string = 'random',
@@ -155,7 +181,11 @@ export class GameService {
         console.error('❌ WebSocket client is null, recreating...');
         this.setupWebSocket();
       }
-      
+
+      // Set authentication headers before activating
+      if (this.client) {
+        this.client.connectHeaders = this.getConnectHeaders();
+      }
       this.client?.activate();
       await new Promise((resolve, reject) => {
         let attempts = 0;
@@ -253,6 +283,10 @@ export class GameService {
     // If not connected, try to reconnect first
     if (!isConnected) {
       console.warn('⚠️ WebSocket not connected, attempting to reconnect...');
+      // Set authentication headers before activating
+      if (this.client) {
+        this.client.connectHeaders = this.getConnectHeaders();
+      }
       this.client.activate();
       
       // Wait a brief moment for connection before trying to send
@@ -343,5 +377,199 @@ export class GameService {
 
   getBaseUrl(): string {
     return this.baseUrl;
+  }
+
+  // ==================== TRAINING SESSION METHODS ====================
+
+  async createTrainingSession(initialFen?: string): Promise<{
+    sessionId: string;
+    roomCode: string;
+    coachId: number;
+    currentFen: string;
+  }> {
+    const headers = this.authService ? this.authService.getAuthHeaders() : { 'Content-Type': 'application/json' };
+
+    const response = await fetch(`${this.baseUrl}/api/training/create`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ initialFen: initialFen || null })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to create training session' }));
+      throw new Error(error.error || 'Failed to create training session');
+    }
+
+    return response.json();
+  }
+
+  async joinTrainingSessionByCode(roomCode: string): Promise<{
+    sessionId: string;
+    roomCode: string;
+    coachId: number;
+    currentFen: string;
+    isCoach: boolean;
+  }> {
+    const headers = this.authService ? this.authService.getAuthHeaders() : { 'Content-Type': 'application/json' };
+
+    const response = await fetch(`${this.baseUrl}/api/training/join-by-code`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ roomCode: roomCode.toUpperCase() })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to join training session' }));
+      throw new Error(error.error || 'Failed to join training session');
+    }
+
+    return response.json();
+  }
+
+  async joinTrainingSession(sessionId: string, participantId?: string): Promise<void> {
+    console.log('🔗 joinTrainingSession called:', { sessionId, participantId });
+
+    // Connect to WebSocket if not already connected
+    const isConnected = this.client?.connected === true;
+    if (!isConnected) {
+      console.log('🔌 Activating WebSocket client for training...');
+      if (!this.client) {
+        console.error('❌ WebSocket client is null, recreating...');
+        this.setupWebSocket();
+      }
+
+      // Set authentication headers before activating
+      if (this.client) {
+        this.client.connectHeaders = this.getConnectHeaders();
+      }
+      this.client?.activate();
+      await new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 50;
+        const checkConnection = () => {
+          attempts++;
+          const currentlyConnected = this.client?.connected === true;
+          if (currentlyConnected) {
+            console.log('✅ WebSocket connected for training!');
+            resolve(void 0);
+          } else if (attempts >= maxAttempts) {
+            console.error('❌ Training WebSocket connection timeout');
+            reject(new Error('Training WebSocket connection timeout'));
+          } else {
+            setTimeout(checkConnection, 100);
+          }
+        };
+        checkConnection();
+      });
+    }
+
+    // Subscribe to training session messages (broadcast to all participants)
+    this.client?.subscribe(`/topic/training/${sessionId}`, (message) => {
+      console.log('📨 Received training broadcast message:', message.body);
+      const trainingMessage = JSON.parse(message.body);
+      console.log('🎓 Parsed training broadcast message:', trainingMessage);
+      if (this.onGameUpdate) {
+        // Convert training message to GameMessage format, preserving ALL fields
+        const gameMessage: GameMessage = {
+          type: trainingMessage.type,
+          gameId: trainingMessage.sessionId,
+          fen: trainingMessage.fen,
+          message: trainingMessage.message,
+          moveHistory: trainingMessage.moveHistory ? JSON.parse(trainingMessage.moveHistory) : undefined,
+          // Preserve training-specific fields
+          participants: trainingMessage.participants,
+          participantCount: trainingMessage.participantCount,
+          userId: trainingMessage.userId,
+          userName: trainingMessage.userName
+        };
+        this.onGameUpdate(gameMessage);
+      }
+    });
+
+    // Subscribe to participant-specific messages (SESSION_STATE, errors)
+    if (participantId) {
+      this.client?.subscribe(`/topic/training/${sessionId}/${participantId}`, (message) => {
+        console.log('📨 Received participant-specific training message:', message.body);
+        const trainingMessage = JSON.parse(message.body);
+        console.log('🎓 Parsed participant-specific message:', trainingMessage);
+        if (this.onGameUpdate) {
+          // Convert training message to GameMessage format, preserving ALL fields
+          const gameMessage: GameMessage = {
+            type: trainingMessage.type,
+            gameId: trainingMessage.sessionId,
+            fen: trainingMessage.fen,
+            message: trainingMessage.message,
+            moveHistory: trainingMessage.moveHistory ? JSON.parse(trainingMessage.moveHistory) : undefined,
+            // Preserve training-specific fields
+            participants: trainingMessage.participants,
+            participantCount: trainingMessage.participantCount,
+            userId: trainingMessage.userId,
+            userName: trainingMessage.userName
+          };
+          this.onGameUpdate(gameMessage);
+        }
+      });
+    }
+
+    // Send join message via WebSocket
+    this.client?.publish({
+      destination: '/app/training/join',
+      body: JSON.stringify({
+        type: 'JOIN',
+        sessionId
+      })
+    });
+  }
+
+  updateTrainingPosition(sessionId: string, fen: string, moveHistory: string[]): void {
+    const isConnected = this.client?.connected === true;
+    console.log('🎯 updateTrainingPosition called:', { sessionId, fen, clientConnected: isConnected });
+
+    if (!this.client?.connected || !sessionId) {
+      console.error('❌ Cannot update position - not connected or no session');
+      return;
+    }
+
+    this.client.publish({
+      destination: '/app/training/position-update',
+      body: JSON.stringify({
+        type: 'POSITION_UPDATE',
+        sessionId,
+        fen,
+        moveHistory: JSON.stringify(moveHistory)
+      })
+    });
+  }
+
+  async endTrainingSession(sessionId: string): Promise<void> {
+    const isConnected = this.client?.connected === true;
+    console.log('🛑 endTrainingSession called:', { sessionId, clientConnected: isConnected });
+
+    if (!this.client?.connected || !sessionId) {
+      console.error('❌ Cannot end session - not connected or no session');
+      return;
+    }
+
+    // Send end message via WebSocket
+    this.client.publish({
+      destination: '/app/training/end',
+      body: JSON.stringify({
+        type: 'END',
+        sessionId
+      })
+    });
+
+    // Also call REST API to ensure session is ended
+    const headers = this.authService ? this.authService.getAuthHeaders() : { 'Content-Type': 'application/json' };
+
+    const response = await fetch(`${this.baseUrl}/api/training/${sessionId}/end`, {
+      method: 'POST',
+      headers
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to end training session' }));
+      throw new Error(error.error || 'Failed to end training session');
+    }
   }
 }

@@ -8,6 +8,7 @@ import { AIPersonalitySelector } from './AIPersonalitySelector';
 import { NewGameModal } from './NewGameModal';
 import { JoinGameModal } from './JoinGameModal';
 import { LoadPositionModal } from './LoadPositionModal';
+import { JoinTrainingSessionModal } from './JoinTrainingSessionModal';
 import { ChessPersonality } from '../types/personality.types';
 import { TimeControl } from '../types/clock.types';
 import { apiClient } from '../services/api-client';
@@ -24,6 +25,8 @@ interface GameLobbyProps {
   onLogout: () => void;
   onAIGameStart: (personality: ChessPersonality, userColor: 'white' | 'black' | 'random') => void;
   onLoadPosition: (fen: string) => void;
+  onCreateTrainingSession: () => void;
+  onJoinTrainingSession: (roomCode: string) => Promise<void>;
   invitationConnectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error';
 }
 
@@ -38,6 +41,8 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   onLogout,
   onAIGameStart,
   onLoadPosition,
+  onCreateTrainingSession,
+  onJoinTrainingSession,
   invitationConnectionStatus = 'disconnected',
 }) => {
   const [showOnlinePlayers, setShowOnlinePlayers] = useState(false);
@@ -46,6 +51,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   const [showNewGameModal, setShowNewGameModal] = useState(false);
   const [showJoinGameModal, setShowJoinGameModal] = useState(false);
   const [showLoadPositionModal, setShowLoadPositionModal] = useState(false);
+  const [showJoinTrainingModal, setShowJoinTrainingModal] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<{ id: number; name: string } | null>(null);
 
   const handleInvitePlayer = (playerId: number, playerName: string) => {
@@ -181,6 +187,41 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   <span style={{ fontSize: '2rem' }}>📋</span>
                   <span>Load Position</span>
                 </button>
+
+                <button
+                  onClick={onCreateTrainingSession}
+                  className={styles.primaryButton}
+                  style={{
+                    padding: 'var(--space-lg)',
+                    fontSize: 'var(--text-lg)',
+                    fontWeight: 'var(--font-bold)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 'var(--space-xs)',
+                    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+                  }}
+                >
+                  <span style={{ fontSize: '2rem' }}>👨‍🏫</span>
+                  <span>Start Training</span>
+                </button>
+
+                <button
+                  onClick={() => setShowJoinTrainingModal(true)}
+                  className={styles.secondaryButton}
+                  style={{
+                    padding: 'var(--space-lg)',
+                    fontSize: 'var(--text-lg)',
+                    fontWeight: 'var(--font-bold)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 'var(--space-xs)'
+                  }}
+                >
+                  <span style={{ fontSize: '2rem' }}>🎓</span>
+                  <span>Join Training</span>
+                </button>
               </div>
             </>
           )}
@@ -265,6 +306,12 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         isVisible={showAISelector}
         onClose={() => setShowAISelector(false)}
         onSelectPersonality={handleAIGameStart}
+      />
+
+      <JoinTrainingSessionModal
+        isVisible={showJoinTrainingModal}
+        onClose={() => setShowJoinTrainingModal(false)}
+        onJoinSession={onJoinTrainingSession}
       />
     </div>
   );

@@ -27,7 +27,7 @@
   background: var(--bg-card);
   border-radius: 12px;
   width: 90%;
-  max-width: 600px;
+  max-width: 1000px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -52,6 +52,45 @@
   align-items: center;
   padding: var(--space-lg);
   border-bottom: 1px solid var(--border-color);
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.tab {
+  flex: 1;
+  padding: var(--space-md) var(--space-lg);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  position: relative;
+}
+
+.tab:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.activeTab {
+  color: var(--primary-color);
+  font-weight: var(--font-semibold);
+  border-bottom-color: var(--primary-color);
+  background: var(--bg-primary);
+}
+
+.visualTab {
+  padding: 0;
+  width: 100%;
 }
 
 .header h2 {
