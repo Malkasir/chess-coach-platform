@@ -1,0 +1,63 @@
+{
+  "title": "Game Lobby",
+  "buttons": {
+    "new_game": "New Game",
+    "join_game": "Join Game",
+    "find_players": "Find Players",
+    "play_vs_ai": "Play vs AI",
+    "load_position": "Load Position",
+    "start_training": "Start Training",
+    "join_training": "Join Training"
+  },
+  "create_game": {
+    "button": "Create New Game",
+    "title": "Create New Game",
+    "mode": {
+      "label": "Game Mode",
+      "vs_player": "vs Player",
+      "vs_ai": "vs AI"
+    },
+    "color": {
+      "label": "Your Color",
+      "white": "White",
+      "black": "Black",
+      "random": "Random"
+    },
+    "time_control": {
+      "label": "Time Control",
+      "unlimited": "Unlimited",
+      "blitz": "Blitz (5 min)",
+      "rapid": "Rapid (10 min)",
+      "classical": "Classical (30 min)",
+      "custom": "Custom"
+    },
+    "ai_personality": {
+      "label": "AI Personality",
+      "select": "Select opponent..."
+    }
+  },
+  "join_game": {
+    "button": "Join Game",
+    "title": "Join Existing Game",
+    "game_id_label": "Game ID",
+    "game_id_placeholder": "Enter game ID"
+  },
+  "online_players": {
+    "title": "Online Players",
+    "search_placeholder": "Search players...",
+    "no_players": "No players online",
+    "invite_button": "Invite"
+  },
+  "invitation": {
+    "send_title": "Send Game Invitation",
+    "send_to": "Invite {{playerName}}",
+    "message_placeholder": "Optional message...",
+    "send_button": "Send Invitation",
+    "received_title": "Game Invitation",
+    "from": "From: {{playerName}}",
+    "accept_button": "Accept",
+    "decline_button": "Decline",
+    "expired": "Invitation expired",
+    "pending": "Invitation pending..."
+  }
+}

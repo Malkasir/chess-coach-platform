@@ -1,0 +1,23 @@
+Namespace,Key,English Text,Arabic Translation,Component/File,Owner,Status,Notes
+common,app_title,Chess Coach Platform,منصة مدرب الشطرنج,AppHeader.tsx,,Complete,
+common,button.cancel,Cancel,إلغاء,Multiple components,,Complete,
+common,button.confirm,Confirm,تأكيد,Multiple components,,Complete,
+common,button.close,Close,إغلاق,Multiple components,,Complete,
+common,button.save,Save,حفظ,Multiple components,,Complete,
+common,button.logout,Logout,تسجيل الخروج,AppHeader.tsx,,Complete,
+common,button.theme,Themes,السمات,AppHeader.tsx,,Complete,
+common,welcome,"Welcome, {{name}}",مرحباً، {{name}},AppHeader.tsx,,Complete,Needs native speaker review
+auth,login.title,Login,تسجيل الدخول,AuthenticationForm.tsx,,Complete,
+auth,login.email_placeholder,Email,البريد الإلكتروني,AuthenticationForm.tsx,,Complete,
+auth,login.password_placeholder,Password,كلمة المرور,AuthenticationForm.tsx,,Complete,
+auth,login.submit_button,Login,تسجيل الدخول,AuthenticationForm.tsx,,Complete,
+auth,register.title,Create Account,إنشاء حساب,AuthenticationForm.tsx,,Complete,
+auth,register.first_name_placeholder,First Name,الاسم الأول,AuthenticationForm.tsx,,Complete,
+auth,register.last_name_placeholder,Last Name,اسم العائلة,AuthenticationForm.tsx,,Complete,
+auth,register.submit_button,Create Account,إنشاء حساب,AuthenticationForm.tsx,,Complete,
+auth,error.invalid_credentials,Invalid email or password,البريد الإلكتروني أو كلمة المرور غير صحيحة,api-client.ts,,Complete,Needs native speaker review
+lobby,title,Game Lobby,صالة الألعاب,GameLobby.tsx,,Pending,Not yet implemented
+lobby,create_game.button,Create New Game,إنشاء لعبة جديدة,GameLobby.tsx,,Pending,Not yet implemented
+game,status.your_turn,Your turn,دورك,ActiveGame.tsx,,Pending,Not yet implemented
+game,status.checkmate,Checkmate!,كش مات!,ActiveGame.tsx,,Pending,Not yet implemented
+notifications,error.api_401,Please log in to continue,يرجى تسجيل الدخول للمتابعة,api-client.ts,,Pending,Not yet implemented

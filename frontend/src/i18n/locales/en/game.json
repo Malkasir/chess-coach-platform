@@ -1,0 +1,55 @@
+{
+  "status": {
+    "waiting": "Waiting for opponent...",
+    "your_turn": "Your turn",
+    "opponent_turn": "Opponent's turn",
+    "in_progress": "Game in progress",
+    "check": "Check!",
+    "checkmate": "Checkmate!",
+    "stalemate": "Stalemate",
+    "draw": "Draw",
+    "draw_by_agreement": "Draw by agreement",
+    "draw_by_repetition": "Draw by threefold repetition",
+    "draw_by_fifty_moves": "Draw by fifty-move rule",
+    "draw_insufficient_material": "Draw by insufficient material",
+    "white_wins": "White wins!",
+    "black_wins": "Black wins!",
+    "game_over": "Game Over"
+  },
+  "actions": {
+    "resign": "Resign",
+    "offer_draw": "Offer Draw",
+    "accept_draw": "Accept Draw",
+    "decline_draw": "Decline Draw",
+    "new_game": "New Game",
+    "rematch": "Rematch",
+    "copy_game_id": "Copy Game ID",
+    "leave_game": "Leave Game"
+  },
+  "move_panel": {
+    "title": "Moves",
+    "no_moves": "No moves yet",
+    "export_pgn": "Export PGN",
+    "training_mode": "Training Mode"
+  },
+  "clock": {
+    "white": "White",
+    "black": "Black",
+    "time_up": "Time's up!",
+    "unlimited": "Unlimited"
+  },
+  "promotion": {
+    "title": "Promote Pawn",
+    "queen": "Queen",
+    "rook": "Rook",
+    "bishop": "Bishop",
+    "knight": "Knight"
+  },
+  "video_call": {
+    "title": "Video Call",
+    "start": "Start Video Call",
+    "end": "End Call",
+    "muted": "Muted",
+    "unmuted": "Unmuted"
+  }
+}
