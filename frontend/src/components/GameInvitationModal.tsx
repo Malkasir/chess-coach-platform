@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from '../styles/shared.module.css';
 import { TimeControl, DEFAULT_TIME_CONTROL } from '../types/clock.types';
 import { TimeControlSelector } from './TimeControlSelector';
@@ -28,6 +29,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
   onSendInvitation,
   onClose,
 }) => {
+  const { t } = useTranslation(['lobby', 'common']);
   const [invitationType, setInvitationType] = useState<'quick_game' | 'lesson' | 'puzzle_session'>('quick_game');
   const [colorPreference, setColorPreference] = useState<'white' | 'black' | 'random'>('random');
   const [timeControl, setTimeControl] = useState<TimeControl>(DEFAULT_TIME_CONTROL);
@@ -99,16 +101,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
   };
 
   const getDefaultMessage = () => {
-    switch (invitationType) {
-      case 'quick_game':
-        return `Hi ${playerName}! Want to play a quick chess game?`;
-      case 'lesson':
-        return `Hi ${playerName}! Would you like to have a chess lesson?`;
-      case 'puzzle_session':
-        return `Hi ${playerName}! Want to solve some chess puzzles together?`;
-      default:
-        return `Hi ${playerName}! Let's play chess!`;
-    }
+    return t(`lobby:invitation.game_types.${invitationType}.default_message`, { playerName });
   };
 
   const getInvitationTypeIcon = (type: string) => {
@@ -121,12 +114,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
   };
 
   const getInvitationTypeDescription = (type: string) => {
-    switch (type) {
-      case 'quick_game': return 'Play a casual chess game';
-      case 'lesson': return 'One-on-one chess coaching session';
-      case 'puzzle_session': return 'Solve chess puzzles together';
-      default: return 'Chess game';
-    }
+    return t(`lobby:invitation.game_types.${type}.description`);
   };
 
   if (!isVisible) return null;
@@ -141,11 +129,11 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
     >
       <div className={styles.modalContent} ref={modalRef}>
         <div className={styles.modalHeader}>
-          <h2 id="modal-title">Invite {playerName} to Play</h2>
-          <button 
-            onClick={onClose} 
+          <h2 id="modal-title">{t('lobby:invitation.send_title', { playerName })}</h2>
+          <button
+            onClick={onClose}
             className={styles.closeButton}
-            aria-label="Close modal"
+            aria-label={t('common:aria.close_modal')}
           >
             ×
           </button>
@@ -153,7 +141,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
 
         <div className={styles.invitationForm}>
           <div className={styles.formSection}>
-            <label className={styles.formLabel}>Game Type:</label>
+            <label className={styles.formLabel}>{t('lobby:invitation.game_type_label')}</label>
             <div className={styles.gameTypeOptions}>
               {(['quick_game', 'lesson', 'puzzle_session'] as const).map((type) => (
                 <div
@@ -168,7 +156,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
                   </span>
                   <div className={styles.gameTypeText}>
                     <div className={styles.gameTypeName}>
-                      {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      {t(`lobby:invitation.game_types.${type}.name`)}
                     </div>
                     <div className={styles.gameTypeDescription}>
                       {getInvitationTypeDescription(type)}
@@ -180,7 +168,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
           </div>
 
           <div className={styles.formSection}>
-            <label htmlFor="invitation-color" className={styles.formLabel}>Your Color Preference:</label>
+            <label htmlFor="invitation-color" className={styles.formLabel}>{t('lobby:invitation.color_preference_label')}</label>
             <div className={styles.colorSelection}>
               <select
                 ref={firstInputRef}
@@ -190,15 +178,15 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
                 onChange={(e) => setColorPreference(e.target.value as 'white' | 'black' | 'random')}
                 className={styles.select}
               >
-                <option value="random">Random</option>
-                <option value="white">White</option>
-                <option value="black">Black</option>
+                <option value="random">{t('lobby:invitation.color_options.random')}</option>
+                <option value="white">{t('lobby:invitation.color_options.white')}</option>
+                <option value="black">{t('lobby:invitation.color_options.black')}</option>
               </select>
             </div>
           </div>
 
           <div className={styles.formSection}>
-            <label className={styles.formLabel}>Time Control:</label>
+            <label className={styles.formLabel}>{t('lobby:invitation.time_control_label')}</label>
             <div style={{
               padding: 'var(--space-md)',
               backgroundColor: 'var(--bg-panel)',
@@ -214,7 +202,7 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
           </div>
 
           <div className={styles.formSection}>
-            <label htmlFor="invitation-message" className={styles.formLabel}>Message (Optional):</label>
+            <label htmlFor="invitation-message" className={styles.formLabel}>{t('lobby:invitation.message_label')}</label>
             <textarea
               id="invitation-message"
               name="message"
@@ -226,25 +214,25 @@ export const GameInvitationModal: React.FC<GameInvitationModalProps> = ({
               maxLength={500}
             />
             <div className={styles.characterCount}>
-              {message.length}/500
+              {t('lobby:invitation.character_count', { count: message.length })}
             </div>
           </div>
         </div>
 
         <div className={styles.modalFooter}>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className={styles.secondaryButton}
             disabled={sending}
           >
-            Cancel
+            {t('lobby:invitation.cancel_button')}
           </button>
-          <button 
-            onClick={handleSendInvitation} 
+          <button
+            onClick={handleSendInvitation}
             className={styles.primaryButton}
             disabled={sending || message.length > 500}
           >
-            {sending ? 'Sending...' : 'Send Invitation'}
+            {sending ? t('lobby:invitation.sending_button') : t('lobby:invitation.send_button')}
           </button>
         </div>
       </div>

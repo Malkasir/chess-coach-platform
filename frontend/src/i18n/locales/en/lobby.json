@@ -65,10 +65,39 @@
     "invite_button": "Invite"
   },
   "invitation": {
-    "send_title": "Send Game Invitation",
+    "send_title": "Invite {{playerName}} to Play",
+    "game_type_label": "Game Type:",
+    "game_types": {
+      "quick_game": {
+        "name": "Quick Game",
+        "description": "Play a casual chess game",
+        "default_message": "Hi {{playerName}}! Want to play a quick chess game?"
+      },
+      "lesson": {
+        "name": "Lesson",
+        "description": "One-on-one chess coaching session",
+        "default_message": "Hi {{playerName}}! Would you like to have a chess lesson?"
+      },
+      "puzzle_session": {
+        "name": "Puzzle Session",
+        "description": "Solve chess puzzles together",
+        "default_message": "Hi {{playerName}}! Want to solve some chess puzzles together?"
+      }
+    },
+    "color_preference_label": "Your Color Preference:",
+    "color_options": {
+      "random": "Random",
+      "white": "White",
+      "black": "Black"
+    },
+    "time_control_label": "Time Control:",
+    "message_label": "Message (Optional):",
+    "character_count": "{{count}}/500",
+    "cancel_button": "Cancel",
+    "send_button": "Send Invitation",
+    "sending_button": "Sending...",
     "send_to": "Invite {{playerName}}",
     "message_placeholder": "Optional message...",
-    "send_button": "Send Invitation",
     "received_title": "Game Invitation",
     "from": "From: {{playerName}}",
     "accept_button": "Accept",

@@ -65,10 +65,39 @@
     "invite_button": "دعوة"
   },
   "invitation": {
-    "send_title": "إرسال دعوة للعبة",
+    "send_title": "دعوة {{playerName}} للعب",
+    "game_type_label": "نوع اللعبة:",
+    "game_types": {
+      "quick_game": {
+        "name": "لعبة سريعة",
+        "description": "العب لعبة شطرنج ودية",
+        "default_message": "مرحباً {{playerName}}! هل تريد لعب لعبة شطرنج سريعة؟"
+      },
+      "lesson": {
+        "name": "درس",
+        "description": "جلسة تدريب شطرنج فردية",
+        "default_message": "مرحباً {{playerName}}! هل ترغب في الحصول على درس شطرنج؟"
+      },
+      "puzzle_session": {
+        "name": "جلسة ألغاز",
+        "description": "حل ألغاز الشطرنج معاً",
+        "default_message": "مرحباً {{playerName}}! هل تريد حل بعض ألغاز الشطرنج معاً؟"
+      }
+    },
+    "color_preference_label": "تفضيل اللون:",
+    "color_options": {
+      "random": "عشوائي",
+      "white": "أبيض",
+      "black": "أسود"
+    },
+    "time_control_label": "التحكم بالوقت:",
+    "message_label": "الرسالة (اختيارية):",
+    "character_count": "{{count}}/500",
+    "cancel_button": "إلغاء",
+    "send_button": "إرسال دعوة",
+    "sending_button": "جاري الإرسال...",
     "send_to": "دعوة {{playerName}}",
     "message_placeholder": "رسالة اختيارية...",
-    "send_button": "إرسال دعوة",
     "received_title": "دعوة للعبة",
     "from": "من: {{playerName}}",
     "accept_button": "قبول",
