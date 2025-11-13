@@ -7,7 +7,7 @@
 
 ---
 
-## 🎯 Current Status: Phase 1B (20% Complete)
+## 🎯 Current Status: Phase 1B (66% Complete)
 
 ### ✅ Completed in PR #14
 **Phase 1A (100% Complete):**
@@ -19,21 +19,21 @@
 - ✅ Arabic fonts integrated
 - ✅ Chessboard LTR fix (critical bug)
 
-**Phase 1B Progress (20% Complete):**
+**Phase 1B Progress (66% Complete):**
 - ✅ **ActiveGame component** - In-game UI translated
 - ✅ **Chess notation RTL fix** - Board stays LTR in Arabic
+- ✅ **NewGameModal** - Game creation dialog fully translated
+- ✅ **JoinGameModal** - Join game dialog fully translated
+- ✅ **GameInvitationModal** - Player invitation system fully translated
+- ✅ **OnlinePlayersList** - Player search and online status fully translated
 
-### ⏳ Remaining in Phase 1B (80%)
-- ❌ NewGameModal - Game creation dialog
-- ❌ JoinGameModal - Join game dialog
-- ❌ GameInvitationModal - Player invitations
-- ❌ OnlinePlayersList - Player search
+### ⏳ Remaining in Phase 1B (34%)
 - ❌ NotificationBanner - Game notifications
 - ❌ Toast - Success/error messages
 - ❌ API client error messages
 - ❌ Backend locale support (MessageSource + preferredLocale)
 
-**Estimated Time Remaining:** 4-6 hours
+**Estimated Time Remaining:** 2-3 hours
 
 ---
 
