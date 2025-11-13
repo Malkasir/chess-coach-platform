@@ -62,5 +62,19 @@
     "end": "إنهاء المكالمة",
     "muted": "كتم الصوت",
     "unmuted": "إلغاء كتم الصوت"
+  },
+  "analysis": {
+    "title": "تحليل المحرك",
+    "on": "مفعّل",
+    "off": "معطّل",
+    "toggle_on": "تفعيل التحليل",
+    "toggle_off": "تعطيل التحليل",
+    "depth_label": "العمق",
+    "lines_label": "الخطوط",
+    "line": "خط",
+    "lines": "خطوط",
+    "depth_reached": "العمق: {{depth}}",
+    "analyzing": "جاري تحليل الوضعية...",
+    "play_best_move": "لعب أفضل حركة"
   }
 }

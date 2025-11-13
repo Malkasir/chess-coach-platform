@@ -62,5 +62,19 @@
     "end": "End Call",
     "muted": "Muted",
     "unmuted": "Unmuted"
+  },
+  "analysis": {
+    "title": "Engine Analysis",
+    "on": "On",
+    "off": "Off",
+    "toggle_on": "Turn analysis on",
+    "toggle_off": "Turn analysis off",
+    "depth_label": "Depth",
+    "lines_label": "Lines",
+    "line": "line",
+    "lines": "lines",
+    "depth_reached": "Depth: {{depth}}",
+    "analyzing": "Analyzing position...",
+    "play_best_move": "Play Best Move"
   }
 }

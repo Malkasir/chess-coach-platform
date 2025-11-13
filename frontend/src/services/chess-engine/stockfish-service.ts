@@ -25,12 +25,39 @@ export interface EngineEvaluation {
   pv: string[];
 }
 
+// New interfaces for MultiPV analysis
+export interface AnalysisLine {
+  multipv: number;  // Line number (1 = best, 2 = second best, etc.)
+  depth: number;    // Search depth reached
+  score: {
+    type: 'cp' | 'mate';  // Centipawn score or mate in N
+    value: number;         // Score value (centipawns or moves to mate)
+  };
+  pv: string[];     // Principal variation (sequence of moves in UCI notation)
+  nodes?: number;   // Nodes searched
+  time?: number;    // Time spent in milliseconds
+}
+
+export interface AnalysisResult {
+  lines: AnalysisLine[];  // Multiple lines (1-3 depending on MultiPV setting)
+  depth: number;           // Current search depth
+  fen: string;             // Position being analyzed
+}
+
+export type AnalysisCallback = (result: AnalysisResult) => void;
+
 export class StockfishService {
   private worker: Worker | null = null;
   private isReady = false;
   private pendingMoves: Array<{ resolve: (value: EngineMove) => void; reject: (error: any) => void }> = [];
   private currentPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
   private engineSettings: EngineSettings;
+
+  // Analysis state
+  private analysisCallback: AnalysisCallback | null = null;
+  private currentAnalysis: Map<number, AnalysisLine> = new Map();  // multipv -> line
+  private currentDepth: number = 0;
+  private isAnalyzing: boolean = false;
 
   constructor() {
     this.engineSettings = {
@@ -73,10 +100,20 @@ export class StockfishService {
   }
 
   private async createStockfishWorker(): Promise<Worker> {
-    // For a real Stockfish implementation, we would need to properly load the WebAssembly
-    // For now, let's create an improved mock that's more realistic
-    debugLog('Real Stockfish not implemented yet, using enhanced mock');
-    throw new Error('Real Stockfish implementation pending - using mock for development');
+    try {
+      // Create the real Stockfish worker using Vite's worker syntax
+      const worker = new Worker(
+        new URL('../../workers/stockfish.worker.ts', import.meta.url),
+        { type: 'module' }
+      );
+
+      debugLog('Real Stockfish worker created successfully');
+      return worker;
+    } catch (error) {
+      debugError('Failed to create Stockfish worker:', error);
+      debugLog('Falling back to mock worker for development');
+      return this.createMockWorker();
+    }
   }
 
   private async createMockWorker(): Promise<Worker> {
@@ -186,6 +223,79 @@ export class StockfishService {
         debugLog(`Position evaluation: ${centipawns} centipawns`);
       }
     }
+
+    // Enhanced parsing for MultiPV analysis
+    if (this.isAnalyzing && this.analysisCallback) {
+      this.parseMultiPVInfo(info);
+    }
+  }
+
+  /**
+   * Parse UCI info line for MultiPV analysis
+   * Example info line:
+   * "info depth 15 multipv 1 score cp 25 nodes 100000 time 1000 pv e2e4 e7e5 g1f3"
+   */
+  private parseMultiPVInfo(info: string): void {
+    // Extract multipv number
+    const multipvMatch = info.match(/multipv (\d+)/);
+    if (!multipvMatch) return;
+    const multipv = parseInt(multipvMatch[1]);
+
+    // Extract depth
+    const depthMatch = info.match(/depth (\d+)/);
+    if (!depthMatch) return;
+    const depth = parseInt(depthMatch[1]);
+
+    // Extract score (either centipawns or mate)
+    let scoreType: 'cp' | 'mate' = 'cp';
+    let scoreValue = 0;
+
+    const cpMatch = info.match(/score cp (-?\d+)/);
+    const mateMatch = info.match(/score mate (-?\d+)/);
+
+    if (cpMatch) {
+      scoreType = 'cp';
+      scoreValue = parseInt(cpMatch[1]);
+    } else if (mateMatch) {
+      scoreType = 'mate';
+      scoreValue = parseInt(mateMatch[1]);
+    } else {
+      return;  // No score found
+    }
+
+    // Extract principal variation (sequence of moves)
+    const pvMatch = info.match(/pv (.+)$/);
+    const pv = pvMatch ? pvMatch[1].trim().split(' ') : [];
+
+    // Extract optional fields
+    const nodesMatch = info.match(/nodes (\d+)/);
+    const timeMatch = info.match(/time (\d+)/);
+    const nodes = nodesMatch ? parseInt(nodesMatch[1]) : undefined;
+    const time = timeMatch ? parseInt(timeMatch[1]) : undefined;
+
+    // Create analysis line
+    const line: AnalysisLine = {
+      multipv,
+      depth,
+      score: { type: scoreType, value: scoreValue },
+      pv,
+      nodes,
+      time
+    };
+
+    // Update current analysis
+    this.currentAnalysis.set(multipv, line);
+    this.currentDepth = Math.max(this.currentDepth, depth);
+
+    // Call callback with updated analysis
+    if (this.analysisCallback) {
+      const result: AnalysisResult = {
+        lines: Array.from(this.currentAnalysis.values()).sort((a, b) => a.multipv - b.multipv),
+        depth: this.currentDepth,
+        fen: this.currentPosition
+      };
+      this.analysisCallback(result);
+    }
   }
 
   private sendCommand(command: string): void {
@@ -279,11 +389,11 @@ export class StockfishService {
    */
   public analyzePosition(depth?: number): Promise<EngineEvaluation> {
     const searchDepth = depth || this.engineSettings.depth || 15;
-    
+
     return new Promise((resolve, reject) => {
       // This is a simplified implementation for now
       // In a full implementation, you'd collect and parse all the UCI info messages
-      this.pendingMoves.push({ 
+      this.pendingMoves.push({
         resolve: (result) => {
           resolve({
             bestMove: result.uci,
@@ -293,12 +403,68 @@ export class StockfishService {
             time: 0, // Would be parsed from info messages
             pv: [] // Would be parsed from info messages
           });
-        }, 
-        reject 
+        },
+        reject
       });
-      
+
       this.sendCommand(`go depth ${searchDepth}`);
     });
+  }
+
+  /**
+   * Start real-time analysis with MultiPV support
+   * @param depth - Search depth (8, 12, 16, 20, etc.)
+   * @param multipv - Number of lines to analyze (1-3)
+   * @param callback - Function called with analysis updates
+   */
+  public startAnalysis(depth: number, multipv: number, callback: AnalysisCallback): void {
+    // Stop any existing analysis
+    this.stopAnalysis();
+
+    // Set up new analysis
+    this.isAnalyzing = true;
+    this.analysisCallback = callback;
+    this.currentAnalysis.clear();
+    this.currentDepth = 0;
+
+    // Configure MultiPV
+    this.sendCommand(`setoption name MultiPV value ${multipv}`);
+
+    // Start infinite analysis at specified depth
+    this.sendCommand(`go depth ${depth}`);
+
+    debugLog(`Started analysis: depth=${depth}, multipv=${multipv}`);
+  }
+
+  /**
+   * Stop current analysis
+   */
+  public stopAnalysis(): void {
+    if (this.isAnalyzing) {
+      this.sendCommand('stop');
+      this.isAnalyzing = false;
+      this.analysisCallback = null;
+      this.currentAnalysis.clear();
+      this.currentDepth = 0;
+      debugLog('Stopped analysis');
+    }
+  }
+
+  /**
+   * Check if currently analyzing
+   */
+  public isCurrentlyAnalyzing(): boolean {
+    return this.isAnalyzing;
+  }
+
+  /**
+   * Set MultiPV option (number of lines to analyze)
+   * @param multipv - Number of lines (1-3)
+   */
+  public setMultiPV(multipv: number): void {
+    const clampedValue = Math.max(1, Math.min(3, multipv));
+    this.sendCommand(`setoption name MultiPV value ${clampedValue}`);
+    debugLog(`MultiPV set to ${clampedValue}`);
   }
 
   /**
