@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from '../styles/shared.module.css';
 
 export interface Toast {
@@ -15,6 +16,7 @@ interface ToastComponentProps {
 }
 
 const ToastComponent: React.FC<ToastComponentProps> = ({ toast, onDismiss }) => {
+  const { t } = useTranslation(['common']);
   const { id, type, title, message, duration = 5000 } = toast;
 
   useEffect(() => {
@@ -44,7 +46,7 @@ const ToastComponent: React.FC<ToastComponentProps> = ({ toast, onDismiss }) => 
       <button
         onClick={() => onDismiss(id)}
         className={styles.toastClose}
-        aria-label="Close notification"
+        aria-label={t('common:aria.close_notification')}
       >
         ×
       </button>

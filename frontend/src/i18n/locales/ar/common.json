@@ -9,7 +9,8 @@
     "theme": "السمات"
   },
   "aria": {
-    "close_modal": "إغلاق النافذة"
+    "close_modal": "إغلاق النافذة",
+    "close_notification": "إغلاق الإشعار"
   },
   "language": {
     "selector_title": "تغيير اللغة",

@@ -127,5 +127,23 @@
     "decline_button": "رفض",
     "expired": "انتهت صلاحية الدعوة",
     "pending": "الدعوة قيد الانتظار..."
+  },
+  "notification_banner": {
+    "invited_to": "{{senderName}} دعاك إلى {{gameType}}",
+    "game_types": {
+      "quick_game": "لعبة سريعة",
+      "lesson": "درس شطرنج",
+      "puzzle_session": "جلسة ألغاز",
+      "default": "لعبة شطرنج"
+    },
+    "time": {
+      "just_now": "الآن",
+      "expired": "منتهية الصلاحية",
+      "minutes_left": "{{count}} د متبقية",
+      "hours_minutes_left": "{{hours}} س {{minutes}} د متبقية"
+    },
+    "color_preference": "يريدون {{color}}",
+    "accept_button": "قبول",
+    "decline_button": "رفض"
   }
 }

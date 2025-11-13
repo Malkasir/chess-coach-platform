@@ -127,5 +127,23 @@
     "decline_button": "Decline",
     "expired": "Invitation expired",
     "pending": "Invitation pending..."
+  },
+  "notification_banner": {
+    "invited_to": "{{senderName}} invited you to a {{gameType}}",
+    "game_types": {
+      "quick_game": "Quick Game",
+      "lesson": "Chess Lesson",
+      "puzzle_session": "Puzzle Session",
+      "default": "Chess Game"
+    },
+    "time": {
+      "just_now": "Just now",
+      "expired": "Expired",
+      "minutes_left": "{{count}}m left",
+      "hours_minutes_left": "{{hours}}h {{minutes}}m left"
+    },
+    "color_preference": "They want {{color}}",
+    "accept_button": "Accept",
+    "decline_button": "Decline"
   }
 }
