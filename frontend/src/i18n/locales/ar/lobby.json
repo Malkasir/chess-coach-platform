@@ -59,10 +59,33 @@
     "game_id_placeholder": "أدخل معرف اللعبة"
   },
   "online_players": {
-    "title": "اللاعبون المتصلون",
+    "title": "اللاعبون المتصلون ({{count}})",
+    "search_label": "البحث عن اللاعبين",
     "search_placeholder": "البحث عن اللاعبين...",
-    "no_players": "لا يوجد لاعبون متصلون",
-    "invite_button": "دعوة"
+    "loading": "جاري تحميل اللاعبين...",
+    "error_retry": "إعادة المحاولة",
+    "no_results": "لم يتم العثور على لاعبين يطابقون بحثك.",
+    "no_players": "لا يوجد لاعبون آخرون متصلون الآن.",
+    "unrated": "بدون تصنيف",
+    "status": {
+      "online": "متاح",
+      "in_game": "في لعبة",
+      "teaching": "يدرّس",
+      "away": "بعيد",
+      "unknown": "غير معروف"
+    },
+    "last_seen": {
+      "just_now": "الآن",
+      "minutes_ago": "منذ {{count}} د",
+      "hours_ago": "منذ {{count}} س",
+      "days_ago": "منذ {{count}} ي"
+    },
+    "invite_button": "دعوة للعبة",
+    "unavailable_playing": "يلعب",
+    "unavailable_text": "غير متاح",
+    "close_button": "إغلاق",
+    "refresh_button": "تحديث",
+    "close_aria_label": "إغلاق قائمة اللاعبين"
   },
   "invitation": {
     "send_title": "دعوة {{playerName}} للعب",

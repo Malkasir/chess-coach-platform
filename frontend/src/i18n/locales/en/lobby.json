@@ -59,10 +59,33 @@
     "game_id_placeholder": "Enter game ID"
   },
   "online_players": {
-    "title": "Online Players",
+    "title": "Online Players ({{count}})",
+    "search_label": "Search players",
     "search_placeholder": "Search players...",
-    "no_players": "No players online",
-    "invite_button": "Invite"
+    "loading": "Loading players...",
+    "error_retry": "Retry",
+    "no_results": "No players found matching your search.",
+    "no_players": "No other players online right now.",
+    "unrated": "Unrated",
+    "status": {
+      "online": "Available",
+      "in_game": "In Game",
+      "teaching": "Teaching",
+      "away": "Away",
+      "unknown": "Unknown"
+    },
+    "last_seen": {
+      "just_now": "Just now",
+      "minutes_ago": "{{count}}m ago",
+      "hours_ago": "{{count}}h ago",
+      "days_ago": "{{count}}d ago"
+    },
+    "invite_button": "Invite to Game",
+    "unavailable_playing": "Playing",
+    "unavailable_text": "Unavailable",
+    "close_button": "Close",
+    "refresh_button": "Refresh",
+    "close_aria_label": "Close players list"
   },
   "invitation": {
     "send_title": "Invite {{playerName}} to Play",

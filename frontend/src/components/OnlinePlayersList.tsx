@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from '../styles/shared.module.css';
 import { apiClient } from '../services/api-client';
 
@@ -27,6 +28,7 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
   isVisible,
   onClose,
 }) => {
+  const { t } = useTranslation(['lobby']);
   const [onlinePlayers, setOnlinePlayers] = useState<OnlinePlayer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -121,13 +123,7 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case 'online': return 'Available';
-      case 'in_game': return 'In Game';
-      case 'teaching': return 'Teaching';
-      case 'away': return 'Away';
-      default: return 'Unknown';
-    }
+    return t(`lobby:online_players.status.${status}`, { defaultValue: t('lobby:online_players.status.unknown') });
   };
 
   const formatLastSeen = (lastSeenStr: string) => {
@@ -135,15 +131,15 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
     const now = new Date();
     const diffMs = now.getTime() - lastSeen.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    
+
+    if (diffMins < 1) return t('lobby:online_players.last_seen.just_now');
+    if (diffMins < 60) return t('lobby:online_players.last_seen.minutes_ago', { count: diffMins });
+
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    
+    if (diffHours < 24) return t('lobby:online_players.last_seen.hours_ago', { count: diffHours });
+
     const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}d ago`;
+    return t('lobby:online_players.last_seen.days_ago', { count: diffDays });
   };
 
   // Handle click outside modal
@@ -165,24 +161,24 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
     >
       <div className={styles.modalContent} ref={modalRef}>
         <div className={styles.modalHeader}>
-          <h2 id="players-modal-title">Online Players ({onlinePlayers.length})</h2>
-          <button 
-            onClick={onClose} 
+          <h2 id="players-modal-title">{t('lobby:online_players.title', { count: onlinePlayers.length })}</h2>
+          <button
+            onClick={onClose}
             className={styles.closeButton}
-            aria-label="Close players list"
+            aria-label={t('lobby:online_players.close_aria_label')}
           >
             ×
           </button>
         </div>
 
         <div className={styles.searchContainer}>
-          <label htmlFor="player-search" className="sr-only">Search players</label>
+          <label htmlFor="player-search" className="sr-only">{t('lobby:online_players.search_label')}</label>
           <input
             ref={searchInputRef}
             id="player-search"
             name="playerSearch"
             type="text"
-            placeholder="Search players..."
+            placeholder={t('lobby:online_players.search_placeholder')}
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
             className={styles.searchInput}
@@ -191,21 +187,21 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
 
         <div className={styles.playersList}>
           {loading && (
-            <div className={styles.loadingMessage}>Loading players...</div>
+            <div className={styles.loadingMessage}>{t('lobby:online_players.loading')}</div>
           )}
 
           {error && (
             <div className={styles.errorMessage}>
               {error}
               <button onClick={() => fetchOnlinePlayers()} className={styles.retryButton}>
-                Retry
+                {t('lobby:online_players.error_retry')}
               </button>
             </div>
           )}
 
           {!loading && !error && onlinePlayers.length === 0 && (
             <div className={styles.emptyMessage}>
-              {searchTerm ? 'No players found matching your search.' : 'No other players online right now.'}
+              {searchTerm ? t('lobby:online_players.no_results') : t('lobby:online_players.no_players')}
             </div>
           )}
 
@@ -217,7 +213,7 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
                     {player.fullName}
                   </span>
                   <span className={styles.playerRating}>
-                    {player.rating ? `(${player.rating})` : '(Unrated)'}
+                    {player.rating ? `(${player.rating})` : `(${t('lobby:online_players.unrated')})`}
                   </span>
                 </div>
                 
@@ -246,11 +242,11 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
                     onClick={() => onInvitePlayer(player.userId, player.fullName)}
                     className={styles.inviteButton}
                   >
-                    Invite to Game
+                    {t('lobby:online_players.invite_button')}
                   </button>
                 ) : (
                   <span className={styles.unavailableText}>
-                    {player.status === 'in_game' ? 'Playing' : 'Unavailable'}
+                    {player.status === 'in_game' ? t('lobby:online_players.unavailable_playing') : t('lobby:online_players.unavailable_text')}
                   </span>
                 )}
               </div>
@@ -260,10 +256,10 @@ export const OnlinePlayersList: React.FC<OnlinePlayersListProps> = ({
 
         <div className={styles.modalFooter}>
           <button onClick={onClose} className={styles.secondaryButton}>
-            Close
+            {t('lobby:online_players.close_button')}
           </button>
           <button onClick={() => fetchOnlinePlayers()} className={styles.primaryButton}>
-            Refresh
+            {t('lobby:online_players.refresh_button')}
           </button>
         </div>
       </div>
