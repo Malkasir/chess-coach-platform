@@ -12,6 +12,9 @@
   "create_game": {
     "button": "Create New Game",
     "title": "Create New Game",
+    "game_mode_label": "Game Mode",
+    "game_mode_timed": "Timed Game",
+    "game_mode_training": "Training (No Clock)",
     "mode": {
       "label": "Game Mode",
       "vs_player": "vs Player",
@@ -34,30 +37,113 @@
     "ai_personality": {
       "label": "AI Personality",
       "select": "Select opponent..."
-    }
+    },
+    "summary_title": "Game Summary:",
+    "summary_mode": "Mode:",
+    "summary_time": "Time:",
+    "summary_color": "Color:",
+    "cancel_button": "Cancel",
+    "create_button": "Create Game"
   },
   "join_game": {
     "button": "Join Game",
-    "title": "Join Existing Game",
+    "title": "Join Game",
+    "room_code_label": "Room Code",
+    "room_code_placeholder": "ABC123",
+    "error_invalid_length": "Please enter a valid 6-character room code",
+    "error_invalid_format": "Room code must be 6 alphanumeric characters",
+    "hint": "Ask your opponent for their 6-character room code",
+    "cancel_button": "Cancel",
+    "join_button": "Join Game",
     "game_id_label": "Game ID",
     "game_id_placeholder": "Enter game ID"
   },
   "online_players": {
-    "title": "Online Players",
+    "title": "Online Players ({{count}})",
+    "search_label": "Search players",
     "search_placeholder": "Search players...",
-    "no_players": "No players online",
-    "invite_button": "Invite"
+    "loading": "Loading players...",
+    "error_retry": "Retry",
+    "no_results": "No players found matching your search.",
+    "no_players": "No other players online right now.",
+    "unrated": "Unrated",
+    "status": {
+      "online": "Available",
+      "in_game": "In Game",
+      "teaching": "Teaching",
+      "away": "Away",
+      "unknown": "Unknown"
+    },
+    "last_seen": {
+      "just_now": "Just now",
+      "minutes_ago": "{{count}}m ago",
+      "hours_ago": "{{count}}h ago",
+      "days_ago": "{{count}}d ago"
+    },
+    "invite_button": "Invite to Game",
+    "unavailable_playing": "Playing",
+    "unavailable_text": "Unavailable",
+    "close_button": "Close",
+    "refresh_button": "Refresh",
+    "close_aria_label": "Close players list"
   },
   "invitation": {
-    "send_title": "Send Game Invitation",
+    "send_title": "Invite {{playerName}} to Play",
+    "game_type_label": "Game Type:",
+    "game_types": {
+      "quick_game": {
+        "name": "Quick Game",
+        "description": "Play a casual chess game",
+        "default_message": "Hi {{playerName}}! Want to play a quick chess game?"
+      },
+      "lesson": {
+        "name": "Lesson",
+        "description": "One-on-one chess coaching session",
+        "default_message": "Hi {{playerName}}! Would you like to have a chess lesson?"
+      },
+      "puzzle_session": {
+        "name": "Puzzle Session",
+        "description": "Solve chess puzzles together",
+        "default_message": "Hi {{playerName}}! Want to solve some chess puzzles together?"
+      }
+    },
+    "color_preference_label": "Your Color Preference:",
+    "color_options": {
+      "random": "Random",
+      "white": "White",
+      "black": "Black"
+    },
+    "time_control_label": "Time Control:",
+    "message_label": "Message (Optional):",
+    "character_count": "{{count}}/500",
+    "cancel_button": "Cancel",
+    "send_button": "Send Invitation",
+    "sending_button": "Sending...",
     "send_to": "Invite {{playerName}}",
     "message_placeholder": "Optional message...",
-    "send_button": "Send Invitation",
     "received_title": "Game Invitation",
     "from": "From: {{playerName}}",
     "accept_button": "Accept",
     "decline_button": "Decline",
     "expired": "Invitation expired",
     "pending": "Invitation pending..."
+  },
+  "notification_banner": {
+    "invited_to": "{{senderName}} invited you to a {{gameType}}",
+    "game_types": {
+      "quick_game": "Quick Game",
+      "lesson": "Chess Lesson",
+      "puzzle_session": "Puzzle Session",
+      "default": "Chess Game"
+    },
+    "time": {
+      "just_now": "Just now",
+      "expired": "Expired",
+      "minutes_left": "{{count}}m left",
+      "hours_minutes_left": "{{hours}}h {{minutes}}m left"
+    },
+    "color_preference": "They want {{color}}",
+    "accept_button": "Accept",
+    "decline_button": "Decline"
   }
 }

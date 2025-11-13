@@ -12,6 +12,9 @@
   "create_game": {
     "button": "إنشاء لعبة جديدة",
     "title": "إنشاء لعبة جديدة",
+    "game_mode_label": "نمط اللعبة",
+    "game_mode_timed": "لعبة موقوتة",
+    "game_mode_training": "التدريب (بدون ساعة)",
     "mode": {
       "label": "نمط اللعبة",
       "vs_player": "ضد لاعب",
@@ -34,30 +37,113 @@
     "ai_personality": {
       "label": "شخصية الذكاء الاصطناعي",
       "select": "اختر الخصم..."
-    }
+    },
+    "summary_title": "ملخص اللعبة:",
+    "summary_mode": "النمط:",
+    "summary_time": "الوقت:",
+    "summary_color": "اللون:",
+    "cancel_button": "إلغاء",
+    "create_button": "إنشاء لعبة"
   },
   "join_game": {
     "button": "الانضمام إلى لعبة",
-    "title": "الانضمام إلى لعبة موجودة",
+    "title": "الانضمام إلى لعبة",
+    "room_code_label": "رمز الغرفة",
+    "room_code_placeholder": "ABC123",
+    "error_invalid_length": "يرجى إدخال رمز غرفة صالح مكون من 6 أحرف",
+    "error_invalid_format": "يجب أن يتكون رمز الغرفة من 6 أحرف وأرقام",
+    "hint": "اطلب من خصمك رمز الغرفة المكون من 6 أحرف",
+    "cancel_button": "إلغاء",
+    "join_button": "الانضمام للعبة",
     "game_id_label": "معرف اللعبة",
     "game_id_placeholder": "أدخل معرف اللعبة"
   },
   "online_players": {
-    "title": "اللاعبون المتصلون",
+    "title": "اللاعبون المتصلون ({{count}})",
+    "search_label": "البحث عن اللاعبين",
     "search_placeholder": "البحث عن اللاعبين...",
-    "no_players": "لا يوجد لاعبون متصلون",
-    "invite_button": "دعوة"
+    "loading": "جاري تحميل اللاعبين...",
+    "error_retry": "إعادة المحاولة",
+    "no_results": "لم يتم العثور على لاعبين يطابقون بحثك.",
+    "no_players": "لا يوجد لاعبون آخرون متصلون الآن.",
+    "unrated": "بدون تصنيف",
+    "status": {
+      "online": "متاح",
+      "in_game": "في لعبة",
+      "teaching": "يدرّس",
+      "away": "بعيد",
+      "unknown": "غير معروف"
+    },
+    "last_seen": {
+      "just_now": "الآن",
+      "minutes_ago": "منذ {{count}} د",
+      "hours_ago": "منذ {{count}} س",
+      "days_ago": "منذ {{count}} ي"
+    },
+    "invite_button": "دعوة للعبة",
+    "unavailable_playing": "يلعب",
+    "unavailable_text": "غير متاح",
+    "close_button": "إغلاق",
+    "refresh_button": "تحديث",
+    "close_aria_label": "إغلاق قائمة اللاعبين"
   },
   "invitation": {
-    "send_title": "إرسال دعوة للعبة",
+    "send_title": "دعوة {{playerName}} للعب",
+    "game_type_label": "نوع اللعبة:",
+    "game_types": {
+      "quick_game": {
+        "name": "لعبة سريعة",
+        "description": "العب لعبة شطرنج ودية",
+        "default_message": "مرحباً {{playerName}}! هل تريد لعب لعبة شطرنج سريعة؟"
+      },
+      "lesson": {
+        "name": "درس",
+        "description": "جلسة تدريب شطرنج فردية",
+        "default_message": "مرحباً {{playerName}}! هل ترغب في الحصول على درس شطرنج؟"
+      },
+      "puzzle_session": {
+        "name": "جلسة ألغاز",
+        "description": "حل ألغاز الشطرنج معاً",
+        "default_message": "مرحباً {{playerName}}! هل تريد حل بعض ألغاز الشطرنج معاً؟"
+      }
+    },
+    "color_preference_label": "تفضيل اللون:",
+    "color_options": {
+      "random": "عشوائي",
+      "white": "أبيض",
+      "black": "أسود"
+    },
+    "time_control_label": "التحكم بالوقت:",
+    "message_label": "الرسالة (اختيارية):",
+    "character_count": "{{count}}/500",
+    "cancel_button": "إلغاء",
+    "send_button": "إرسال دعوة",
+    "sending_button": "جاري الإرسال...",
     "send_to": "دعوة {{playerName}}",
     "message_placeholder": "رسالة اختيارية...",
-    "send_button": "إرسال دعوة",
     "received_title": "دعوة للعبة",
     "from": "من: {{playerName}}",
     "accept_button": "قبول",
     "decline_button": "رفض",
     "expired": "انتهت صلاحية الدعوة",
     "pending": "الدعوة قيد الانتظار..."
+  },
+  "notification_banner": {
+    "invited_to": "{{senderName}} دعاك إلى {{gameType}}",
+    "game_types": {
+      "quick_game": "لعبة سريعة",
+      "lesson": "درس شطرنج",
+      "puzzle_session": "جلسة ألغاز",
+      "default": "لعبة شطرنج"
+    },
+    "time": {
+      "just_now": "الآن",
+      "expired": "منتهية الصلاحية",
+      "minutes_left": "{{count}} د متبقية",
+      "hours_minutes_left": "{{hours}} س {{minutes}} د متبقية"
+    },
+    "color_preference": "يريدون {{color}}",
+    "accept_button": "قبول",
+    "decline_button": "رفض"
   }
 }

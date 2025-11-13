@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from '../styles/shared.module.css';
 
 interface GameInvitation {
@@ -27,6 +28,7 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
   onDecline,
   onDismiss,
 }) => {
+  const { t } = useTranslation(['lobby']);
   const [, forceUpdate] = useState({});
   
   
@@ -53,12 +55,9 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
   };
 
   const getTypeText = (type: string) => {
-    switch (type) {
-      case 'quick_game': return 'Quick Game';
-      case 'lesson': return 'Chess Lesson';
-      case 'puzzle_session': return 'Puzzle Session';
-      default: return 'Chess Game';
-    }
+    return t(`lobby:notification_banner.game_types.${type}`, {
+      defaultValue: t('lobby:notification_banner.game_types.default')
+    });
   };
 
   const getTimeRemaining = (expiresAt: string) => {
@@ -66,12 +65,15 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
     const expires = new Date(expiresAt);
     const diffMs = expires.getTime() - now.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMs <= 0) return 'Expired';
-    if (diffMins < 60) return `${Math.max(0, diffMins)}m left`;
-    
+
+    if (diffMs <= 0) return t('lobby:notification_banner.time.expired');
+    if (diffMins < 60) return t('lobby:notification_banner.time.minutes_left', { count: Math.max(0, diffMins) });
+
     const diffHours = Math.floor(diffMins / 60);
-    return `${diffHours}h ${diffMins % 60}m left`;
+    return t('lobby:notification_banner.time.hours_minutes_left', {
+      hours: diffHours,
+      minutes: diffMins % 60
+    });
   };
 
   return (
@@ -83,7 +85,10 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
         
         <div className={styles.notificationInfo}>
           <div className={styles.notificationTitle}>
-            <strong>{invitation.senderName}</strong> invited you to a {getTypeText(invitation.type)}
+            {t('lobby:notification_banner.invited_to', {
+              senderName: invitation.senderName,
+              gameType: getTypeText(invitation.type)
+            })}
           </div>
 
           {invitation.message && (
@@ -94,28 +99,28 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
 
           <div className={styles.notificationMeta}>
             <span className={styles.timeRemaining}>
-              ⏱️ Just now
+              ⏱️ {t('lobby:notification_banner.time.just_now')}
             </span>
             {invitation.senderColor && invitation.senderColor !== 'random' && (
               <span className={styles.colorInfo}>
-                • They want {invitation.senderColor}
+                • {t('lobby:notification_banner.color_preference', { color: invitation.senderColor })}
               </span>
             )}
           </div>
         </div>
         
         <div className={styles.notificationActions}>
-          <button 
+          <button
             onClick={() => onAccept(invitation.id)}
             className={styles.acceptButton}
           >
-            Accept
+            {t('lobby:notification_banner.accept_button')}
           </button>
-          <button 
+          <button
             onClick={() => onDecline(invitation.id)}
             className={styles.declineButton}
           >
-            Decline
+            {t('lobby:notification_banner.decline_button')}
           </button>
           <button 
             onClick={onDismiss}
