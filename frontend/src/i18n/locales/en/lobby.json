@@ -47,7 +47,14 @@
   },
   "join_game": {
     "button": "Join Game",
-    "title": "Join Existing Game",
+    "title": "Join Game",
+    "room_code_label": "Room Code",
+    "room_code_placeholder": "ABC123",
+    "error_invalid_length": "Please enter a valid 6-character room code",
+    "error_invalid_format": "Room code must be 6 alphanumeric characters",
+    "hint": "Ask your opponent for their 6-character room code",
+    "cancel_button": "Cancel",
+    "join_button": "Join Game",
     "game_id_label": "Game ID",
     "game_id_placeholder": "Enter game ID"
   },

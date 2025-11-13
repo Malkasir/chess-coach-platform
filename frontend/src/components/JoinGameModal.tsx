@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from '../styles/shared.module.css';
 
 interface JoinGameModalProps {
@@ -12,6 +13,7 @@ export const JoinGameModal: React.FC<JoinGameModalProps> = ({
   onClose,
   onJoinGame,
 }) => {
+  const { t } = useTranslation(['lobby', 'common']);
   const [roomCode, setRoomCode] = useState('');
   const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -40,13 +42,13 @@ export const JoinGameModal: React.FC<JoinGameModalProps> = ({
   const handleJoinGame = () => {
     // Validate room code
     if (!roomCode || roomCode.length !== 6) {
-      setError('Please enter a valid 6-character room code');
+      setError(t('lobby:join_game.error_invalid_length'));
       return;
     }
 
     // Check if room code is alphanumeric
     if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
-      setError('Room code must be 6 alphanumeric characters');
+      setError(t('lobby:join_game.error_invalid_format'));
       return;
     }
 
@@ -83,12 +85,12 @@ export const JoinGameModal: React.FC<JoinGameModalProps> = ({
         {/* Header */}
         <div className={styles.modalHeader}>
           <h2 id="join-game-modal-title" style={{ margin: 0, fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)' }}>
-            Join Game
+            {t('lobby:join_game.title')}
           </h2>
           <button
             onClick={onClose}
             className={styles.modalCloseButton}
-            aria-label="Close modal"
+            aria-label={t('common:aria.close_modal')}
           >
             ✕
           </button>
@@ -106,7 +108,7 @@ export const JoinGameModal: React.FC<JoinGameModalProps> = ({
               color: 'var(--text-primary)'
             }}
           >
-            Room Code
+            {t('lobby:join_game.room_code_label')}
           </label>
 
           <input
@@ -115,7 +117,7 @@ export const JoinGameModal: React.FC<JoinGameModalProps> = ({
             type="text"
             value={roomCode}
             onChange={(e) => handleRoomCodeChange(e.target.value)}
-            placeholder="ABC123"
+            placeholder={t('lobby:join_game.room_code_placeholder')}
             maxLength={6}
             className={styles.input}
             style={{
@@ -127,7 +129,8 @@ export const JoinGameModal: React.FC<JoinGameModalProps> = ({
               fontWeight: 'var(--font-bold)',
               textTransform: 'uppercase',
               border: error ? '2px solid var(--error-color)' : '2px solid var(--border-subtle)',
-              fontFamily: 'monospace'
+              fontFamily: 'monospace',
+              direction: 'ltr'
             }}
             aria-invalid={!!error}
             aria-describedby={error ? 'room-code-error' : undefined}
@@ -157,7 +160,7 @@ export const JoinGameModal: React.FC<JoinGameModalProps> = ({
             color: 'var(--text-muted)',
             textAlign: 'center'
           }}>
-            💡 Ask your opponent for their 6-character room code
+            💡 {t('lobby:join_game.hint')}
           </div>
         </div>
 
@@ -166,9 +169,9 @@ export const JoinGameModal: React.FC<JoinGameModalProps> = ({
           <button
             onClick={onClose}
             className={styles.secondaryButton}
-            style={{ marginRight: 'var(--space-md)' }}
+            style={{ marginInlineEnd: 'var(--space-md)' }}
           >
-            Cancel
+            {t('lobby:join_game.cancel_button')}
           </button>
           <button
             onClick={handleJoinGame}
@@ -179,7 +182,7 @@ export const JoinGameModal: React.FC<JoinGameModalProps> = ({
               cursor: roomCode.length !== 6 ? 'not-allowed' : 'pointer'
             }}
           >
-            Join Game
+            {t('lobby:join_game.join_button')}
           </button>
         </div>
       </div>

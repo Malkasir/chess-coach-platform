@@ -47,7 +47,14 @@
   },
   "join_game": {
     "button": "الانضمام إلى لعبة",
-    "title": "الانضمام إلى لعبة موجودة",
+    "title": "الانضمام إلى لعبة",
+    "room_code_label": "رمز الغرفة",
+    "room_code_placeholder": "ABC123",
+    "error_invalid_length": "يرجى إدخال رمز غرفة صالح مكون من 6 أحرف",
+    "error_invalid_format": "يجب أن يتكون رمز الغرفة من 6 أحرف وأرقام",
+    "hint": "اطلب من خصمك رمز الغرفة المكون من 6 أحرف",
+    "cancel_button": "إلغاء",
+    "join_button": "الانضمام للعبة",
     "game_id_label": "معرف اللعبة",
     "game_id_placeholder": "أدخل معرف اللعبة"
   },
