@@ -74,6 +74,7 @@
     "line": "خط",
     "lines": "خطوط",
     "depth_reached": "العمق: {{depth}}",
+    "engine_loading": "جاري تحميل المحرك...",
     "analyzing": "جاري تحليل الوضعية...",
     "play_best_move": "لعب أفضل حركة"
   }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import { StockfishService, AnalysisResult, AnalysisLine } from '../services/chess-engine/stockfish-service';
@@ -6,12 +6,14 @@ import styles from './AnalysisPanel.module.css';
 
 interface AnalysisPanelProps {
   game: Chess;
+  position: string; // FEN string - pass from parent to avoid game.fen() dependency churn
   enabled: boolean;
   onPlayMove?: (uciMove: string) => void;
 }
 
 export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
   game,
+  position,
   enabled,
   onPlayMove
 }) => {
@@ -21,33 +23,63 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
   const [depth, setDepth] = useState<number>(12);
   const [multipv, setMultipv] = useState<number>(1);
   const [analysisEnabled, setAnalysisEnabled] = useState<boolean>(enabled);
+  const [engineReady, setEngineReady] = useState<boolean>(false);
 
   // Analysis results
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+
+  // Sync enabled prop changes (e.g., entering/exiting review mode)
+  useEffect(() => {
+    setAnalysisEnabled(enabled);
+  }, [enabled]);
 
   // Refs
   const engineRef = useRef<StockfishService | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Handle analysis updates from engine (declared early to avoid circular dependency)
+  const handleAnalysisUpdate = useCallback((result: AnalysisResult) => {
+    setAnalysis(result);
+  }, []);
+
   // Initialize engine
   useEffect(() => {
-    if (!engineRef.current) {
-      engineRef.current = new StockfishService();
+    let service: StockfishService | null = null;
+
+    try {
+      // Always create a new service (handles StrictMode double-mount)
+      service = new StockfishService();
+      engineRef.current = service;
+    } catch (error) {
+      console.error('Failed to create StockfishService:', error);
+      engineRef.current = null;
+      setEngineReady(false);
+      return;
     }
+
+    // Poll engine readiness
+    const checkReadiness = setInterval(() => {
+      if (engineRef.current && engineRef.current.isEngineReady()) {
+        setEngineReady(true);
+        clearInterval(checkReadiness);
+      }
+    }, 100);
 
     // Cleanup on unmount
     return () => {
-      if (engineRef.current) {
-        engineRef.current.stopAnalysis();
-        engineRef.current.shutdown();
-        engineRef.current = null;
+      clearInterval(checkReadiness);
+      if (service) {
+        service.stopAnalysis();
+        service.shutdown();
       }
     };
   }, []);
 
   // Handle position changes with debouncing
   useEffect(() => {
-    if (!analysisEnabled || !engineRef.current) return;
+    if (!analysisEnabled || !engineRef.current || !engineReady) {
+      return;
+    }
 
     // Clear previous timer
     if (debounceTimerRef.current) {
@@ -56,9 +88,8 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
 
     // Debounce analysis by 300ms
     debounceTimerRef.current = setTimeout(() => {
-      if (engineRef.current) {
-        const fen = game.fen();
-        engineRef.current.setPosition(fen);
+      if (engineRef.current && engineReady) {
+        engineRef.current.setPosition(position);
         engineRef.current.startAnalysis(depth, multipv, handleAnalysisUpdate);
       }
     }, 300);
@@ -68,12 +99,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [game.fen(), analysisEnabled, depth, multipv]);
-
-  // Handle analysis updates from engine
-  const handleAnalysisUpdate = useCallback((result: AnalysisResult) => {
-    setAnalysis(result);
-  }, []);
+  }, [position, analysisEnabled, depth, multipv, handleAnalysisUpdate, engineReady]);
 
   // Toggle analysis on/off
   const handleToggleAnalysis = () => {
@@ -104,28 +130,46 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
     }
   };
 
-  // Format score for display
+  // Format score for display - already normalized to white's perspective by service
   const formatScore = (line: AnalysisLine): string => {
+    const scoreValue = line.score.value;
+
     if (line.score.type === 'mate') {
-      const mateIn = line.score.value;
-      return mateIn > 0 ? `M${mateIn}` : `M${Math.abs(mateIn)}`;
+      const mateIn = Math.abs(scoreValue);
+      return scoreValue > 0 ? `+M${mateIn}` : `-M${mateIn}`;
     } else {
-      const pawns = (line.score.value / 100).toFixed(2);
-      return line.score.value > 0 ? `+${pawns}` : pawns;
+      const pawns = (scoreValue / 100).toFixed(2);
+      return scoreValue > 0 ? `+${pawns}` : pawns;
     }
   };
 
-  // Convert UCI moves to SAN notation
-  const formatPV = (pv: string[], maxMoves: number = 5): string => {
+  // Convert UCI moves to SAN notation with move numbers
+  const formatPV = useCallback((pv: string[], maxMoves: number = 5): string => {
     try {
       // Create a new Chess instance from current FEN
       const tempGame = new Chess(game.fen());
       const sanMoves: string[] = [];
 
+      // Calculate the actual move number from the FEN
+      // FEN format: "position w/b KQkq - halfmove fullmove"
+      const fenParts = game.fen().split(' ');
+      let moveNumber = parseInt(fenParts[5] || '1', 10); // Full move number from FEN
+      const isWhiteTurn = tempGame.turn() === 'w';
+
       for (let i = 0; i < Math.min(pv.length, maxMoves); i++) {
         const move = tempGame.move({ from: pv[i].slice(0, 2), to: pv[i].slice(2, 4), promotion: pv[i][4] });
         if (move) {
-          sanMoves.push(move.san);
+          // Add move number for white moves or first move if black
+          if (i === 0 && !isWhiteTurn) {
+            sanMoves.push(`${moveNumber}...${move.san}`);
+          } else if (tempGame.turn() === 'b') {
+            // Just added white's move
+            sanMoves.push(`${moveNumber}.${move.san}`);
+          } else {
+            // Just added black's move
+            sanMoves.push(move.san);
+            moveNumber++; // Increment after black's move
+          }
         } else {
           break;
         }
@@ -136,29 +180,67 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
       // Fallback to UCI notation if conversion fails
       return pv.slice(0, maxMoves).join(' ') + (pv.length > maxMoves ? '...' : '');
     }
-  };
+  }, [game]);
+
+  // Pre-format all PV lines to prevent flickering between UCI and SAN notation
+  const formattedLines = useMemo(() => {
+    if (!analysis) return [];
+
+    return analysis.lines.map(line => ({
+      ...line,
+      formattedPV: formatPV(line.pv, 18)
+    }));
+  }, [analysis, formatPV]);
 
   // Pause analysis when tab is hidden
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && engineRef.current) {
         engineRef.current.stopAnalysis();
-      } else if (!document.hidden && analysisEnabled && engineRef.current) {
-        const fen = game.fen();
-        engineRef.current.setPosition(fen);
+      } else if (!document.hidden && analysisEnabled && engineRef.current && engineReady) {
+        engineRef.current.setPosition(position);
         engineRef.current.startAnalysis(depth, multipv, handleAnalysisUpdate);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [analysisEnabled, depth, multipv, game, handleAnalysisUpdate]);
+  }, [analysisEnabled, depth, multipv, position, handleAnalysisUpdate, engineReady]);
 
   return (
     <div className={styles.analysisPanel}>
-      {/* Header with toggle */}
+      {/* Compact header with inline controls */}
       <div className={styles.header}>
-        <h3>{t('game:analysis.title')}</h3>
+        {/* Settings inline */}
+        {analysisEnabled && (
+          <div className={styles.headerSettings}>
+            <span className={styles.settingLabel}>{t('game:analysis.depth_label')}:</span>
+            <select
+              id="depth-select"
+              value={depth}
+              onChange={(e) => handleDepthChange(Number(e.target.value))}
+              className={styles.select}
+            >
+              <option value={8}>8</option>
+              <option value={12}>12</option>
+              <option value={16}>16</option>
+              <option value={20}>20</option>
+            </select>
+
+            <span className={styles.settingLabel}>{t('game:analysis.lines_label')}:</span>
+            <select
+              id="lines-select"
+              value={multipv}
+              onChange={(e) => handleMultipvChange(Number(e.target.value))}
+              className={styles.select}
+            >
+              <option value={1}>1</option>
+              <option value={2}>2</option>
+              <option value={3}>3</option>
+            </select>
+          </div>
+        )}
+
         <button
           onClick={handleToggleAnalysis}
           className={analysisEnabled ? styles.toggleOn : styles.toggleOff}
@@ -168,80 +250,52 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
         </button>
       </div>
 
-      {/* Settings */}
+      {/* Analysis results - compact horizontal lines */}
       {analysisEnabled && (
-        <>
-          <div className={styles.settings}>
-            {/* Depth selector */}
-            <div className={styles.setting}>
-              <label htmlFor="depth-select">{t('game:analysis.depth_label')}</label>
-              <select
-                id="depth-select"
-                value={depth}
-                onChange={(e) => handleDepthChange(Number(e.target.value))}
-                className={styles.select}
-              >
-                <option value={8}>8</option>
-                <option value={12}>12</option>
-                <option value={16}>16</option>
-                <option value={20}>20</option>
-              </select>
+        <div className={styles.results}>
+          {!engineReady ? (
+            <div className={styles.analyzing}>
+              {t('game:analysis.engine_loading', { defaultValue: 'Engine loading...' })}
             </div>
+          ) : formattedLines.length > 0 ? (
+            <>
+              {/* Analysis lines - compact: score #N moves */}
+              {formattedLines.map((line) => (
+                <div
+                  key={line.multipv}
+                  className={styles.line}
+                  onClick={async () => {
+                    // All lines are now clickable to explore different moves
+                    if (onPlayMove && line.pv.length > 0) {
+                      // IMPORTANT: Stop analysis first to prevent WASM crashes
+                      if (engineRef.current) {
+                        engineRef.current.stopAnalysis();
+                      }
 
-            {/* MultiPV selector */}
-            <div className={styles.setting}>
-              <label htmlFor="lines-select">{t('game:analysis.lines_label')}</label>
-              <select
-                id="lines-select"
-                value={multipv}
-                onChange={(e) => handleMultipvChange(Number(e.target.value))}
-                className={styles.select}
-              >
-                <option value={1}>1 {t('game:analysis.line')}</option>
-                <option value={2}>2 {t('game:analysis.lines')}</option>
-                <option value={3}>3 {t('game:analysis.lines')}</option>
-              </select>
-            </div>
-          </div>
+                      // Small delay to let the engine fully stop before playing move
+                      await new Promise(resolve => setTimeout(resolve, 100));
 
-          {/* Analysis results */}
-          <div className={styles.results}>
-            {analysis ? (
-              <>
-                <div className={styles.depthInfo}>
-                  {t('game:analysis.depth_reached', { depth: analysis.depth })}
+                      // Now safe to play the move
+                      onPlayMove(line.pv[0]);
+                    }
+                  }}
+                  style={{ cursor: onPlayMove ? 'pointer' : 'default' }}
+                  title={t('game:analysis.play_move', { defaultValue: `Play ${line.pv[0]}` })}
+                >
+                  <span className={styles.score}>{formatScore(line)}</span>
+                  <span className={styles.lineNumber}>#{line.multipv}</span>
+                  <span className={styles.pv} style={{ direction: 'ltr' }}>
+                    {line.formattedPV}
+                  </span>
                 </div>
-
-                {/* Analysis lines */}
-                {analysis.lines.map((line) => (
-                  <div key={line.multipv} className={styles.line}>
-                    <div className={styles.lineHeader}>
-                      <span className={styles.lineNumber}>#{line.multipv}</span>
-                      <span className={styles.score}>{formatScore(line)}</span>
-                    </div>
-                    <div className={styles.pv} style={{ direction: 'ltr' }}>
-                      {formatPV(line.pv)}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Play best move button */}
-                {analysis.lines.length > 0 && onPlayMove && (
-                  <button
-                    onClick={handlePlayBestMove}
-                    className={styles.playButton}
-                  >
-                    {t('game:analysis.play_best_move')}
-                  </button>
-                )}
-              </>
-            ) : (
-              <div className={styles.analyzing}>
-                {t('game:analysis.analyzing')}
-              </div>
-            )}
-          </div>
-        </>
+              ))}
+            </>
+          ) : (
+            <div className={styles.analyzing}>
+              {t('game:analysis.analyzing')}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

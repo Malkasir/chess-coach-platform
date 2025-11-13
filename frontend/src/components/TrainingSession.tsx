@@ -4,6 +4,7 @@ import { User } from '../services/auth-service';
 import { ChessBoard } from './ChessBoard';
 import { AppHeader } from './AppHeader';
 import { MovePanel } from './MovePanel';
+import { AnalysisPanel } from './AnalysisPanel';
 import { BoardEditor } from './BoardEditor';
 import styles from '../styles/shared.module.css';
 
@@ -65,6 +66,46 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
   onEndSession,
 }) => {
   const [showEditor, setShowEditor] = useState(false);
+
+  // Collapsible panel state (persisted to localStorage)
+  const [movesPanelOpen, setMovesPanelOpen] = useState(() => {
+    const saved = localStorage.getItem('training-moves-panel-open');
+    return saved !== null ? JSON.parse(saved) : true; // Default: open
+  });
+
+  const [analysisPanelOpen, setAnalysisPanelOpen] = useState(() => {
+    const saved = localStorage.getItem('training-analysis-panel-open');
+    return saved !== null ? JSON.parse(saved) : true; // Default: OPEN
+  });
+
+  const [participantsOpen, setParticipantsOpen] = useState(false);
+
+  // Persist panel states to localStorage
+  React.useEffect(() => {
+    localStorage.setItem('training-moves-panel-open', JSON.stringify(movesPanelOpen));
+  }, [movesPanelOpen]);
+
+  React.useEffect(() => {
+    localStorage.setItem('training-analysis-panel-open', JSON.stringify(analysisPanelOpen));
+  }, [analysisPanelOpen]);
+
+  // Handler for playing the engine's suggested move
+  const handlePlayBestMove = (uciMove: string) => {
+    try {
+      // Convert UCI move (e.g., "e2e4") to chess.js move format
+      const move = game.move({
+        from: uciMove.slice(0, 2),
+        to: uciMove.slice(2, 4),
+        promotion: uciMove.length > 4 ? uciMove[4] : undefined
+      });
+
+      if (move) {
+        onMove(move.san, game.fen());
+      }
+    } catch (error) {
+      console.error('Failed to play suggested move:', error);
+    }
+  };
 
   return (
     <div className={styles.app}>
@@ -169,122 +210,150 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
 
             {/* Side Panel - Move Panel & Info */}
             <div className={styles.sidePanel}>
-              {/* Participants List (Shared Sessions Only) */}
+              {/* Participants Dropdown (Shared Sessions Only) */}
               {isSharedSession && participants.length > 0 && (
                 <div style={{
-                  padding: 'var(--space-md)',
+                  padding: 'var(--space-sm)',
                   backgroundColor: 'var(--bg-secondary)',
                   borderRadius: '8px',
                   marginBottom: 'var(--space-md)',
                   fontSize: 'var(--text-sm)'
                 }}>
-                  <strong style={{
-                    display: 'block',
-                    marginBottom: 'var(--space-xs)',
-                    color: 'var(--text-primary)'
-                  }}>
-                    👥 Participants
-                  </strong>
-                  <ul style={{
-                    margin: 0,
-                    padding: 0,
-                    listStyle: 'none'
-                  }}>
-                    {participants.map(participant => (
-                      <li key={participant.id} style={{
-                        padding: 'var(--space-xs) var(--space-sm)',
-                        marginBottom: 'var(--space-xs)',
-                        backgroundColor: 'var(--bg-card)',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}>
-                        <span style={{ color: 'var(--text-primary)' }}>
-                          {participant.firstName} {participant.lastName}
-                        </span>
-                        {participant.isCoach && (
-                          <span style={{
-                            fontSize: 'var(--text-xs)',
-                            padding: '2px 6px',
-                            backgroundColor: 'var(--primary-color)',
-                            color: 'white',
-                            borderRadius: '3px',
-                            fontWeight: 'var(--font-semibold)'
-                          }}>
-                            Coach
+                  <button
+                    onClick={() => setParticipantsOpen(!participantsOpen)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'none',
+                      border: 'none',
+                      padding: 'var(--space-xs)',
+                      cursor: 'pointer',
+                      color: 'var(--text-primary)',
+                      fontWeight: 'var(--font-medium)'
+                    }}
+                  >
+                    <span>👥 {participants.length} Participant{participants.length !== 1 ? 's' : ''}</span>
+                    <span>{participantsOpen ? '▲' : '▼'}</span>
+                  </button>
+                  {participantsOpen && (
+                    <ul style={{
+                      margin: 'var(--space-xs) 0 0 0',
+                      padding: 0,
+                      listStyle: 'none'
+                    }}>
+                      {participants.map(participant => (
+                        <li key={participant.id} style={{
+                          padding: 'var(--space-xs) var(--space-sm)',
+                          marginBottom: 'var(--space-xs)',
+                          backgroundColor: 'var(--bg-card)',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}>
+                          <span style={{ color: 'var(--text-primary)' }}>
+                            {participant.firstName} {participant.lastName}
                           </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                          {participant.isCoach && (
+                            <span style={{
+                              fontSize: 'var(--text-xs)',
+                              padding: '2px 6px',
+                              backgroundColor: 'var(--primary-color)',
+                              color: 'white',
+                              borderRadius: '3px',
+                              fontWeight: 'var(--font-semibold)'
+                            }}>
+                              Coach
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
 
-              {/* Training Instructions */}
+              {/* Move Panel - Collapsible */}
               <div style={{
-                padding: 'var(--space-md)',
-                backgroundColor: 'var(--bg-secondary)',
+                backgroundColor: 'var(--bg-card)',
                 borderRadius: '8px',
                 marginBottom: 'var(--space-md)',
-                fontSize: 'var(--text-sm)',
-                lineHeight: '1.6'
+                overflow: 'hidden'
               }}>
-                <strong style={{
-                  display: 'block',
-                  marginBottom: 'var(--space-xs)',
-                  color: 'var(--text-primary)'
-                }}>
-                  💡 {isSharedSession ? (isCoach ? 'Coach' : 'Spectator') : 'Training'} Tips
-                </strong>
-                <ul style={{
-                  margin: 0,
-                  paddingLeft: 'var(--space-lg)',
-                  color: 'var(--text-muted)'
-                }}>
-                  {isSharedSession ? (
-                    isCoach ? (
-                      <>
-                        <li>Share the room code with your students</li>
-                        <li>Use "Edit Position" to set up custom positions</li>
-                        <li>Make moves to demonstrate solutions and tactics</li>
-                        <li>Students see your moves in real-time</li>
-                        <li>Click "End Session" when you're done teaching</li>
-                      </>
-                    ) : (
-                      <>
-                        <li>Watch as the coach demonstrates the position</li>
-                        <li>You're in spectator mode - board is read-only</li>
-                        <li>Use move navigation to review the moves</li>
-                        <li>Ask questions to your coach via your communication tool</li>
-                        <li>Session ends when the coach closes it</li>
-                      </>
-                    )
-                  ) : (
-                    <>
-                      <li>Click "Edit Position" to set up custom positions</li>
-                      <li>Play both white and black pieces to demonstrate solutions</li>
-                      <li>Practice tactics, endgames, or specific scenarios</li>
-                      <li>Use move navigation to review your analysis</li>
-                      <li>No time pressure - take your time to think</li>
-                    </>
-                  )}
-                </ul>
+                <button
+                  onClick={() => setMovesPanelOpen(!movesPanelOpen)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'var(--bg-secondary)',
+                    border: 'none',
+                    padding: 'var(--space-sm) var(--space-md)',
+                    cursor: 'pointer',
+                    color: 'var(--text-primary)',
+                    fontWeight: 'var(--font-semibold)',
+                    fontSize: 'var(--text-sm)',
+                    borderRadius: '8px 8px 0 0'
+                  }}
+                >
+                  <span>📝 Moves ({moveHistory.length})</span>
+                  <span>{movesPanelOpen ? '▲' : '▼'}</span>
+                </button>
+                {movesPanelOpen && (
+                  <MovePanel
+                    moveHistory={moveHistory}
+                    currentMoveIndex={reviewIndex ?? -1}
+                    gameMode="TRAINING"
+                    reviewMode={reviewMode}
+                    game={game}
+                    onMoveClick={onNavigateToMove}
+                    onNavigateBack={onNavigateBack}
+                    onNavigateForward={onNavigateForward}
+                    onNavigateToStart={onNavigateToStart}
+                    onNavigateToEnd={onNavigateToEnd}
+                  />
+                )}
               </div>
 
-              {/* Move Panel */}
-              <MovePanel
-                moveHistory={moveHistory}
-                currentMoveIndex={reviewIndex ?? -1}
-                gameMode="TRAINING"
-                reviewMode={reviewMode}
-                game={game}
-                onMoveClick={onNavigateToMove}
-                onNavigateBack={onNavigateBack}
-                onNavigateForward={onNavigateForward}
-                onNavigateToStart={onNavigateToStart}
-                onNavigateToEnd={onNavigateToEnd}
-              />
+              {/* Engine Analysis Panel - Collapsible */}
+              <div style={{
+                backgroundColor: 'var(--bg-card)',
+                borderRadius: '8px',
+                marginBottom: 'var(--space-md)',
+                overflow: 'hidden'
+              }}>
+                <button
+                  onClick={() => setAnalysisPanelOpen(!analysisPanelOpen)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'var(--bg-secondary)',
+                    border: 'none',
+                    padding: 'var(--space-sm) var(--space-md)',
+                    cursor: 'pointer',
+                    color: 'var(--text-primary)',
+                    fontWeight: 'var(--font-semibold)',
+                    fontSize: 'var(--text-sm)',
+                    borderRadius: '8px 8px 0 0'
+                  }}
+                >
+                  <span>🤖 Engine Analysis</span>
+                  <span>{analysisPanelOpen ? '▲' : '▼'}</span>
+                </button>
+                {analysisPanelOpen && (
+                  <AnalysisPanel
+                    game={game}
+                    position={position}
+                    enabled={!reviewMode && isCoach}
+                    onPlayMove={handlePlayBestMove}
+                  />
+                )}
+              </div>
 
               {/* Turn Indicator */}
               <div className={`${styles.turnIndicator} turn-indicator`} style={{

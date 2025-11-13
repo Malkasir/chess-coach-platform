@@ -12,6 +12,11 @@ export default defineConfig({
     global: 'globalThis',
   },
   server: {
+    // Enable SharedArrayBuffer for Stockfish WASM
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp'
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

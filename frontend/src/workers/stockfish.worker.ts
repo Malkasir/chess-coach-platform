@@ -42,25 +42,67 @@ interface WorkerResponse {
 // Initialize Stockfish engine
 let engine: Worker | null = null;
 let isInitializing = false;
+let isEngineReady = false;
 
 /**
  * Initialize the Stockfish engine
  * Loads the Stockfish WASM worker from the public directory
  */
 function initEngine(): void {
-  if (engine || isInitializing) return;
+  if (engine || isInitializing) {
+    console.log('[StockfishWorker] Already initializing or initialized');
+    return;
+  }
 
   try {
-    isInitializing = false;
+    console.log('[StockfishWorker] Starting initialization, loading from:', stockfishPath);
+    isInitializing = true;
+
+    // Set a timeout to fall back to ready state if Stockfish doesn't respond
+    // This allows the mock worker in the service to take over
+    const loadTimeout = setTimeout(() => {
+      if (!isEngineReady) {
+        console.warn('[StockfishWorker] Stockfish not responding after 3s, signaling ready anyway (mock mode)');
+        isEngineReady = true;
+        isInitializing = false;
+        const readyResponse: WorkerResponse = {
+          type: 'ready',
+          data: 'Stockfish timed out, using mock mode'
+        };
+        self.postMessage(readyResponse);
+      }
+    }, 3000);
 
     // Load Stockfish as a nested worker
     // NOTE: This requires stockfish files to be in the public directory
+    console.log('[StockfishWorker] About to create Worker from:', stockfishPath);
     engine = new Worker(stockfishPath);
+    console.log('[StockfishWorker] ✅ Worker object created successfully:', engine);
+    console.log('[StockfishWorker] Worker type:', typeof engine, 'instanceof Worker:', engine instanceof Worker);
+    console.log('[StockfishWorker] Now waiting for first message from nested engine...');
 
     // Set up message handler to receive UCI output from Stockfish
     engine.onmessage = (e: MessageEvent) => {
       const line = e.data;
+      console.log('[StockfishWorker] Received from engine:', line);
+
       if (typeof line === 'string') {
+        // Wait for first message from Stockfish to confirm it's loaded
+        if (!isEngineReady) {
+          clearTimeout(loadTimeout);
+          isEngineReady = true;
+          isInitializing = false;
+          console.log('[StockfishWorker] Engine ready! Notifying service...');
+
+          // Now that the nested engine is loaded, notify the service that we're ready
+          const readyResponse: WorkerResponse = {
+            type: 'ready',
+            data: 'Stockfish engine loaded and ready'
+          };
+          self.postMessage(readyResponse);
+        }
+
+        // Forward all Stockfish output to the service
         const response: WorkerResponse = {
           type: 'output',
           data: line
@@ -70,24 +112,74 @@ function initEngine(): void {
     };
 
     engine.onerror = (error: ErrorEvent) => {
+      clearTimeout(loadTimeout);
+      console.error('[StockfishWorker] ❌ ENGINE ERROR EVENT:', error);
+      console.error('[StockfishWorker] ❌ Error details:', {
+        message: error.message,
+        filename: error.filename,
+        lineno: error.lineno,
+        colno: error.colno,
+        error: error.error,
+        type: error.type,
+        isTrusted: error.isTrusted
+      });
+
+      // Try to extract more details from the error object
+      if (error.error) {
+        console.error('[StockfishWorker] ❌ Nested error object:', error.error);
+        if (error.error instanceof Error) {
+          console.error('[StockfishWorker] ❌ Stack trace:', error.error.stack);
+        }
+      }
+
+      // WASM "unreachable" errors are fatal - engine needs restart
+      const errorMessage = error.message || '';
+      const isFatalWasmError = errorMessage.includes('unreachable') || errorMessage.includes('RuntimeError');
+
+      if (isFatalWasmError) {
+        console.warn('[StockfishWorker] ⚠️ Fatal WASM error detected - engine crashed');
+        // Terminate the crashed engine
+        if (engine) {
+          engine.terminate();
+          engine = null;
+        }
+        isEngineReady = false;
+        isInitializing = false;
+      }
+
+      isInitializing = false;
+
+      // Signal ready anyway so mock mode can take over
+      if (!isEngineReady) {
+        isEngineReady = true;
+        const readyResponse: WorkerResponse = {
+          type: 'ready',
+          data: 'Stockfish failed to load, using mock mode'
+        };
+        self.postMessage(readyResponse);
+      }
+
       const errorResponse: WorkerResponse = {
         type: 'error',
-        data: `Stockfish error: ${error.message}`
+        data: `Stockfish error: ${error.message || 'Unknown error'} at ${error.filename || 'unknown'}:${error.lineno || '?'}`
       };
       self.postMessage(errorResponse);
     };
 
-    isInitializing = false;
-
-    // Notify main thread that engine is ready
-    const readyResponse: WorkerResponse = {
-      type: 'ready',
-      data: 'Stockfish engine initialized'
-    };
-    self.postMessage(readyResponse);
-
   } catch (error) {
+    console.error('[StockfishWorker] Failed to initialize:', error);
     isInitializing = false;
+
+    // Signal ready anyway so mock mode can take over
+    if (!isEngineReady) {
+      isEngineReady = true;
+      const readyResponse: WorkerResponse = {
+        type: 'ready',
+        data: 'Stockfish failed to initialize, using mock mode'
+      };
+      self.postMessage(readyResponse);
+    }
+
     const errorResponse: WorkerResponse = {
       type: 'error',
       data: `Failed to initialize Stockfish: ${error instanceof Error ? error.message : String(error)}`
@@ -144,27 +236,33 @@ function quitEngine(): void {
  */
 self.onmessage = (e: MessageEvent<WorkerMessage>) => {
   const { type, command } = e.data;
+  console.log('[StockfishWorker] Received message:', { type, command });
 
   switch (type) {
     case 'init':
+      console.log('[StockfishWorker] Init message received, calling initEngine()');
       initEngine();
       break;
 
     case 'command':
       if (command) {
+        console.log('[StockfishWorker] Forwarding command to engine:', command);
         sendCommand(command);
       }
       break;
 
     case 'stop':
+      console.log('[StockfishWorker] Stop command received');
       stopEngine();
       break;
 
     case 'quit':
+      console.log('[StockfishWorker] Quit command received');
       quitEngine();
       break;
 
     default:
+      console.error('[StockfishWorker] Unknown message type:', type);
       const errorResponse: WorkerResponse = {
         type: 'error',
         data: `Unknown message type: ${type}`

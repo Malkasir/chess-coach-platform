@@ -48,6 +48,7 @@ vi.mock('../services/chess-engine/stockfish-service', () => {
 describe('AnalysisPanel', () => {
   let game: Chess;
   let mockOnPlayMove: ReturnType<typeof vi.fn>;
+  const defaultPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
   beforeEach(() => {
     game = new Chess();
@@ -55,14 +56,14 @@ describe('AnalysisPanel', () => {
   });
 
   it('should render with analysis disabled by default', () => {
-    render(<AnalysisPanel game={game} enabled={false} onPlayMove={mockOnPlayMove} />);
+    render(<AnalysisPanel game={game} position={defaultPosition} enabled={false} onPlayMove={mockOnPlayMove} />);
 
     expect(screen.getByText('Engine Analysis')).toBeInTheDocument();
     expect(screen.getByText('Off')).toBeInTheDocument();
   });
 
   it('should toggle analysis on/off', () => {
-    render(<AnalysisPanel game={game} enabled={false} onPlayMove={mockOnPlayMove} />);
+    render(<AnalysisPanel game={game} position={defaultPosition} enabled={false} onPlayMove={mockOnPlayMove} />);
 
     const toggleButton = screen.getByRole('button', { name: /Turn analysis on/i });
     expect(toggleButton).toBeInTheDocument();
@@ -74,7 +75,7 @@ describe('AnalysisPanel', () => {
   });
 
   it('should render depth and lines selectors when enabled', () => {
-    render(<AnalysisPanel game={game} enabled={true} />);
+    render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
     const toggleButton = screen.getByRole('button', { name: /Turn analysis off/i });
     fireEvent.click(toggleButton);
@@ -84,7 +85,7 @@ describe('AnalysisPanel', () => {
   });
 
   it('should render depth options correctly', () => {
-    render(<AnalysisPanel game={game} enabled={true} />);
+    render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
     const depthSelect = screen.getByLabelText('Depth') as HTMLSelectElement;
 
@@ -95,7 +96,7 @@ describe('AnalysisPanel', () => {
   });
 
   it('should render lines options correctly', () => {
-    render(<AnalysisPanel game={game} enabled={true} />);
+    render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
     const linesSelect = screen.getByLabelText('Lines') as HTMLSelectElement;
 
@@ -105,14 +106,14 @@ describe('AnalysisPanel', () => {
   });
 
   it('should show analyzing message when no analysis results', () => {
-    render(<AnalysisPanel game={game} enabled={true} />);
+    render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
     expect(screen.getByText('Analyzing position...')).toBeInTheDocument();
   });
 
   describe('RTL Handling', () => {
     it('should force LTR direction for principal variation (PV) display', () => {
-      const { container } = render(<AnalysisPanel game={game} enabled={true} />);
+      const { container } = render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
       // Check if PV elements have LTR direction
       const pvElements = container.querySelectorAll('[style*="direction"]');
@@ -143,7 +144,7 @@ describe('AnalysisPanel', () => {
       // Override document direction to RTL to simulate Arabic locale
       document.documentElement.dir = 'rtl';
 
-      const { container } = render(<AnalysisPanel game={game} enabled={true} />);
+      const { container } = render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
       // Simulate receiving analysis results by directly accessing the component's state
       // In a real scenario, this would come from the StockfishService callback
@@ -164,7 +165,7 @@ describe('AnalysisPanel', () => {
       // This would require exposing formatScore or testing through rendered output
       // For now, we test the rendered behavior
 
-      render(<AnalysisPanel game={game} enabled={true} />);
+      render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
       // The actual score formatting would be tested through integration
       // with real analysis results
@@ -173,7 +174,7 @@ describe('AnalysisPanel', () => {
 
   describe('Play Best Move', () => {
     it('should call onPlayMove with best move when button clicked', async () => {
-      render(<AnalysisPanel game={game} enabled={true} onPlayMove={mockOnPlayMove} />);
+      render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} onPlayMove={mockOnPlayMove} />);
 
       // This test would require simulating analysis results
       // In a full implementation, you'd trigger the analysis callback
@@ -181,7 +182,7 @@ describe('AnalysisPanel', () => {
     });
 
     it('should not render Play Best Move button when onPlayMove is not provided', () => {
-      render(<AnalysisPanel game={game} enabled={true} />);
+      render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
       expect(screen.queryByText('Play Best Move')).not.toBeInTheDocument();
     });
@@ -189,17 +190,17 @@ describe('AnalysisPanel', () => {
 
   describe('Debouncing', () => {
     it('should debounce analysis when position changes rapidly', async () => {
-      const { rerender } = render(<AnalysisPanel game={game} enabled={true} />);
+      const { rerender } = render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
       // Make multiple moves rapidly
       game.move('e4');
-      rerender(<AnalysisPanel game={game} enabled={true} />);
+      rerender(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
       game.move('e5');
-      rerender(<AnalysisPanel game={game} enabled={true} />);
+      rerender(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
       game.move('Nf3');
-      rerender(<AnalysisPanel game={game} enabled={true} />);
+      rerender(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
       // Wait for debounce timeout (300ms)
       await waitFor(
@@ -214,7 +215,7 @@ describe('AnalysisPanel', () => {
 
   describe('Visibility Handling', () => {
     it('should pause analysis when tab becomes hidden', () => {
-      render(<AnalysisPanel game={game} enabled={true} />);
+      render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
       // Simulate tab becoming hidden
       Object.defineProperty(document, 'hidden', {
@@ -229,7 +230,7 @@ describe('AnalysisPanel', () => {
     });
 
     it('should resume analysis when tab becomes visible', () => {
-      render(<AnalysisPanel game={game} enabled={true} />);
+      render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
       // Simulate tab becoming visible
       Object.defineProperty(document, 'hidden', {
@@ -246,7 +247,7 @@ describe('AnalysisPanel', () => {
 
   describe('Cleanup', () => {
     it('should shutdown engine on unmount', () => {
-      const { unmount } = render(<AnalysisPanel game={game} enabled={true} />);
+      const { unmount } = render(<AnalysisPanel game={game} position={defaultPosition} enabled={true} />);
 
       unmount();
 

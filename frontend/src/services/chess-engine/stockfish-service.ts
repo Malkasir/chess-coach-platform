@@ -50,6 +50,7 @@ export class StockfishService {
   private worker: Worker | null = null;
   private isReady = false;
   private pendingMoves: Array<{ resolve: (value: EngineMove) => void; reject: (error: any) => void }> = [];
+  private commandQueue: string[] = [];  // Queue commands until engine is ready
   private currentPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
   private engineSettings: EngineSettings;
 
@@ -82,17 +83,37 @@ export class StockfishService {
       }
 
       this.worker.onmessage = (event) => {
-        this.handleEngineMessage(event.data);
+        const message = event.data;
+
+        // Handle structured responses from worker
+        if (message && typeof message === 'object') {
+          if (message.type === 'output') {
+            this.handleEngineMessage(message.data);
+          } else if (message.type === 'ready') {
+            debugLog('Worker ready:', message.data);
+            // Worker is now ready - commands will be processed from the queue
+          } else if (message.type === 'error') {
+            debugError('Worker error:', message.data);
+          }
+        } else {
+          // Fallback for plain string messages (mock worker)
+          this.handleEngineMessage(event.data);
+        }
       };
 
       this.worker.onerror = (error) => {
         debugError('Stockfish Worker error:', error);
       };
 
-      // Initialize UCI protocol
+      // Initialize the worker engine
+      this.worker.postMessage({ type: 'init' });
+
+      // Send UCI immediately - it will queue until the engine is ready
+      // This breaks the deadlock: Stockfish needs 'uci' to send its banner,
+      // but we were waiting for the banner before sending 'uci'
       this.sendCommand('uci');
-      
-      debugLog('Stockfish engine initialized successfully');
+
+      debugLog('Stockfish engine initialization started');
     } catch (error) {
       debugError('Failed to initialize Stockfish engine:', error);
       throw new Error('Could not initialize chess engine');
@@ -186,6 +207,8 @@ export class StockfishService {
 
     if (message === 'readyok') {
       debugLog('Stockfish engine is ready');
+      // Flush any queued commands now that engine is ready
+      this.flushCommandQueue();
     }
 
     // Handle bestmove responses
@@ -236,14 +259,16 @@ export class StockfishService {
    * "info depth 15 multipv 1 score cp 25 nodes 100000 time 1000 pv e2e4 e7e5 g1f3"
    */
   private parseMultiPVInfo(info: string): void {
-    // Extract multipv number
+    // Extract multipv number (defaults to 1 when not present, as Stockfish omits it for single-line analysis)
     const multipvMatch = info.match(/multipv (\d+)/);
-    if (!multipvMatch) return;
-    const multipv = parseInt(multipvMatch[1]);
+    const multipv = multipvMatch ? parseInt(multipvMatch[1]) : 1;
 
     // Extract depth
     const depthMatch = info.match(/depth (\d+)/);
-    if (!depthMatch) return;
+    if (!depthMatch) {
+      debugLog('No depth found in info line, skipping');
+      return;
+    }
     const depth = parseInt(depthMatch[1]);
 
     // Extract score (either centipawns or mate)
@@ -263,9 +288,25 @@ export class StockfishService {
       return;  // No score found
     }
 
+    // Normalize score to white's perspective
+    // Stockfish returns scores relative to side to move
+    // FEN format: "position w/b ..." - field 2 is the side to move
+    const fenParts = this.currentPosition.split(' ');
+    const isWhiteToMove = fenParts[1] === 'w';
+
+    // If black to move, flip the score to show from white's perspective
+    if (!isWhiteToMove) {
+      scoreValue = -scoreValue;
+    }
+
     // Extract principal variation (sequence of moves)
-    const pvMatch = info.match(/pv (.+)$/);
-    const pv = pvMatch ? pvMatch[1].trim().split(' ') : [];
+    // Use word boundary \b to avoid matching "pv" inside "multipv"
+    const pvMatch = info.match(/\bpv (.+)$/);
+    if (!pvMatch) {
+      debugLog('No PV found in info line, skipping');
+      return;  // Only update when we have an actual PV line
+    }
+    const pv = pvMatch[1].trim().split(' ');
 
     // Extract optional fields
     const nodesMatch = info.match(/nodes (\d+)/);
@@ -283,6 +324,8 @@ export class StockfishService {
       time
     };
 
+    debugLog(`📊 Analysis update: multipv=${multipv}, depth=${depth}, score=${scoreType === 'cp' ? scoreValue : 'M' + scoreValue}, pv=${pv.slice(0, 3).join(' ')}`);
+
     // Update current analysis
     this.currentAnalysis.set(multipv, line);
     this.currentDepth = Math.max(this.currentDepth, depth);
@@ -294,15 +337,43 @@ export class StockfishService {
         depth: this.currentDepth,
         fen: this.currentPosition
       };
+      debugLog(`📤 Sending analysis to callback: ${result.lines.length} lines, depth ${result.depth}`);
       this.analysisCallback(result);
     }
   }
 
   private sendCommand(command: string): void {
-    if (this.worker) {
-      debugLog('Sending command:', command);
-      this.worker.postMessage(command);
+    if (!this.worker) return;
+
+    // UCI initialization commands (uci, isready) must ALWAYS go through immediately
+    // They are part of the initialization protocol and cannot be queued
+    const isInitCommand = command === 'uci' || command === 'isready';
+
+    // If engine is not ready yet, queue the command for later (except init commands)
+    if (!this.isReady && !isInitCommand) {
+      debugLog('Queueing command (engine not ready):', command);
+      this.commandQueue.push(command);
+      return;
     }
+
+    debugLog('Sending command:', command);
+    // Send structured message to worker
+    this.worker.postMessage({ type: 'command', command });
+  }
+
+  private flushCommandQueue(): void {
+    if (this.commandQueue.length === 0) return;
+
+    debugLog(`Flushing ${this.commandQueue.length} queued commands`);
+    const commands = [...this.commandQueue];
+    this.commandQueue = [];
+
+    commands.forEach(command => {
+      debugLog('Sending queued command:', command);
+      if (this.worker) {
+        this.worker.postMessage({ type: 'command', command });
+      }
+    });
   }
 
   /**
@@ -441,7 +512,10 @@ export class StockfishService {
    */
   public stopAnalysis(): void {
     if (this.isAnalyzing) {
-      this.sendCommand('stop');
+      // Send structured stop message to worker
+      if (this.worker) {
+        this.worker.postMessage({ type: 'stop' });
+      }
       this.isAnalyzing = false;
       this.analysisCallback = null;
       this.currentAnalysis.clear();
@@ -472,8 +546,15 @@ export class StockfishService {
    */
   public shutdown(): void {
     if (this.worker) {
-      this.worker.terminate();
-      this.worker = null;
+      // Send structured quit message to worker
+      this.worker.postMessage({ type: 'quit' });
+      // Give the worker a moment to clean up, then terminate
+      setTimeout(() => {
+        if (this.worker) {
+          this.worker.terminate();
+          this.worker = null;
+        }
+      }, 100);
       this.isReady = false;
     }
   }

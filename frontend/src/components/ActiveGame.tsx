@@ -76,6 +76,16 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
   // Determine if we're in training mode
   const isTrainingMode = clockState?.gameMode === 'TRAINING';
 
+  // Debug: Log training mode state
+  React.useEffect(() => {
+    console.log('ActiveGame Debug:', {
+      clockState,
+      gameMode: clockState?.gameMode,
+      isTrainingMode,
+      reviewMode
+    });
+  }, [clockState, isTrainingMode, reviewMode]);
+
   // Handler for playing the engine's suggested move
   const handlePlayBestMove = (uciMove: string) => {
     try {
@@ -194,6 +204,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
               {isTrainingMode && (
                 <AnalysisPanel
                   game={game}
+                  position={position}
                   enabled={!reviewMode}
                   onPlayMove={handlePlayBestMove}
                 />

@@ -331,7 +331,16 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         playerColor: hostColor as 'white' | 'black',
         moveHistory: [],
         gameStatus: 'waiting',
-        clockState: null, // Will be populated when WebSocket connects
+        // Initialize clockState from timeControl (will be updated by WebSocket if backend sends it)
+        clockState: {
+          gameMode: timeControl.mode,
+          baseTimeSeconds: timeControl.baseTimeSeconds,
+          incrementSeconds: timeControl.incrementSeconds,
+          whiteTimeRemaining: timeControl.baseTimeSeconds,
+          blackTimeRemaining: timeControl.baseTimeSeconds,
+          lastMoveTimestamp: null,
+          activeColor: 'WHITE'
+        },
         colorPreference, // Update color preference in state
         // Reset navigation state when creating new game
         reviewMode: false,
