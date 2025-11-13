@@ -25,12 +25,40 @@ export interface EngineEvaluation {
   pv: string[];
 }
 
+// New interfaces for MultiPV analysis
+export interface AnalysisLine {
+  multipv: number;  // Line number (1 = best, 2 = second best, etc.)
+  depth: number;    // Search depth reached
+  score: {
+    type: 'cp' | 'mate';  // Centipawn score or mate in N
+    value: number;         // Score value (centipawns or moves to mate)
+  };
+  pv: string[];     // Principal variation (sequence of moves in UCI notation)
+  nodes?: number;   // Nodes searched
+  time?: number;    // Time spent in milliseconds
+}
+
+export interface AnalysisResult {
+  lines: AnalysisLine[];  // Multiple lines (1-3 depending on MultiPV setting)
+  depth: number;           // Current search depth
+  fen: string;             // Position being analyzed
+}
+
+export type AnalysisCallback = (result: AnalysisResult) => void;
+
 export class StockfishService {
   private worker: Worker | null = null;
   private isReady = false;
   private pendingMoves: Array<{ resolve: (value: EngineMove) => void; reject: (error: any) => void }> = [];
+  private commandQueue: string[] = [];  // Queue commands until engine is ready
   private currentPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
   private engineSettings: EngineSettings;
+
+  // Analysis state
+  private analysisCallback: AnalysisCallback | null = null;
+  private currentAnalysis: Map<number, AnalysisLine> = new Map();  // multipv -> line
+  private currentDepth: number = 0;
+  private isAnalyzing: boolean = false;
 
   constructor() {
     this.engineSettings = {
@@ -55,17 +83,37 @@ export class StockfishService {
       }
 
       this.worker.onmessage = (event) => {
-        this.handleEngineMessage(event.data);
+        const message = event.data;
+
+        // Handle structured responses from worker
+        if (message && typeof message === 'object') {
+          if (message.type === 'output') {
+            this.handleEngineMessage(message.data);
+          } else if (message.type === 'ready') {
+            debugLog('Worker ready:', message.data);
+            // Worker is now ready - commands will be processed from the queue
+          } else if (message.type === 'error') {
+            debugError('Worker error:', message.data);
+          }
+        } else {
+          // Fallback for plain string messages (mock worker)
+          this.handleEngineMessage(event.data);
+        }
       };
 
       this.worker.onerror = (error) => {
         debugError('Stockfish Worker error:', error);
       };
 
-      // Initialize UCI protocol
+      // Initialize the worker engine
+      this.worker.postMessage({ type: 'init' });
+
+      // Send UCI immediately - it will queue until the engine is ready
+      // This breaks the deadlock: Stockfish needs 'uci' to send its banner,
+      // but we were waiting for the banner before sending 'uci'
       this.sendCommand('uci');
-      
-      debugLog('Stockfish engine initialized successfully');
+
+      debugLog('Stockfish engine initialization started');
     } catch (error) {
       debugError('Failed to initialize Stockfish engine:', error);
       throw new Error('Could not initialize chess engine');
@@ -73,10 +121,20 @@ export class StockfishService {
   }
 
   private async createStockfishWorker(): Promise<Worker> {
-    // For a real Stockfish implementation, we would need to properly load the WebAssembly
-    // For now, let's create an improved mock that's more realistic
-    debugLog('Real Stockfish not implemented yet, using enhanced mock');
-    throw new Error('Real Stockfish implementation pending - using mock for development');
+    try {
+      // Create the real Stockfish worker using Vite's worker syntax
+      const worker = new Worker(
+        new URL('../../workers/stockfish.worker.ts', import.meta.url),
+        { type: 'module' }
+      );
+
+      debugLog('Real Stockfish worker created successfully');
+      return worker;
+    } catch (error) {
+      debugError('Failed to create Stockfish worker:', error);
+      debugLog('Falling back to mock worker for development');
+      return this.createMockWorker();
+    }
   }
 
   private async createMockWorker(): Promise<Worker> {
@@ -149,6 +207,8 @@ export class StockfishService {
 
     if (message === 'readyok') {
       debugLog('Stockfish engine is ready');
+      // Flush any queued commands now that engine is ready
+      this.flushCommandQueue();
     }
 
     // Handle bestmove responses
@@ -186,13 +246,134 @@ export class StockfishService {
         debugLog(`Position evaluation: ${centipawns} centipawns`);
       }
     }
+
+    // Enhanced parsing for MultiPV analysis
+    if (this.isAnalyzing && this.analysisCallback) {
+      this.parseMultiPVInfo(info);
+    }
+  }
+
+  /**
+   * Parse UCI info line for MultiPV analysis
+   * Example info line:
+   * "info depth 15 multipv 1 score cp 25 nodes 100000 time 1000 pv e2e4 e7e5 g1f3"
+   */
+  private parseMultiPVInfo(info: string): void {
+    // Extract multipv number (defaults to 1 when not present, as Stockfish omits it for single-line analysis)
+    const multipvMatch = info.match(/multipv (\d+)/);
+    const multipv = multipvMatch ? parseInt(multipvMatch[1]) : 1;
+
+    // Extract depth
+    const depthMatch = info.match(/depth (\d+)/);
+    if (!depthMatch) {
+      debugLog('No depth found in info line, skipping');
+      return;
+    }
+    const depth = parseInt(depthMatch[1]);
+
+    // Extract score (either centipawns or mate)
+    let scoreType: 'cp' | 'mate' = 'cp';
+    let scoreValue = 0;
+
+    const cpMatch = info.match(/score cp (-?\d+)/);
+    const mateMatch = info.match(/score mate (-?\d+)/);
+
+    if (cpMatch) {
+      scoreType = 'cp';
+      scoreValue = parseInt(cpMatch[1]);
+    } else if (mateMatch) {
+      scoreType = 'mate';
+      scoreValue = parseInt(mateMatch[1]);
+    } else {
+      return;  // No score found
+    }
+
+    // Normalize score to white's perspective
+    // Stockfish returns scores relative to side to move
+    // FEN format: "position w/b ..." - field 2 is the side to move
+    const fenParts = this.currentPosition.split(' ');
+    const isWhiteToMove = fenParts[1] === 'w';
+
+    // If black to move, flip the score to show from white's perspective
+    if (!isWhiteToMove) {
+      scoreValue = -scoreValue;
+    }
+
+    // Extract principal variation (sequence of moves)
+    // Use word boundary \b to avoid matching "pv" inside "multipv"
+    const pvMatch = info.match(/\bpv (.+)$/);
+    if (!pvMatch) {
+      debugLog('No PV found in info line, skipping');
+      return;  // Only update when we have an actual PV line
+    }
+    const pv = pvMatch[1].trim().split(' ');
+
+    // Extract optional fields
+    const nodesMatch = info.match(/nodes (\d+)/);
+    const timeMatch = info.match(/time (\d+)/);
+    const nodes = nodesMatch ? parseInt(nodesMatch[1]) : undefined;
+    const time = timeMatch ? parseInt(timeMatch[1]) : undefined;
+
+    // Create analysis line
+    const line: AnalysisLine = {
+      multipv,
+      depth,
+      score: { type: scoreType, value: scoreValue },
+      pv,
+      nodes,
+      time
+    };
+
+    debugLog(`📊 Analysis update: multipv=${multipv}, depth=${depth}, score=${scoreType === 'cp' ? scoreValue : 'M' + scoreValue}, pv=${pv.slice(0, 3).join(' ')}`);
+
+    // Update current analysis
+    this.currentAnalysis.set(multipv, line);
+    this.currentDepth = Math.max(this.currentDepth, depth);
+
+    // Call callback with updated analysis
+    if (this.analysisCallback) {
+      const result: AnalysisResult = {
+        lines: Array.from(this.currentAnalysis.values()).sort((a, b) => a.multipv - b.multipv),
+        depth: this.currentDepth,
+        fen: this.currentPosition
+      };
+      debugLog(`📤 Sending analysis to callback: ${result.lines.length} lines, depth ${result.depth}`);
+      this.analysisCallback(result);
+    }
   }
 
   private sendCommand(command: string): void {
-    if (this.worker) {
-      debugLog('Sending command:', command);
-      this.worker.postMessage(command);
+    if (!this.worker) return;
+
+    // UCI initialization commands (uci, isready) must ALWAYS go through immediately
+    // They are part of the initialization protocol and cannot be queued
+    const isInitCommand = command === 'uci' || command === 'isready';
+
+    // If engine is not ready yet, queue the command for later (except init commands)
+    if (!this.isReady && !isInitCommand) {
+      debugLog('Queueing command (engine not ready):', command);
+      this.commandQueue.push(command);
+      return;
     }
+
+    debugLog('Sending command:', command);
+    // Send structured message to worker
+    this.worker.postMessage({ type: 'command', command });
+  }
+
+  private flushCommandQueue(): void {
+    if (this.commandQueue.length === 0) return;
+
+    debugLog(`Flushing ${this.commandQueue.length} queued commands`);
+    const commands = [...this.commandQueue];
+    this.commandQueue = [];
+
+    commands.forEach(command => {
+      debugLog('Sending queued command:', command);
+      if (this.worker) {
+        this.worker.postMessage({ type: 'command', command });
+      }
+    });
   }
 
   /**
@@ -279,11 +460,11 @@ export class StockfishService {
    */
   public analyzePosition(depth?: number): Promise<EngineEvaluation> {
     const searchDepth = depth || this.engineSettings.depth || 15;
-    
+
     return new Promise((resolve, reject) => {
       // This is a simplified implementation for now
       // In a full implementation, you'd collect and parse all the UCI info messages
-      this.pendingMoves.push({ 
+      this.pendingMoves.push({
         resolve: (result) => {
           resolve({
             bestMove: result.uci,
@@ -293,12 +474,71 @@ export class StockfishService {
             time: 0, // Would be parsed from info messages
             pv: [] // Would be parsed from info messages
           });
-        }, 
-        reject 
+        },
+        reject
       });
-      
+
       this.sendCommand(`go depth ${searchDepth}`);
     });
+  }
+
+  /**
+   * Start real-time analysis with MultiPV support
+   * @param depth - Search depth (8, 12, 16, 20, etc.)
+   * @param multipv - Number of lines to analyze (1-3)
+   * @param callback - Function called with analysis updates
+   */
+  public startAnalysis(depth: number, multipv: number, callback: AnalysisCallback): void {
+    // Stop any existing analysis
+    this.stopAnalysis();
+
+    // Set up new analysis
+    this.isAnalyzing = true;
+    this.analysisCallback = callback;
+    this.currentAnalysis.clear();
+    this.currentDepth = 0;
+
+    // Configure MultiPV
+    this.sendCommand(`setoption name MultiPV value ${multipv}`);
+
+    // Start infinite analysis at specified depth
+    this.sendCommand(`go depth ${depth}`);
+
+    debugLog(`Started analysis: depth=${depth}, multipv=${multipv}`);
+  }
+
+  /**
+   * Stop current analysis
+   */
+  public stopAnalysis(): void {
+    if (this.isAnalyzing) {
+      // Send structured stop message to worker
+      if (this.worker) {
+        this.worker.postMessage({ type: 'stop' });
+      }
+      this.isAnalyzing = false;
+      this.analysisCallback = null;
+      this.currentAnalysis.clear();
+      this.currentDepth = 0;
+      debugLog('Stopped analysis');
+    }
+  }
+
+  /**
+   * Check if currently analyzing
+   */
+  public isCurrentlyAnalyzing(): boolean {
+    return this.isAnalyzing;
+  }
+
+  /**
+   * Set MultiPV option (number of lines to analyze)
+   * @param multipv - Number of lines (1-3)
+   */
+  public setMultiPV(multipv: number): void {
+    const clampedValue = Math.max(1, Math.min(3, multipv));
+    this.sendCommand(`setoption name MultiPV value ${clampedValue}`);
+    debugLog(`MultiPV set to ${clampedValue}`);
   }
 
   /**
@@ -306,8 +546,15 @@ export class StockfishService {
    */
   public shutdown(): void {
     if (this.worker) {
-      this.worker.terminate();
-      this.worker = null;
+      // Send structured quit message to worker
+      this.worker.postMessage({ type: 'quit' });
+      // Give the worker a moment to clean up, then terminate
+      setTimeout(() => {
+        if (this.worker) {
+          this.worker.terminate();
+          this.worker = null;
+        }
+      }, 100);
       this.isReady = false;
     }
   }

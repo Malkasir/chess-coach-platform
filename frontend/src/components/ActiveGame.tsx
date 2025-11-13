@@ -7,6 +7,7 @@ import { VideoCall } from './VideoCall';
 import { AppHeader } from './AppHeader';
 import { GameClock } from './GameClock';
 import { MovePanel } from './MovePanel';
+import { AnalysisPanel } from './AnalysisPanel';
 import { useGameClock } from '../hooks/useGameClock';
 import { ClockState } from '../types/clock.types';
 import styles from '../styles/shared.module.css';
@@ -71,6 +72,37 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
 
   // Determine if current player's time has expired
   const isTimeExpired = playerColor === 'white' ? isWhiteTimeExpired : isBlackTimeExpired;
+
+  // Determine if we're in training mode
+  const isTrainingMode = clockState?.gameMode === 'TRAINING';
+
+  // Debug: Log training mode state
+  React.useEffect(() => {
+    console.log('ActiveGame Debug:', {
+      clockState,
+      gameMode: clockState?.gameMode,
+      isTrainingMode,
+      reviewMode
+    });
+  }, [clockState, isTrainingMode, reviewMode]);
+
+  // Handler for playing the engine's suggested move
+  const handlePlayBestMove = (uciMove: string) => {
+    try {
+      // Convert UCI move (e.g., "e2e4") to chess.js move format
+      const move = game.move({
+        from: uciMove.slice(0, 2),
+        to: uciMove.slice(2, 4),
+        promotion: uciMove.length > 4 ? uciMove[4] : undefined
+      });
+
+      if (move) {
+        onMove(move.san, game.fen());
+      }
+    } catch (error) {
+      console.error('Failed to play suggested move:', error);
+    }
+  };
 
   return (
     <div className={styles.app}>
@@ -167,6 +199,16 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                 onNavigateToStart={onNavigateToStart}
                 onNavigateToEnd={onNavigateToEnd}
               />
+
+              {/* 2.5 Engine Analysis Panel (Training Mode Only) */}
+              {isTrainingMode && (
+                <AnalysisPanel
+                  game={game}
+                  position={position}
+                  enabled={!reviewMode}
+                  onPlayMove={handlePlayBestMove}
+                />
+              )}
 
               {/* 3. Turn Indicator */}
               <div className={`${styles.turnIndicator} turn-indicator`} style={{
