@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Chess } from 'chess.js';
@@ -36,6 +37,7 @@ vi.mock('../services/chess-engine/stockfish-service', () => {
     stopAnalysis: vi.fn(),
     shutdown: vi.fn(),
     isCurrentlyAnalyzing: vi.fn(() => false),
+    isEngineReady: vi.fn(() => true),
   }));
 
   return {
@@ -47,12 +49,12 @@ vi.mock('../services/chess-engine/stockfish-service', () => {
 
 describe('AnalysisPanel', () => {
   let game: Chess;
-  let mockOnPlayMove: ReturnType<typeof vi.fn>;
+  let mockOnPlayMove: ReturnType<typeof vi.fn<(uciMove: string) => void>>;
   const defaultPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
   beforeEach(() => {
     game = new Chess();
-    mockOnPlayMove = vi.fn();
+    mockOnPlayMove = vi.fn<(uciMove: string) => void>();
   });
 
   it('should render with analysis disabled by default', () => {
