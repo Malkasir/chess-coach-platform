@@ -29,6 +29,8 @@ interface GameState {
     lastName: string;
     isCoach: boolean;
   }>;
+  // Phase 2: Interactive Mode
+  interactiveMode: boolean;
 }
 
 export const useGameState = (authService: AuthService, currentUser: User | null) => {
@@ -51,7 +53,9 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     customStartPosition: null,
     isCustomPosition: false,
     // Training session participants initialization
-    participants: []
+    participants: [],
+    // Phase 2: Interactive Mode initialization
+    interactiveMode: false
   });
 
   const gameRef = useRef(new Chess());
@@ -150,7 +154,8 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
             ...prev,
             position: fen,
             moveHistory: message.moveHistory || [],
-            participants: message.participants || prev.participants
+            participants: message.participants || prev.participants,
+            interactiveMode: message.interactiveMode ?? prev.interactiveMode // Phase 2
           }));
         }
         break;
@@ -225,7 +230,15 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
           roomCode: '',
           gameStatus: 'disconnected',
           position: 'start',
-          participants: []
+          participants: [],
+          interactiveMode: false
+        }));
+        break;
+      case 'MODE_CHANGED':
+        console.log('🎮 Interactive mode changed:', message.interactiveMode);
+        setGameState(prev => ({
+          ...prev,
+          interactiveMode: message.interactiveMode ?? false
         }));
         break;
       case 'ERROR':
@@ -732,7 +745,8 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       reviewIndex: -1,
       customStartPosition: null,
       isCustomPosition: false,
-      participants: []
+      participants: [],
+      interactiveMode: false // Phase 2
     });
     console.log('👋 Exited training session');
   }, []);
@@ -867,6 +881,18 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     }
   };
 
+  // Toggle interactive mode (coach only) - Phase 2
+  const toggleInteractiveMode = (enabled: boolean) => {
+    if (!gameState.gameId || !gameState.isHost) {
+      console.warn('⚠️ Only the coach can toggle interactive mode');
+      return;
+    }
+
+    console.log('🎮 Toggling interactive mode to:', enabled);
+    gameServiceRef.current?.toggleInteractiveMode(gameState.gameId, enabled);
+    // State will be updated when MODE_CHANGED message is received from server
+  };
+
   return {
     gameState,
     gameRef: gameRef.current,
@@ -895,6 +921,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     createTrainingSession,
     joinTrainingSessionByCode,
     updateTrainingPosition,
-    endTrainingSession
+    endTrainingSession,
+    toggleInteractiveMode // Phase 2
   };
 };

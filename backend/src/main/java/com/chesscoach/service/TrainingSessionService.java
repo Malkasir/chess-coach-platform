@@ -166,6 +166,37 @@ public class TrainingSessionService {
     }
 
     /**
+     * Toggle interactive mode in a training session (coach only)
+     * Phase 2 feature: Allows students to make moves when enabled
+     * @param sessionId The session ID
+     * @param user The authenticated user attempting to toggle
+     * @param enabled True to enable interactive mode, false to disable
+     * @return Session state map with updated interactiveMode
+     */
+    public Map<String, Object> toggleInteractiveMode(String sessionId, User user, Boolean enabled) {
+        TrainingSession session = sessionRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> new RuntimeException("Training session not found"));
+
+        // Only coach can toggle interactive mode
+        if (!session.isCoach(user)) {
+            throw new RuntimeException("Only the coach can toggle interactive mode");
+        }
+
+        if (!session.isActive()) {
+            throw new RuntimeException("Training session is not active");
+        }
+
+        session.setInteractiveMode(enabled);
+        TrainingSession savedSession = sessionRepository.save(session);
+
+        System.out.println("📊 ANALYTICS: Interactive mode toggled - SessionId: " + sessionId +
+                ", Enabled: " + enabled +
+                ", Coach: " + user.getEmail());
+
+        return buildSessionStateResponse(savedSession, user.getId());
+    }
+
+    /**
      * Build a session state response map
      */
     private Map<String, Object> buildSessionStateResponse(TrainingSession session, Long currentUserId) {
@@ -190,6 +221,7 @@ public class TrainingSessionService {
         response.put("participants", participants);
         response.put("participantCount", session.getParticipantCount());
         response.put("isCoach", session.isCoach(userRepository.findById(currentUserId).orElseThrow()));
+        response.put("interactiveMode", session.getInteractiveMode()); // Phase 2: Include interactive mode state
         response.put("createdAt", session.getCreatedAt().toString());
         response.put("updatedAt", session.getUpdatedAt().toString());
 

@@ -39,6 +39,9 @@ interface TrainingSessionProps {
   }>;
   onCopyRoomCode?: () => void;
   onEndSession?: () => void;
+  // Phase 2: Interactive Mode
+  interactiveMode?: boolean;
+  onToggleInteractiveMode?: (enabled: boolean) => void;
 }
 
 export const TrainingSession: React.FC<TrainingSessionProps> = ({
@@ -64,6 +67,8 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
   participants = [],
   onCopyRoomCode,
   onEndSession,
+  interactiveMode = false,
+  onToggleInteractiveMode,
 }) => {
   const [showEditor, setShowEditor] = useState(false);
 
@@ -79,6 +84,18 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
   });
 
   const [participantsOpen, setParticipantsOpen] = useState(false);
+
+  // Debug logging for interactive mode
+  React.useEffect(() => {
+    if (isSharedSession && isCoach) {
+      console.log('🎮 TrainingSession Props:', {
+        isSharedSession,
+        isCoach,
+        interactiveMode,
+        hasToggleFunction: !!onToggleInteractiveMode
+      });
+    }
+  }, [isSharedSession, isCoach, interactiveMode, onToggleInteractiveMode]);
 
   // Persist panel states to localStorage
   React.useEffect(() => {
@@ -129,6 +146,24 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
                 <button onClick={onResetPosition} className={styles.secondaryButton}>
                   🔄 Reset Position
                 </button>
+                {isSharedSession && onToggleInteractiveMode && (
+                  <button
+                    onClick={() => {
+                      console.log('🎮 Button clicked! Current interactiveMode:', interactiveMode);
+                      console.log('🎮 Calling onToggleInteractiveMode with:', !interactiveMode);
+                      onToggleInteractiveMode(!interactiveMode);
+                    }}
+                    className={styles.secondaryButton}
+                    style={{
+                      backgroundColor: interactiveMode ? '#28a745' : '#6c757d',
+                      color: 'white',
+                      fontWeight: 'var(--font-medium)'
+                    }}
+                    title={interactiveMode ? 'Students can make moves' : 'Only coach can make moves'}
+                  >
+                    🎮 Interactive: {interactiveMode ? 'ON' : 'OFF'}
+                  </button>
+                )}
               </>
             )}
             {isSharedSession && isCoach && onEndSession && (
@@ -159,6 +194,15 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
           }}>
             {isSharedSession ? (isCoach ? '👨‍🏫 Coach Mode' : '👁️ Spectator Mode') : '📚 Training Mode'}
           </div>
+          {isSharedSession && !isCoach && interactiveMode && (
+            <div className={styles.statusCard} style={{
+              background: '#28a745',
+              color: 'white',
+              fontWeight: 'var(--font-medium)'
+            }}>
+              🎮 Interactive Mode
+            </div>
+          )}
           {isSharedSession && roomCode && (
             <div className={styles.statusCard} style={{ cursor: 'pointer' }} onClick={onCopyRoomCode}>
               🔑 Room: {roomCode}

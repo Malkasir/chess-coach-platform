@@ -195,6 +195,71 @@ public class TrainingSessionWebSocketController {
         }
     }
 
+    @MessageMapping("/training/toggle-interactive-mode")
+    public void handleToggleInteractiveMode(@Payload TrainingMessage message, Principal principal) {
+        try {
+            if (principal == null) {
+                System.out.println("❌ No authenticated user found");
+                sendError(message.getSessionId(), null, "Authentication required");
+                return;
+            }
+
+            // Get authenticated user from Principal
+            String username = principal.getName();
+            Optional<User> userOpt = userRepository.findByEmail(username);
+            if (userOpt.isEmpty()) {
+                System.out.println("❌ Authenticated user not found: " + username);
+                sendError(message.getSessionId(), null, "User not found");
+                return;
+            }
+
+            User user = userOpt.get();
+            Boolean interactiveMode = message.getInteractiveMode();
+            System.out.println("🎮 Toggling interactive mode for session " + message.getSessionId() +
+                    " by user " + user.getId() + " to " + interactiveMode);
+
+            Optional<TrainingSession> sessionOpt = sessionRepository.findBySessionId(message.getSessionId());
+            if (sessionOpt.isEmpty()) {
+                sendError(message.getSessionId(), String.valueOf(user.getId()), "Training session not found");
+                return;
+            }
+
+            TrainingSession session = sessionOpt.get();
+
+            // Validate that the session is active
+            if (!session.isActive()) {
+                sendError(message.getSessionId(), String.valueOf(user.getId()), "Training session is not active");
+                return;
+            }
+
+            // Validate that the user is the coach (only coach can toggle mode)
+            if (!session.isCoach(user)) {
+                System.out.println("❌ User " + user.getId() + " is not the coach - permission denied");
+                sendError(message.getSessionId(), String.valueOf(user.getId()), "Only the coach can toggle interactive mode");
+                return;
+            }
+
+            // Update interactive mode in database
+            session.setInteractiveMode(interactiveMode);
+            sessionRepository.save(session);
+
+            // Broadcast mode change to all participants
+            TrainingMessage modeMessage = TrainingMessage.modeChangedMessage(
+                    message.getSessionId(),
+                    interactiveMode
+            );
+
+            System.out.println("📢 Broadcasting interactive mode change to /topic/training/" + message.getSessionId());
+            messagingTemplate.convertAndSend("/topic/training/" + message.getSessionId(), modeMessage);
+
+            System.out.println("✅ Interactive mode toggled successfully for session " + message.getSessionId());
+
+        } catch (Exception e) {
+            System.out.println("❌ Error toggling interactive mode: " + e.getMessage());
+            sendError(message.getSessionId(), null, "Failed to toggle interactive mode: " + e.getMessage());
+        }
+    }
+
     @MessageMapping("/training/end")
     public void handleEndSession(@Payload TrainingMessage message, Principal principal) {
         try {

@@ -50,7 +50,8 @@ export const ChessCoachAppReact: React.FC = () => {
     createTrainingSession,
     joinTrainingSessionByCode,
     updateTrainingPosition,
-    endTrainingSession
+    endTrainingSession,
+    toggleInteractiveMode // Phase 2
   } = useGameState(authService, authState.currentUser);
 
   // Notification state for game invitations
@@ -432,6 +433,9 @@ export const ChessCoachAppReact: React.FC = () => {
           participants={gameState.participants}
           onCopyRoomCode={copyRoomCode}
           onEndSession={endTrainingSession}
+          // Phase 2: Interactive Mode
+          interactiveMode={gameState.interactiveMode}
+          onToggleInteractiveMode={toggleInteractiveMode}
         />
         <NotificationBanner
           invitation={currentInvitation}

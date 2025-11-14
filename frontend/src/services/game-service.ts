@@ -23,6 +23,8 @@ export interface GameMessage {
   participantCount?: number;
   userId?: string;
   userName?: string;
+  // Phase 2: Interactive mode
+  interactiveMode?: boolean;
 }
 
 export interface GameState {
@@ -480,7 +482,9 @@ export class GameService {
           participants: trainingMessage.participants,
           participantCount: trainingMessage.participantCount,
           userId: trainingMessage.userId,
-          userName: trainingMessage.userName
+          userName: trainingMessage.userName,
+          // Phase 2: Interactive mode
+          interactiveMode: trainingMessage.interactiveMode
         };
         this.onGameUpdate(gameMessage);
       }
@@ -504,7 +508,9 @@ export class GameService {
             participants: trainingMessage.participants,
             participantCount: trainingMessage.participantCount,
             userId: trainingMessage.userId,
-            userName: trainingMessage.userName
+            userName: trainingMessage.userName,
+            // Phase 2: Interactive mode
+            interactiveMode: trainingMessage.interactiveMode
           };
           this.onGameUpdate(gameMessage);
         }
@@ -571,5 +577,26 @@ export class GameService {
       const error = await response.json().catch(() => ({ error: 'Failed to end training session' }));
       throw new Error(error.error || 'Failed to end training session');
     }
+  }
+
+  // Phase 2: Toggle interactive mode (coach only)
+  toggleInteractiveMode(sessionId: string, enabled: boolean): void {
+    const isConnected = this.client?.connected === true;
+    console.log('🎮 toggleInteractiveMode called:', { sessionId, enabled, clientConnected: isConnected });
+
+    if (!this.client?.connected || !sessionId) {
+      console.error('❌ Cannot toggle interactive mode - not connected or no session');
+      return;
+    }
+
+    // Send toggle message via WebSocket
+    this.client.publish({
+      destination: '/app/training/toggle-interactive-mode',
+      body: JSON.stringify({
+        type: 'TOGGLE_INTERACTIVE_MODE',
+        sessionId,
+        interactiveMode: enabled
+      })
+    });
   }
 }

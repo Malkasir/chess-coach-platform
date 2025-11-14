@@ -41,6 +41,9 @@ public class TrainingSession {
     @Column(nullable = false)
     private SessionStatus status;
 
+    @Column(nullable = false)
+    private Boolean interactiveMode = false; // Phase 2: Allow students to make moves when enabled
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -205,5 +208,13 @@ public class TrainingSession {
 
     public void setEndedAt(LocalDateTime endedAt) {
         this.endedAt = endedAt;
+    }
+
+    public Boolean getInteractiveMode() {
+        return interactiveMode;
+    }
+
+    public void setInteractiveMode(Boolean interactiveMode) {
+        this.interactiveMode = interactiveMode;
     }
 }
