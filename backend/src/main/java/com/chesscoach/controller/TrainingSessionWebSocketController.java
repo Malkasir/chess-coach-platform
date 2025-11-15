@@ -100,7 +100,8 @@ public class TrainingSessionWebSocketController {
                             "firstName", p.getFirstName(),
                             "lastName", p.getLastName(),
                             "email", p.getEmail(),
-                            "isCoach", session.isCoach(p)
+                            "isCoach", session.isCoach(p),
+                            "role", session.getUserRole(p.getId())
                     ))
                     .collect(Collectors.toList());
 
@@ -109,7 +110,8 @@ public class TrainingSessionWebSocketController {
                     session.getCurrentFen(),
                     session.getMoveHistory(),
                     participants,
-                    session.getParticipantCount()
+                    session.getParticipantCount(),
+                    session.getInteractiveMode()
             );
 
             messagingTemplate.convertAndSend(
@@ -161,12 +163,32 @@ public class TrainingSessionWebSocketController {
                 return;
             }
 
-            // Validate that the user is the coach (only coach can update position)
-            if (!session.isCoach(user)) {
-                System.out.println("❌ User " + user.getId() + " is not the coach - permission denied");
-                sendError(message.getSessionId(), String.valueOf(user.getId()), "Only the coach can update the position");
-                return;
+            // Phase 2: Allow students with proper roles to update position when interactive mode is ON
+            boolean isCoach = session.isCoach(user);
+            if (!isCoach) {
+                String currentTurn = "w";
+                if (session.getCurrentFen() != null) {
+                    String[] fenParts = session.getCurrentFen().split(" ");
+                    if (fenParts.length > 1) {
+                        currentTurn = fenParts[1];
+                    }
+                }
+
+                boolean canStudentMove = session.canUserMovePieces(user, currentTurn);
+                if (!canStudentMove) {
+                    System.out.println("❌ Student " + user.getId() + " denied - lacks interactive permission for turn " + currentTurn);
+                    System.out.println("   - interactiveMode: " + session.getInteractiveMode());
+                    System.out.println("   - userRole: " + session.getUserRole(user.getId()));
+                    sendError(message.getSessionId(), String.valueOf(user.getId()),
+                            "You need the correct role (WHITE/BLACK/BOTH) to move right now. Ask the coach to assign you a role.");
+                    return;
+                }
             }
+
+            System.out.println("✅ User " + user.getId() + " allowed to update position:");
+            System.out.println("   - isCoach: " + isCoach);
+            System.out.println("   - interactiveMode: " + session.getInteractiveMode());
+            System.out.println("   - userRole: " + session.getUserRole(user.getId()));
 
             // Update session state in database
             session.setCurrentFen(message.getFen());
@@ -257,6 +279,90 @@ public class TrainingSessionWebSocketController {
         } catch (Exception e) {
             System.out.println("❌ Error toggling interactive mode: " + e.getMessage());
             sendError(message.getSessionId(), null, "Failed to toggle interactive mode: " + e.getMessage());
+        }
+    }
+
+    @MessageMapping("/training/assign-role")
+    public void handleAssignRole(@Payload TrainingMessage message, Principal principal) {
+        try {
+            if (principal == null) {
+                System.out.println("❌ No authenticated user found");
+                sendError(message.getSessionId(), null, "Authentication required");
+                return;
+            }
+
+            // Get authenticated user from Principal
+            String username = principal.getName();
+            Optional<User> userOpt = userRepository.findByEmail(username);
+            if (userOpt.isEmpty()) {
+                System.out.println("❌ Authenticated user not found: " + username);
+                sendError(message.getSessionId(), null, "User not found");
+                return;
+            }
+
+            User coach = userOpt.get();
+            String targetUserId = message.getUserId();
+            String role = message.getRole();
+
+            System.out.println("🎭 Assigning role for session " + message.getSessionId() +
+                    " by coach " + coach.getId() +
+                    " to user " + targetUserId +
+                    " role: " + role);
+
+            Optional<TrainingSession> sessionOpt = sessionRepository.findBySessionId(message.getSessionId());
+            if (sessionOpt.isEmpty()) {
+                sendError(message.getSessionId(), String.valueOf(coach.getId()), "Training session not found");
+                return;
+            }
+
+            TrainingSession session = sessionOpt.get();
+
+            // Validate that the session is active
+            if (!session.isActive()) {
+                sendError(message.getSessionId(), String.valueOf(coach.getId()), "Training session is not active");
+                return;
+            }
+
+            // Validate that the user is the coach (only coach can assign roles)
+            if (!session.isCoach(coach)) {
+                System.out.println("❌ User " + coach.getId() + " is not the coach - permission denied");
+                sendError(message.getSessionId(), String.valueOf(coach.getId()), "Only the coach can assign roles");
+                return;
+            }
+
+            // Validate target user ID
+            if (targetUserId == null || targetUserId.isEmpty()) {
+                sendError(message.getSessionId(), String.valueOf(coach.getId()), "Target user ID is required");
+                return;
+            }
+
+            Long targetUserIdLong;
+            try {
+                targetUserIdLong = Long.parseLong(targetUserId);
+            } catch (NumberFormatException e) {
+                sendError(message.getSessionId(), String.valueOf(coach.getId()), "Invalid target user ID");
+                return;
+            }
+
+            // Assign the role
+            session.assignRole(targetUserIdLong, role);
+            sessionRepository.save(session);
+
+            // Broadcast role assignment to all participants
+            TrainingMessage roleMessage = TrainingMessage.roleAssignedMessage(
+                    message.getSessionId(),
+                    targetUserId,
+                    role
+            );
+
+            System.out.println("📢 Broadcasting role assignment to /topic/training/" + message.getSessionId());
+            messagingTemplate.convertAndSend("/topic/training/" + message.getSessionId(), roleMessage);
+
+            System.out.println("✅ Role assigned successfully for session " + message.getSessionId());
+
+        } catch (Exception e) {
+            System.out.println("❌ Error assigning role: " + e.getMessage());
+            sendError(message.getSessionId(), null, "Failed to assign role: " + e.getMessage());
         }
     }
 

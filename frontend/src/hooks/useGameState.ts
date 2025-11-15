@@ -28,9 +28,14 @@ interface GameState {
     firstName: string;
     lastName: string;
     isCoach: boolean;
+    role?: string; // Phase 2: Participant role
   }>;
   // Phase 2: Interactive Mode
   interactiveMode: boolean;
+  // Phase 2: Current user's role
+  userRole: string;
+  // Phase 2: Convenience flag for BOTH-role behavior
+  canPlayBothSides: boolean;
 }
 
 export const useGameState = (authService: AuthService, currentUser: User | null) => {
@@ -55,7 +60,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     // Training session participants initialization
     participants: [],
     // Phase 2: Interactive Mode initialization
-    interactiveMode: false
+    interactiveMode: false,
+    // Phase 2: User role initialization
+    userRole: 'SPECTATOR',
+    canPlayBothSides: false
   });
 
   const gameRef = useRef(new Chess());
@@ -146,17 +154,65 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         break;
       // Training session message types
       case 'SESSION_STATE':
-        console.log('📋 Training session state received:', message);
+        console.log('📋 SESSION_STATE message received!', message);
+        console.log('  🔍 Raw message details:', {
+          interactiveMode: message.interactiveMode,
+          participants: message.participants,
+          participantCount: message.participantCount
+        });
         if (message.fen) {
           const fen = message.fen;
           gameRef.current.load(fen);
-          setGameState(prev => ({
-            ...prev,
-            position: fen,
-            moveHistory: message.moveHistory || [],
-            participants: message.participants || prev.participants,
-            interactiveMode: message.interactiveMode ?? prev.interactiveMode // Phase 2
-          }));
+
+          // Extract current user's role from participants
+          const currentUserParticipant = message.participants?.find(
+            p => currentUser && p.id === currentUser.id
+          );
+          console.log('  👤 Finding my role:', {
+            currentUserId: currentUser?.id,
+            foundParticipant: currentUserParticipant,
+            participantRole: currentUserParticipant?.role
+          });
+          const newUserRole = currentUserParticipant?.role ?? 'SPECTATOR';
+
+          setGameState(prev => {
+            // IMPORTANT: Don't overwrite role/interactiveMode if they're already set
+            // This prevents stale SESSION_STATE from wiping out ROLE_ASSIGNED updates
+            const shouldKeepCurrentRole = prev.userRole && prev.userRole !== 'SPECTATOR';
+            const shouldKeepInteractiveMode = prev.interactiveMode === true;
+
+            const shouldPreserveNonSpectatorRole =
+              shouldKeepCurrentRole && (!currentUserParticipant?.role || currentUserParticipant.role === 'SPECTATOR');
+
+            const finalUserRole = shouldPreserveNonSpectatorRole
+              ? prev.userRole
+              : newUserRole;
+
+            const finalInteractiveMode = message.interactiveMode !== undefined
+              ? message.interactiveMode  // Use new value if explicitly provided
+              : prev.interactiveMode;    // Otherwise keep existing
+
+            console.log('  📊 SESSION_STATE processing:', {
+              prevUserRole: prev.userRole,
+              newUserRole,
+              finalUserRole,
+              prevInteractiveMode: prev.interactiveMode,
+              messageInteractiveMode: message.interactiveMode,
+              finalInteractiveMode,
+              keepingCurrentRole: shouldPreserveNonSpectatorRole
+            });
+
+            return {
+              ...prev,
+              position: fen,
+              moveHistory: message.moveHistory || [],
+              participants: message.participants || prev.participants,
+              interactiveMode: finalInteractiveMode,
+              userRole: finalUserRole,
+              // Keep canPlayBothSides sticky - only ROLE_ASSIGNED should change it
+              canPlayBothSides: prev.canPlayBothSides || (finalUserRole === 'BOTH')
+            };
+          });
         }
         break;
       case 'PARTICIPANT_JOINED':
@@ -235,17 +291,86 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         }));
         break;
       case 'MODE_CHANGED':
-        console.log('🎮 Interactive mode changed:', message.interactiveMode);
-        setGameState(prev => ({
-          ...prev,
-          interactiveMode: message.interactiveMode ?? false
-        }));
+        console.log('🎮 MODE_CHANGED message received!');
+        console.log('  📦 New interactiveMode value:', message.interactiveMode);
+        console.log('  ⚠️ WARNING: This will affect all participants!');
+
+        setGameState(prev => {
+          if (prev.interactiveMode && !message.interactiveMode) {
+            console.log('  ❌ Interactive mode is being turned OFF!');
+            console.log('  ❌ All student roles will become inactive!');
+          } else if (!prev.interactiveMode && message.interactiveMode) {
+            console.log('  ✅ Interactive mode is being turned ON!');
+            console.log('  ℹ️ Students will need roles assigned to move pieces');
+          }
+
+          return {
+            ...prev,
+            interactiveMode: message.interactiveMode ?? false
+          };
+        });
+        break;
+      case 'ROLE_ASSIGNED':
+        console.log('🎭 ROLE_ASSIGNED message received!');
+        console.log('  📦 Message data:', { userId: message.userId, role: message.role });
+        console.log('  👤 Current user:', {
+          id: currentUser?.id,
+          idAsString: currentUser?.id.toString(),
+          firstName: currentUser?.firstName,
+          lastName: currentUser?.lastName
+        });
+        console.log('  🔍 ID comparison:', {
+          messageUserId: message.userId,
+          currentUserId: currentUser?.id.toString(),
+          typeOfMessageUserId: typeof message.userId,
+          typeOfCurrentUserId: typeof currentUser?.id,
+          exactMatch: currentUser && currentUser.id.toString() === message.userId,
+          looseMatch: currentUser && currentUser.id.toString() == (message.userId ?? '')
+        });
+        setGameState(prev => {
+          // Update the participant's role in the participants list
+          const updatedParticipants = prev.participants.map(p => {
+            const matches = p.id.toString() === message.userId;
+            if (matches) {
+              console.log('  ✅ Updated participant in list:', { id: p.id, oldRole: p.role, newRole: message.role });
+            }
+            return matches ? { ...p, role: message.role } : p;
+          });
+
+          // Update userRole if this assignment is for the current user
+          const isCurrentUser = currentUser && currentUser.id.toString() === message.userId;
+          const newUserRole = isCurrentUser
+            ? (message.role ?? 'SPECTATOR')
+            : prev.userRole;
+
+          console.log('  🎭 Role update decision:', {
+            isCurrentUser,
+            previousUserRole: prev.userRole,
+            newUserRole,
+            willUpdateMyRole: isCurrentUser
+          });
+
+          if (isCurrentUser) {
+            console.log('  ✅✅✅ MY ROLE IS BEING UPDATED TO:', newUserRole);
+          } else {
+            console.log('  ℹ️ This role assignment is for a different user');
+          }
+
+          return {
+            ...prev,
+            participants: updatedParticipants,
+            userRole: newUserRole,
+            canPlayBothSides: isCurrentUser
+              ? message.role === 'BOTH'
+              : prev.canPlayBothSides
+          };
+        });
         break;
       case 'ERROR':
         console.error('❌ Game error:', message.message);
         break;
     }
-  }, []);
+  }, [currentUser]); // Add currentUser to dependencies to fix stale closure
 
   useEffect(() => {
     const gameService = gameServiceRef.current;
@@ -746,7 +871,9 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       customStartPosition: null,
       isCustomPosition: false,
       participants: [],
-      interactiveMode: false // Phase 2
+      interactiveMode: false, // Phase 2
+      userRole: 'SPECTATOR', // Phase 2
+      canPlayBothSides: false
     });
     console.log('👋 Exited training session');
   }, []);
@@ -793,7 +920,8 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         reviewIndex: -1,
         customStartPosition: null,
         isCustomPosition: false,
-        participants: initialParticipants
+        participants: initialParticipants,
+        canPlayBothSides: true
       }));
 
       // Connect to WebSocket with participant ID for SESSION_STATE subscription
@@ -815,7 +943,36 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
       const response = await gameServiceRef.current?.joinTrainingSessionByCode(roomCode);
       if (!response) return;
 
-      const { sessionId, currentFen, isCoach } = response;
+      const {
+        sessionId,
+        currentFen,
+        isCoach,
+        participants: participantPayload = [],
+        interactiveMode: sessionInteractiveMode = false,
+        moveHistory: moveHistoryJson
+      } = response;
+
+      const parsedMoveHistory = (() => {
+        if (!moveHistoryJson) return [];
+        try {
+          const history = JSON.parse(moveHistoryJson);
+          return Array.isArray(history) ? history : [];
+        } catch (error) {
+          console.warn('⚠️ Failed to parse move history from join response:', error);
+          return [];
+        }
+      })();
+
+      const formattedParticipants = participantPayload.map(participant => ({
+        id: participant.id,
+        firstName: participant.firstName,
+        lastName: participant.lastName,
+        isCoach: participant.isCoach,
+        role: participant.role ?? 'SPECTATOR'
+      }));
+
+      const initialUserRole = formattedParticipants.find(p => p.id === currentUser.id)?.role ?? 'SPECTATOR';
+      const initialCanPlayBothSides = initialUserRole === 'BOTH';
 
       setGameState(prev => ({
         ...prev,
@@ -826,7 +983,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         roomCodeInput: '', // Clear input after successful join
         playerColor: 'white', // Spectator sees from white's perspective by default
         position: currentFen,
-        moveHistory: [],
+        moveHistory: parsedMoveHistory,
         gameStatus: 'trainingSession',
         clockState: {
           gameMode: 'TRAINING',
@@ -841,8 +998,10 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
         reviewIndex: -1,
         customStartPosition: null,
         isCustomPosition: false,
-        // Participants will be populated via SESSION_STATE message after WebSocket connects
-        participants: []
+        participants: formattedParticipants,
+        interactiveMode: sessionInteractiveMode,
+        userRole: initialUserRole,
+        canPlayBothSides: initialCanPlayBothSides
       }));
 
       // Connect to WebSocket with participant ID - this will trigger SESSION_STATE message with full participant list
@@ -855,12 +1014,29 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     }
   };
 
-  // Update position in training session (coach only)
+  // Update position in training session (coach or students with roles in interactive mode)
   const updateTrainingPosition = (fen: string, moveHistory: string[]) => {
-    if (!gameState.gameId || !gameState.isHost) {
-      console.warn('⚠️ Only the coach can update the training position');
+    if (!gameState.gameId) {
+      console.warn('⚠️ No active training session');
       return;
     }
+
+    // Phase 2: Allow students with roles to update position in interactive mode
+    const hasInteractivePermission = gameState.interactiveMode &&
+                                     gameState.userRole &&
+                                     gameState.userRole !== 'SPECTATOR';
+
+    if (!gameState.isHost && !hasInteractivePermission) {
+      console.warn('⚠️ You need a playing role (WHITE, BLACK, or BOTH) to make moves. Ask the coach to assign you a role.');
+      return;
+    }
+
+    console.log('📡 updateTrainingPosition called by:', {
+      isHost: gameState.isHost,
+      userRole: gameState.userRole,
+      interactiveMode: gameState.interactiveMode,
+      fen: fen.slice(0, 50) + '...'
+    });
 
     gameServiceRef.current?.updateTrainingPosition(gameState.gameId, fen, moveHistory);
   };
@@ -893,6 +1069,18 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     // State will be updated when MODE_CHANGED message is received from server
   };
 
+  // Assign role to participant (coach only) - Phase 2
+  const assignRole = (userId: number, role: string) => {
+    if (!gameState.gameId || !gameState.isHost) {
+      console.warn('⚠️ Only the coach can assign roles');
+      return;
+    }
+
+    console.log('🎭 Assigning role:', { userId, role });
+    gameServiceRef.current?.assignRole(gameState.gameId, userId, role);
+    // State will be updated when ROLE_ASSIGNED message is received from server
+  };
+
   return {
     gameState,
     gameRef: gameRef.current,
@@ -922,6 +1110,7 @@ export const useGameState = (authService: AuthService, currentUser: User | null)
     joinTrainingSessionByCode,
     updateTrainingPosition,
     endTrainingSession,
-    toggleInteractiveMode // Phase 2
+    toggleInteractiveMode, // Phase 2
+    assignRole // Phase 2
   };
 };

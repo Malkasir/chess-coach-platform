@@ -22,16 +22,18 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
   // Settings
   const [depth, setDepth] = useState<number>(12);
   const [multipv, setMultipv] = useState<number>(1);
-  const [analysisEnabled, setAnalysisEnabled] = useState<boolean>(enabled);
+  const [analysisEnabled, setAnalysisEnabled] = useState<boolean>(false); // Default OFF - user can enable
   const [engineReady, setEngineReady] = useState<boolean>(false);
 
   // Analysis results
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
 
-  // Sync enabled prop changes (e.g., entering/exiting review mode)
+  // Auto-disable when entering review mode (but don't auto-enable)
   useEffect(() => {
-    setAnalysisEnabled(enabled);
-  }, [enabled]);
+    if (!enabled && analysisEnabled) {
+      setAnalysisEnabled(false); // Force OFF in review mode
+    }
+  }, [enabled, analysisEnabled]);
 
   // Refs
   const engineRef = useRef<StockfishService | null>(null);

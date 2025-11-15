@@ -51,7 +51,8 @@ export const ChessCoachAppReact: React.FC = () => {
     joinTrainingSessionByCode,
     updateTrainingPosition,
     endTrainingSession,
-    toggleInteractiveMode // Phase 2
+    toggleInteractiveMode, // Phase 2
+    assignRole // Phase 2
   } = useGameState(authService, authState.currentUser);
 
   // Notification state for game invitations
@@ -383,15 +384,34 @@ export const ChessCoachAppReact: React.FC = () => {
     // Determine if this is a shared training session (backend-backed with room code)
     const isSharedSession = !!gameState.roomCode;
 
-    // Handler for training session moves (coach only, with broadcast to spectators)
+    // Handler for training session moves (coach + students with roles in interactive mode)
     const handleTrainingMove = (move: string, fen: string) => {
       // Update local state
       makeMove(move, fen);
 
-      // If shared session and user is coach, broadcast to spectators
-      if (isSharedSession && gameState.isHost) {
+      // Broadcast move to all participants if:
+      // 1. User is the coach (always allowed)
+      // 2. OR user is a student with interactive mode enabled and a playing role
+      const canBroadcast = gameState.isHost ||
+                          (gameState.interactiveMode && gameState.userRole && gameState.userRole !== 'SPECTATOR');
+
+      if (isSharedSession && canBroadcast) {
+        console.log('📡 Broadcasting move to all participants:', {
+          move,
+          isCoach: gameState.isHost,
+          interactiveMode: gameState.interactiveMode,
+          userRole: gameState.userRole
+        });
         const updatedMoveHistory = [...gameState.moveHistory, move];
         updateTrainingPosition(fen, updatedMoveHistory);
+      } else {
+        console.log('⚠️ Move NOT broadcast - missing permissions:', {
+          isSharedSession,
+          canBroadcast,
+          isHost: gameState.isHost,
+          interactiveMode: gameState.interactiveMode,
+          userRole: gameState.userRole
+        });
       }
     };
 
@@ -436,6 +456,10 @@ export const ChessCoachAppReact: React.FC = () => {
           // Phase 2: Interactive Mode
           interactiveMode={gameState.interactiveMode}
           onToggleInteractiveMode={toggleInteractiveMode}
+          // Phase 2: Role Assignment
+          userRole={gameState.userRole}
+          canPlayBothSides={gameState.canPlayBothSides}
+          onAssignRole={assignRole}
         />
         <NotificationBanner
           invitation={currentInvitation}

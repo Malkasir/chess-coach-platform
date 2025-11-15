@@ -44,6 +44,16 @@ public class TrainingSession {
     @Column(nullable = false)
     private Boolean interactiveMode = false; // Phase 2: Allow students to make moves when enabled
 
+    // Phase 2: Role assignments for interactive mode
+    @Column
+    private Long whitePlayerId; // Student assigned to play white pieces
+
+    @Column
+    private Long blackPlayerId; // Student assigned to play black pieces
+
+    @Column
+    private Long bothColorsPlayerId; // Student assigned to play both colors (for demonstrating lines)
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -119,6 +129,83 @@ public class TrainingSession {
 
     public int getParticipantCount() {
         return participants.size();
+    }
+
+    // Phase 2: Role assignment helpers
+    public boolean canUserMovePieces(User user, String turn) {
+        Long userId = user.getId();
+
+        // Coach can always move pieces
+        if (isCoach(user)) {
+            return true;
+        }
+
+        // If interactive mode is disabled, only coach can move
+        if (!interactiveMode) {
+            return false;
+        }
+
+        // If user is assigned to play both colors, they can always move
+        if (userId.equals(bothColorsPlayerId)) {
+            return true;
+        }
+
+        // If user is assigned to play white and it's white's turn
+        if (userId.equals(whitePlayerId) && "w".equals(turn)) {
+            return true;
+        }
+
+        // If user is assigned to play black and it's black's turn
+        if (userId.equals(blackPlayerId) && "b".equals(turn)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public String getUserRole(Long userId) {
+        if (coach.getId().equals(userId)) {
+            return "COACH";
+        }
+        if (userId.equals(bothColorsPlayerId)) {
+            return "BOTH";
+        }
+        if (userId.equals(whitePlayerId)) {
+            return "WHITE";
+        }
+        if (userId.equals(blackPlayerId)) {
+            return "BLACK";
+        }
+        return "SPECTATOR";
+    }
+
+    public void assignRole(Long userId, String role) {
+        // Clear any existing role for this user
+        if (userId.equals(whitePlayerId)) {
+            whitePlayerId = null;
+        }
+        if (userId.equals(blackPlayerId)) {
+            blackPlayerId = null;
+        }
+        if (userId.equals(bothColorsPlayerId)) {
+            bothColorsPlayerId = null;
+        }
+
+        // Assign new role
+        switch (role.toUpperCase()) {
+            case "WHITE":
+                whitePlayerId = userId;
+                break;
+            case "BLACK":
+                blackPlayerId = userId;
+                break;
+            case "BOTH":
+                bothColorsPlayerId = userId;
+                break;
+            case "SPECTATOR":
+                // Already cleared above
+                break;
+        }
     }
 
     // Getters and Setters
@@ -216,5 +303,29 @@ public class TrainingSession {
 
     public void setInteractiveMode(Boolean interactiveMode) {
         this.interactiveMode = interactiveMode;
+    }
+
+    public Long getWhitePlayerId() {
+        return whitePlayerId;
+    }
+
+    public void setWhitePlayerId(Long whitePlayerId) {
+        this.whitePlayerId = whitePlayerId;
+    }
+
+    public Long getBlackPlayerId() {
+        return blackPlayerId;
+    }
+
+    public void setBlackPlayerId(Long blackPlayerId) {
+        this.blackPlayerId = blackPlayerId;
+    }
+
+    public Long getBothColorsPlayerId() {
+        return bothColorsPlayerId;
+    }
+
+    public void setBothColorsPlayerId(Long bothColorsPlayerId) {
+        this.bothColorsPlayerId = bothColorsPlayerId;
     }
 }
