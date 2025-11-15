@@ -19,10 +19,15 @@ export interface GameMessage {
     lastName: string;
     email?: string;
     isCoach: boolean;
+    role?: string; // Phase 2: Participant role
   }>;
   participantCount?: number;
   userId?: string;
   userName?: string;
+  // Phase 2: Interactive mode
+  interactiveMode?: boolean;
+  // Phase 2: Role assignment
+  role?: string;
 }
 
 export interface GameState {
@@ -35,6 +40,15 @@ export interface GameState {
   status: string;
   moveHistory: string[];
   roomCode?: string;
+}
+
+export interface TrainingParticipant {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  isCoach: boolean;
+  role?: string;
 }
 
 export class GameService {
@@ -409,6 +423,9 @@ export class GameService {
     coachId: number;
     currentFen: string;
     isCoach: boolean;
+    participants?: TrainingParticipant[];
+    interactiveMode?: boolean;
+    moveHistory?: string;
   }> {
     const headers = this.authService ? this.authService.getAuthHeaders() : { 'Content-Type': 'application/json' };
 
@@ -464,10 +481,12 @@ export class GameService {
     }
 
     // Subscribe to training session messages (broadcast to all participants)
+    console.log('🔔 SUBSCRIBING to training topic:', `/topic/training/${sessionId}`);
     this.client?.subscribe(`/topic/training/${sessionId}`, (message) => {
       console.log('📨 Received training broadcast message:', message.body);
       const trainingMessage = JSON.parse(message.body);
       console.log('🎓 Parsed training broadcast message:', trainingMessage);
+      console.log('  📌 Message type:', trainingMessage.type);
       if (this.onGameUpdate) {
         // Convert training message to GameMessage format, preserving ALL fields
         const gameMessage: GameMessage = {
@@ -480,7 +499,11 @@ export class GameService {
           participants: trainingMessage.participants,
           participantCount: trainingMessage.participantCount,
           userId: trainingMessage.userId,
-          userName: trainingMessage.userName
+          userName: trainingMessage.userName,
+          // Phase 2: Interactive mode
+          interactiveMode: trainingMessage.interactiveMode,
+          // Phase 2: Role assignment
+          role: trainingMessage.role
         };
         this.onGameUpdate(gameMessage);
       }
@@ -504,7 +527,11 @@ export class GameService {
             participants: trainingMessage.participants,
             participantCount: trainingMessage.participantCount,
             userId: trainingMessage.userId,
-            userName: trainingMessage.userName
+            userName: trainingMessage.userName,
+            // Phase 2: Interactive mode
+            interactiveMode: trainingMessage.interactiveMode,
+            // Phase 2: Role assignment
+            role: trainingMessage.role
           };
           this.onGameUpdate(gameMessage);
         }
@@ -571,5 +598,48 @@ export class GameService {
       const error = await response.json().catch(() => ({ error: 'Failed to end training session' }));
       throw new Error(error.error || 'Failed to end training session');
     }
+  }
+
+  // Phase 2: Toggle interactive mode (coach only)
+  toggleInteractiveMode(sessionId: string, enabled: boolean): void {
+    const isConnected = this.client?.connected === true;
+    console.log('🎮 toggleInteractiveMode called:', { sessionId, enabled, clientConnected: isConnected });
+
+    if (!this.client?.connected || !sessionId) {
+      console.error('❌ Cannot toggle interactive mode - not connected or no session');
+      return;
+    }
+
+    // Send toggle message via WebSocket
+    this.client.publish({
+      destination: '/app/training/toggle-interactive-mode',
+      body: JSON.stringify({
+        type: 'TOGGLE_INTERACTIVE_MODE',
+        sessionId,
+        interactiveMode: enabled
+      })
+    });
+  }
+
+  // Phase 2: Assign role to participant (coach only)
+  assignRole(sessionId: string, userId: number, role: string): void {
+    const isConnected = this.client?.connected === true;
+    console.log('🎭 assignRole called:', { sessionId, userId, role, clientConnected: isConnected });
+
+    if (!this.client?.connected || !sessionId) {
+      console.error('❌ Cannot assign role - not connected or no session');
+      return;
+    }
+
+    // Send assign role message via WebSocket
+    this.client.publish({
+      destination: '/app/training/assign-role',
+      body: JSON.stringify({
+        type: 'ASSIGN_ROLE',
+        sessionId,
+        userId: userId.toString(),
+        role
+      })
+    });
   }
 }

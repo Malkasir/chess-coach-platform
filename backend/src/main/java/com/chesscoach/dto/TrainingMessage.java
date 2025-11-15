@@ -13,6 +13,8 @@ public class TrainingMessage {
     private String message;
     private Integer participantCount;
     private List<Map<String, Object>> participants;
+    private Boolean interactiveMode; // Phase 2: Interactive mode state
+    private String role; // Phase 2: Assigned player role (WHITE, BLACK, BOTH, SPECTATOR)
 
     public TrainingMessage() {}
 
@@ -38,12 +40,14 @@ public class TrainingMessage {
     }
 
     public static TrainingMessage sessionStateMessage(String sessionId, String fen, String moveHistory,
-                                                      List<Map<String, Object>> participants, Integer participantCount) {
+                                                      List<Map<String, Object>> participants, Integer participantCount,
+                                                      Boolean interactiveMode) {
         TrainingMessage msg = new TrainingMessage("SESSION_STATE", sessionId);
         msg.setFen(fen);
         msg.setMoveHistory(moveHistory);
         msg.setParticipants(participants);
         msg.setParticipantCount(participantCount);
+        msg.setInteractiveMode(interactiveMode);
         return msg;
     }
 
@@ -56,6 +60,19 @@ public class TrainingMessage {
     public static TrainingMessage errorMessage(String sessionId, String message) {
         TrainingMessage msg = new TrainingMessage("ERROR", sessionId);
         msg.setMessage(message);
+        return msg;
+    }
+
+    public static TrainingMessage modeChangedMessage(String sessionId, Boolean interactiveMode) {
+        TrainingMessage msg = new TrainingMessage("MODE_CHANGED", sessionId);
+        msg.setInteractiveMode(interactiveMode);
+        return msg;
+    }
+
+    public static TrainingMessage roleAssignedMessage(String sessionId, String userId, String role) {
+        TrainingMessage msg = new TrainingMessage("ROLE_ASSIGNED", sessionId);
+        msg.setUserId(userId);
+        msg.setRole(role);
         return msg;
     }
 
@@ -130,5 +147,21 @@ public class TrainingMessage {
 
     public void setParticipants(List<Map<String, Object>> participants) {
         this.participants = participants;
+    }
+
+    public Boolean getInteractiveMode() {
+        return interactiveMode;
+    }
+
+    public void setInteractiveMode(Boolean interactiveMode) {
+        this.interactiveMode = interactiveMode;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

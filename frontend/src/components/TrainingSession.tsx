@@ -36,9 +36,17 @@ interface TrainingSessionProps {
     firstName: string;
     lastName: string;
     isCoach: boolean;
+    role?: string; // Phase 2: Participant role
   }>;
   onCopyRoomCode?: () => void;
   onEndSession?: () => void;
+  // Phase 2: Interactive Mode
+  interactiveMode?: boolean;
+  onToggleInteractiveMode?: (enabled: boolean) => void;
+  // Phase 2: Role Assignment
+  userRole?: string;
+  onAssignRole?: (userId: number, role: string) => void;
+  canPlayBothSides?: boolean;
 }
 
 export const TrainingSession: React.FC<TrainingSessionProps> = ({
@@ -64,6 +72,11 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
   participants = [],
   onCopyRoomCode,
   onEndSession,
+  interactiveMode = false,
+  onToggleInteractiveMode,
+  userRole = 'SPECTATOR',
+  onAssignRole,
+  canPlayBothSides = false,
 }) => {
   const [showEditor, setShowEditor] = useState(false);
 
@@ -80,6 +93,29 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
 
   const [participantsOpen, setParticipantsOpen] = useState(false);
 
+  // Log only when interactive mode or role changes (not on every render)
+  React.useEffect(() => {
+    if (isSharedSession && !isCoach) {
+      console.log('🎮 Student state:', { interactiveMode, userRole, canPlayBothSides, allowBothSides: isCoach || canPlayBothSides });
+    }
+  }, [isSharedSession, isCoach, interactiveMode, userRole, canPlayBothSides]);
+
+  // Memoize isMyTurn callback to prevent timing issues during rapid state updates
+  const isMyTurn = React.useCallback(() => {
+    if (reviewMode) return false;
+    if (isCoach) return true;
+    if (!interactiveMode) return false;
+    if (!userRole || userRole === 'SPECTATOR') return false;
+    if (userRole === 'BOTH') return true;
+
+    // Check turn-based permissions for WHITE/BLACK roles
+    const currentTurn = game.turn();
+    if (userRole === 'WHITE') return currentTurn === 'w';
+    if (userRole === 'BLACK') return currentTurn === 'b';
+
+    return false;
+  }, [reviewMode, isCoach, interactiveMode, userRole, game]);
+
   // Persist panel states to localStorage
   React.useEffect(() => {
     localStorage.setItem('training-moves-panel-open', JSON.stringify(movesPanelOpen));
@@ -92,16 +128,24 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
   // Handler for playing the engine's suggested move
   const handlePlayBestMove = (uciMove: string) => {
     try {
-      // Convert UCI move (e.g., "e2e4") to chess.js move format
-      const move = game.move({
+      // Always base the engine move on the current board position to avoid stale state
+      const tempGame = new Chess(position);
+      const move = tempGame.move({
         from: uciMove.slice(0, 2),
         to: uciMove.slice(2, 4),
         promotion: uciMove.length > 4 ? uciMove[4] : undefined
       });
 
-      if (move) {
-        onMove(move.san, game.fen());
+      if (!move) {
+        console.warn('Engine suggested an illegal move for the current position', {
+          uciMove,
+          position
+        });
+        return;
       }
+
+      // Delegate to parent handler – it will update shared Chess instance + state
+      onMove(move.san, tempGame.fen());
     } catch (error) {
       console.error('Failed to play suggested move:', error);
     }
@@ -129,6 +173,28 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
                 <button onClick={onResetPosition} className={styles.secondaryButton}>
                   🔄 Reset Position
                 </button>
+                {isSharedSession && onToggleInteractiveMode && (
+                  <button
+                    onClick={() => {
+                      console.log('🎮 Button clicked! Current interactiveMode:', interactiveMode);
+                      console.log('🎮 Calling onToggleInteractiveMode with:', !interactiveMode);
+                      onToggleInteractiveMode(!interactiveMode);
+                    }}
+                    className={styles.secondaryButton}
+                    style={{
+                      backgroundColor: interactiveMode ? '#28a745' : '#6c757d',
+                      color: 'white',
+                      fontWeight: 'var(--font-medium)'
+                    }}
+                    title={
+                      interactiveMode
+                        ? 'Interactive mode ON - Students can make moves (remember to assign roles!)'
+                        : 'Interactive mode OFF - Only coach can make moves. Click to enable and then assign roles to students.'
+                    }
+                  >
+                    🎮 Interactive: {interactiveMode ? 'ON' : 'OFF'}
+                  </button>
+                )}
               </>
             )}
             {isSharedSession && isCoach && onEndSession && (
@@ -159,6 +225,35 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
           }}>
             {isSharedSession ? (isCoach ? '👨‍🏫 Coach Mode' : '👁️ Spectator Mode') : '📚 Training Mode'}
           </div>
+          {isSharedSession && !isCoach && interactiveMode && userRole === 'SPECTATOR' && (
+            <div className={styles.statusCard} style={{
+              background: '#ffc107',
+              color: '#000',
+              fontWeight: 'var(--font-semibold)',
+              border: '2px solid #ff9800'
+            }}>
+              ⚠️ Waiting for coach to assign you a role
+            </div>
+          )}
+          {isSharedSession && !isCoach && interactiveMode && userRole !== 'SPECTATOR' && (
+            <div className={styles.statusCard} style={{
+              background: '#28a745',
+              color: 'white',
+              fontWeight: 'var(--font-medium)'
+            }}>
+              🎮 Interactive Mode
+            </div>
+          )}
+          {isSharedSession && !isCoach && userRole && userRole !== 'SPECTATOR' && (
+            <div className={styles.statusCard} style={{
+              background: userRole === 'BOTH' ? '#ff9800' : userRole === 'WHITE' ? '#f0f0f0' : '#333',
+              color: userRole === 'WHITE' ? '#333' : 'white',
+              fontWeight: 'var(--font-semibold)',
+              border: userRole === 'WHITE' ? '2px solid #333' : 'none'
+            }}>
+              🎭 Playing: {userRole === 'BOTH' ? 'Both Colors' : userRole === 'WHITE' ? 'White' : 'Black'}
+            </div>
+          )}
           {isSharedSession && roomCode && (
             <div className={styles.statusCard} style={{ cursor: 'pointer' }} onClick={onCopyRoomCode}>
               🔑 Room: {roomCode}
@@ -197,14 +292,20 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
             {/* Chess Board */}
             <div className={styles.boardWrapper}>
               <ChessBoard
+                key={`chessboard-${isCoach}-${canPlayBothSides}-${userRole}`}
                 position={position === 'start' ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' : position}
                 game={game}
-                playerColor="white"
-                isMyTurn={() => !reviewMode && isCoach}
+                playerColor={
+                  // Derive playerColor from user role
+                  isCoach || canPlayBothSides ? 'white' : // Coach/BOTH can move both sides
+                  userRole === 'BLACK' ? 'black' :
+                  'white' // Default for WHITE/SPECTATOR
+                }
+                isMyTurn={isMyTurn}
                 onMove={onMove}
                 isTimeExpired={false}
                 reviewMode={reviewMode}
-                allowBothSides={isCoach}
+                allowBothSides={isCoach || canPlayBothSides}
               />
             </div>
 
@@ -243,33 +344,65 @@ export const TrainingSession: React.FC<TrainingSessionProps> = ({
                       padding: 0,
                       listStyle: 'none'
                     }}>
-                      {participants.map(participant => (
-                        <li key={participant.id} style={{
-                          padding: 'var(--space-xs) var(--space-sm)',
-                          marginBottom: 'var(--space-xs)',
-                          backgroundColor: 'var(--bg-card)',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between'
-                        }}>
-                          <span style={{ color: 'var(--text-primary)' }}>
-                            {participant.firstName} {participant.lastName}
-                          </span>
-                          {participant.isCoach && (
+                      {participants.map(participant => {
+                        const needsRole = interactiveMode && !participant.isCoach && (!participant.role || participant.role === 'SPECTATOR');
+                        return (
+                          <li key={participant.id} style={{
+                            padding: 'var(--space-xs) var(--space-sm)',
+                            marginBottom: 'var(--space-xs)',
+                            backgroundColor: needsRole ? '#fff3cd' : 'var(--bg-card)',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 'var(--space-sm)',
+                            border: needsRole ? '2px solid #ffc107' : 'none'
+                          }}>
                             <span style={{
-                              fontSize: 'var(--text-xs)',
-                              padding: '2px 6px',
-                              backgroundColor: 'var(--primary-color)',
-                              color: 'white',
-                              borderRadius: '3px',
-                              fontWeight: 'var(--font-semibold)'
+                              color: needsRole ? '#856404' : 'var(--text-primary)',
+                              flex: '1 1 auto',
+                              fontWeight: needsRole ? 'var(--font-semibold)' : 'normal'
                             }}>
-                              Coach
+                              {needsRole && '⚠️ '}
+                              {participant.firstName} {participant.lastName}
                             </span>
-                          )}
-                        </li>
-                      ))}
+                            {isCoach && !participant.isCoach && onAssignRole && (
+                              <select
+                                value={participant.role || 'SPECTATOR'}
+                                onChange={(e) => onAssignRole(participant.id, e.target.value)}
+                                style={{
+                                  fontSize: 'var(--text-xs)',
+                                  padding: '2px 4px',
+                                  backgroundColor: needsRole ? '#fff' : 'var(--bg-secondary)',
+                                  color: needsRole ? '#000' : 'var(--text-primary)',
+                                  border: needsRole ? '2px solid #ff9800' : '1px solid var(--border-color)',
+                                  borderRadius: '3px',
+                                  cursor: 'pointer',
+                                  fontWeight: needsRole ? 'var(--font-bold)' : 'normal'
+                                }}
+                                title={needsRole ? "⚠️ Assign a role for this student to participate!" : "Assign role to this participant"}
+                              >
+                                <option value="SPECTATOR">👁️ Spectator</option>
+                                <option value="WHITE">⚪ White</option>
+                                <option value="BLACK">⚫ Black</option>
+                                <option value="BOTH">🎭 Both</option>
+                              </select>
+                            )}
+                            {participant.isCoach && (
+                              <span style={{
+                                fontSize: 'var(--text-xs)',
+                                padding: '2px 6px',
+                                backgroundColor: 'var(--primary-color)',
+                                color: 'white',
+                                borderRadius: '3px',
+                                fontWeight: 'var(--font-semibold)'
+                              }}>
+                                Coach
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>

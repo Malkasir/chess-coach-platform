@@ -45,22 +45,30 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
 
   // Handle piece drop with useCallback
   const onDrop = useCallback((sourceSquare: Square, targetSquare: Square, piece: string): boolean => {
+    console.log('🎯 onDrop called!', { sourceSquare, targetSquare, piece });
+    console.log('  📊 Drop state:', { reviewMode, isTimeExpired, allowBothSides });
+
     // Prevent moves in review mode
     if (reviewMode) {
+      console.log('📖 Move blocked: Currently reviewing game history');
       debugLog('📖 Move blocked: Currently reviewing game history');
       return false;
     }
 
     // Check if time has expired
     if (isTimeExpired) {
+      console.log('⏰ Move blocked: Time expired');
       debugLog('⏰ Move blocked: Time expired');
       return false;
     }
 
     // Check if it's the player's turn (skip in training mode when playing both sides)
     if (!allowBothSides && !isMyTurn()) {
+      console.log('🚫 Move blocked: Not my turn and allowBothSides is false');
       return false;
     }
+
+    console.log('✅ Initial checks passed, validating move...');
 
     // Use rulesGame based on localPosition for consistent legality checks
     const gameCopy = new Chess(localPosition);
@@ -116,8 +124,11 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     }
 
     if (move === null) {
+      console.log('❌ Move validation failed - chess.js rejected the move');
       return false;
     }
+
+    console.log('✅ Move is legal!', { san: move.san, from: move.from, to: move.to });
 
     // Move is legal! Send to server - this will update the position via props
     const newFen = gameCopy.fen();
@@ -125,19 +136,40 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     // Update local position immediately for responsive UI
     setLocalPosition(newFen);
 
+    console.log('📤 Calling onMove to broadcast...', { san: move.san, newFen });
+    console.log('📤 onMove function exists?', typeof onMove, onMove);
+
+    if (!onMove) {
+      console.error('❌ onMove callback is undefined!');
+      return false;
+    }
+
     // Don't modify the original game object here - let the parent handle state updates
     // The onMove callback will update the game state and re-render with new position
-    onMove(move.san, newFen, {
-      from: move.from,
-      to: move.to,
-      promotion: move.promotion
-    });
+    try {
+      onMove(move.san, newFen, {
+        from: move.from,
+        to: move.to,
+        promotion: move.promotion
+      });
+      console.log('✅ onMove called successfully');
+    } catch (error) {
+      console.error('❌ onMove threw an error:', error);
+      return false;
+    }
 
     return true;
   }, [localPosition, playerColor, isMyTurn, onMove, isTimeExpired, reviewMode, allowBothSides]);
 
   // Determine if a piece can be dragged
   const isDraggablePiece = useCallback(({ piece, sourceSquare }: any): boolean => {
+    const pieceColor = piece.startsWith('w') ? 'white' : 'black';
+
+    // Allow all pieces when allowBothSides is true
+    if (allowBothSides) {
+      return true;
+    }
+
     // Can't drag in review mode
     if (reviewMode) {
       return false;
@@ -148,36 +180,20 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       return false;
     }
 
-    // In training mode (allowBothSides), skip color and turn checks
+    // Check turn-based restrictions (when not in allowBothSides mode)
     if (!allowBothSides) {
-      // Don't allow dragging if no playerColor set
-      if (!playerColor) {
-        return false;
-      }
+      if (!playerColor) return false;
 
-      // Don't allow dragging pieces of the wrong color
-      const pieceColor = piece.startsWith('w') ? 'white' : 'black';
       const isMyPiece = playerColor === pieceColor;
+      if (!isMyPiece) return false;
 
-      if (!isMyPiece) {
-        return false;
-      }
-
-      // Check if it's the player's turn
       const myTurn = isMyTurn();
-
-      if (!myTurn) {
-        return false;
-      }
+      if (!myTurn) return false;
     }
 
     // Check if piece has legal moves
     const moves = rulesGame.moves({ square: sourceSquare, verbose: true });
-    
-    if (moves.length === 0) {
-      return false;
-    }
-    return true;
+    return moves.length > 0;
   }, [rulesGame, playerColor, isMyTurn, isTimeExpired, reviewMode, allowBothSides]);
 
   const flipBoard = () => {

@@ -166,17 +166,99 @@ public class TrainingSessionService {
     }
 
     /**
+     * Toggle interactive mode in a training session (coach only)
+     * Phase 2 feature: Allows students to make moves when enabled
+     * @param sessionId The session ID
+     * @param user The authenticated user attempting to toggle
+     * @param enabled True to enable interactive mode, false to disable
+     * @return Session state map with updated interactiveMode
+     */
+    public Map<String, Object> toggleInteractiveMode(String sessionId, User user, Boolean enabled) {
+        TrainingSession session = sessionRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> new RuntimeException("Training session not found"));
+
+        // Only coach can toggle interactive mode
+        if (!session.isCoach(user)) {
+            throw new RuntimeException("Only the coach can toggle interactive mode");
+        }
+
+        if (!session.isActive()) {
+            throw new RuntimeException("Training session is not active");
+        }
+
+        session.setInteractiveMode(enabled);
+        TrainingSession savedSession = sessionRepository.save(session);
+
+        System.out.println("📊 ANALYTICS: Interactive mode toggled - SessionId: " + sessionId +
+                ", Enabled: " + enabled +
+                ", Coach: " + user.getEmail());
+
+        return buildSessionStateResponse(savedSession, user.getId());
+    }
+
+    /**
+     * Assign a role to a participant in a training session (coach only)
+     * Phase 2 feature: Allows coach to assign students to play white, black, both colors, or spectator
+     * @param sessionId The session ID
+     * @param coach The authenticated coach user
+     * @param targetUserId The user ID to assign the role to
+     * @param role The role to assign (WHITE, BLACK, BOTH, SPECTATOR)
+     * @return Session state map with updated role assignments
+     */
+    public Map<String, Object> assignRole(String sessionId, User coach, Long targetUserId, String role) {
+        TrainingSession session = sessionRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> new RuntimeException("Training session not found"));
+
+        // Only coach can assign roles
+        if (!session.isCoach(coach)) {
+            throw new RuntimeException("Only the coach can assign roles");
+        }
+
+        if (!session.isActive()) {
+            throw new RuntimeException("Training session is not active");
+        }
+
+        // Validate that target user is a participant
+        User targetUser = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new RuntimeException("Target user not found"));
+
+        if (!session.isParticipant(targetUser)) {
+            throw new RuntimeException("Target user is not a participant in this session");
+        }
+
+        // Validate role
+        if (role == null || (!role.equals("WHITE") && !role.equals("BLACK") &&
+                            !role.equals("BOTH") && !role.equals("SPECTATOR"))) {
+            throw new RuntimeException("Invalid role. Must be WHITE, BLACK, BOTH, or SPECTATOR");
+        }
+
+        // Assign the role
+        session.assignRole(targetUserId, role);
+        TrainingSession savedSession = sessionRepository.save(session);
+
+        System.out.println("📊 ANALYTICS: Role assigned - SessionId: " + sessionId +
+                ", TargetUser: " + targetUser.getEmail() +
+                ", Role: " + role +
+                ", Coach: " + coach.getEmail());
+
+        return buildSessionStateResponse(savedSession, coach.getId());
+    }
+
+    /**
      * Build a session state response map
      */
     private Map<String, Object> buildSessionStateResponse(TrainingSession session, Long currentUserId) {
         List<Map<String, Object>> participants = session.getParticipants().stream()
-                .map(participant -> Map.of(
-                        "id", (Object) participant.getId(),
-                        "firstName", participant.getFirstName(),
-                        "lastName", participant.getLastName(),
-                        "email", participant.getEmail(),
-                        "isCoach", session.isCoach(participant)
-                ))
+                .map(participant -> {
+                    Map<String, Object> participantMap = new HashMap<>();
+                    participantMap.put("id", participant.getId());
+                    participantMap.put("firstName", participant.getFirstName());
+                    participantMap.put("lastName", participant.getLastName());
+                    participantMap.put("email", participant.getEmail());
+                    participantMap.put("isCoach", session.isCoach(participant));
+                    participantMap.put("role", session.getUserRole(participant.getId())); // Phase 2: Include role
+                    return participantMap;
+                })
                 .collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();
@@ -190,6 +272,7 @@ public class TrainingSessionService {
         response.put("participants", participants);
         response.put("participantCount", session.getParticipantCount());
         response.put("isCoach", session.isCoach(userRepository.findById(currentUserId).orElseThrow()));
+        response.put("interactiveMode", session.getInteractiveMode()); // Phase 2: Include interactive mode state
         response.put("createdAt", session.getCreatedAt().toString());
         response.put("updatedAt", session.getUpdatedAt().toString());
 
